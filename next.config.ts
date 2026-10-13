@@ -6,8 +6,9 @@ import type { NextConfig } from "next";
 // سمت کلاینت به روت واقعی ریدایرکت می‌شوند.
 
 const nextConfig: NextConfig = {
-  output: "standalone",
-  /* config options here */
+  // 🟢 output: "standalone" حذف شد — فقط برای self-hosting (Docker/node server.js)
+  // است و روی Vercel باعث 404 NOT_FOUND با بیلدِ موفق می‌شد. بدون آن، هم Vercel
+  // درست کار می‌کند و هم `next start` محلی.
   typescript: {
     // 🛡️ فاز ۶۴ — خطاهای تایپ دیگر در بیلد نادیده گرفته نمی‌شوند؛
     // ignoreBuildErrors=true اجازه داده بود کد خراب (مثل FaqVote غایب) تا
