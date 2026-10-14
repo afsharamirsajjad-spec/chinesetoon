@@ -48,11 +48,13 @@ import {
   LayoutDashboard,
   DatabaseBackup,
   ScrollText,
+  BookOpenCheck,
 } from 'lucide-react'
 import { ClassesAdminTab } from '../admin/ClassesAdminTab'
 import { FaqAdminTab, type AdminFaqItem } from '../admin/FaqAdminTab'
 import { DiscountsAdminTab, type DiscountItem } from '../admin/DiscountsAdminTab'
 import { SchedulingAdminTab } from '../admin/SchedulingAdminTab'
+import { HomeworkAdminTab } from '../admin/HomeworkAdminTab'
 import { PaymentsAdminTab } from '../admin/PaymentsAdminTab'
 import { PaymentSettingsCard, type BankSettingsState } from '../admin/PaymentSettingsCard'
 import { DashboardAdminTab } from '../admin/DashboardAdminTab'
@@ -3099,7 +3101,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
   const [token, setToken] = useState<string | null>(null)
   const [checked, setChecked] = useState(false)
   const [tab, setTab] = useState<
-    'dashboard' | 'classes' | 'messages' | 'registrations' | 'scheduling' | 'students' | 'orders' | 'newsletter' | 'blog' | 'reviews' | 'faq' | 'discounts' | 'lessons' | 'words' | 'quiz' | 'teachers' | 'settings' | 'backup' | 'logs'
+    'dashboard' | 'classes' | 'messages' | 'registrations' | 'scheduling' | 'students' | 'orders' | 'newsletter' | 'blog' | 'reviews' | 'faq' | 'discounts' | 'lessons' | 'words' | 'quiz' | 'teachers' | 'homework' | 'settings' | 'backup' | 'logs'
   >('dashboard')
   const [messages, setMessages] = useState<SupportMsg[]>([])
   const [registrations, setRegistrations] = useState<Registration[]>([])
@@ -3653,6 +3655,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
     { key: 'classes' as const, label: a.tabClasses, count: 0, alert: 0, icon: School },
     { key: 'messages' as const, label: a.tabMessages, count: messages.length, alert: pendingMessages, icon: Mail },
     { key: 'registrations' as const, label: a.tabRegistrations, count: registrations.length, alert: pendingRegistrations, icon: GraduationCap },
+    { key: 'homework' as const, label: a.tabHomework, count: 0, alert: 0, icon: BookOpenCheck },
     { key: 'scheduling' as const, label: a.tabSchedule, count: 0, alert: 0, icon: CalendarDays },
     { key: 'students' as const, label: a.tabStudents, count: studentsMeta?.total ?? 0, alert: studentsMeta?.counts.unpaid ?? 0, icon: UsersRound },
     { key: 'orders' as const, label: a.tabOrders, count: 0, alert: payCounts?.pendingReview ?? 0, icon: CreditCard },
@@ -3680,7 +3683,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
       key: 'community',
       label: a.catCommunity,
       icon: UsersRound,
-      tabKeys: ['students', 'registrations', 'messages', 'newsletter', 'reviews'],
+      tabKeys: ['students', 'registrations', 'homework', 'messages', 'newsletter', 'reviews'],
     },
     {
       key: 'commerce',
@@ -4706,6 +4709,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
 
               {/* 🗓️ Scheduling — برنامهٔ واقعی جلسات (فاز ۴۸) */}
               {tab === 'scheduling' && <SchedulingAdminTab token={token!} onToast={onToast ?? (() => {})} />}
+              {tab === 'homework' && <HomeworkAdminTab token={token!} onToast={onToast ?? (() => {})} />}
 
               {/* 🎟️ Discounts — کدهای تخفیف + پله‌های خودکار بسته (فاز ۴۷) */}
               {tab === 'discounts' && (

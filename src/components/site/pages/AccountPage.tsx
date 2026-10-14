@@ -31,6 +31,7 @@ import {
 import { siteContent, PageKey } from '@/content/site-content'
 import { AccountSchedule } from '@/components/site/AccountSchedule'
 import { AccountNotifications } from '@/components/site/AccountNotifications'
+import { AccountHomework } from '@/components/site/AccountHomework'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { COUNTRIES, flagFromCode } from '@/lib/countries'
 import { refreshUser, logoutUser, useUser, OrderLike } from '@/lib/user-store'
@@ -1006,6 +1007,9 @@ function ProfileView({
 
       {/* 🗓️ برنامهٔ جلسات من — پیشنهادها/تأییدشده‌ها + هشدارها (فاز ۴۸) */}
       <AccountSchedule onToast={onToast} />
+
+      {/* 📚 تکالیف من — دانلود تکلیف، آپلود پاسخ، بازخورد استاد */}
+      <AccountHomework onToast={onToast} />
     </div>
   )
 }

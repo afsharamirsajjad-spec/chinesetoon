@@ -1895,6 +1895,8 @@ export const siteContent = {
     tabMessages: "Support Messages",
     tabRegistrations: "Registrations",
     tabNewsletter: "Newsletter",
+    // 📚 تب تکالیف — استاد تکلیف می‌سازد، پاسخ‌ها را می‌بیند و بازخورد می‌دهد
+    tabHomework: "Homework",
     // 👥 تب کاربران (فاز ۳۰) — ثبت‌نام‌شده‌ها با وضعیت خرید واقعی
     tabStudents: "Students",
     students: {

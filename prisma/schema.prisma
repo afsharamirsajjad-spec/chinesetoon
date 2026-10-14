@@ -285,6 +285,7 @@ model User {
   registrations Registration[] @relation("RegistrationUser")
   schedules        ClassSchedule[] @relation("ScheduleUser")
   scheduleAlerts   ScheduleNotification[]
+  homeworkSubmissions HomeworkSubmission[]
 
   @@index([createdAt])
 }
@@ -320,6 +321,66 @@ model PasswordResetToken {
   createdAt DateTime  @default(now())
 
   @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// 📚 تکالیف (Homework) — استاد (ادمین) تکلیف می‌سازد و فایل پیوست می‌گذارد؛
+// دانش‌پذیرِ واردشده تکلیف و پیوست‌هایش را دانلود می‌کند و پاسخ خود (فایل‌ها +
+// یادداشت) را آپلود می‌کند؛ استاد پاسخ‌ها را می‌بیند/دانلود می‌کند و بازخورد
+// متنی می‌دهد. هر دانش‌پذیر برای هر تکلیف فقط «یک» رکورد پاسخ دارد
+// (@@unique) — ارسال دوباره همان رکورد را به‌روز می‌کند.
+// فایل‌ها هرگز در public/ نیستند: شناسهٔ ۴۸hex غیرقابل‌حدس + مسیر دانلودِ
+// احرازشده (Vercel Blob وقتی BLOB_READ_WRITE_TOKEN تنظیم باشد، وگرنه FS محلی).
+// ---------------------------------------------------------------------------
+model Homework {
+  id          String    @id @default(cuid())
+  title       String
+  description String    @default("")
+  className   String    @default("") // برچسب اختیاری کلاس — فقط نمایشی
+  dueAt       DateTime? // مهلت (نمایشی — سخت‌گیری سمت سرور نیست)
+  archived    Boolean   @default(false) // آرشیو = از پنل دانش‌پذیر پنهان می‌شود
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  files       HomeworkFile[]
+  submissions HomeworkSubmission[]
+
+  @@index([createdAt])
+}
+
+model HomeworkSubmission {
+  id         String    @id @default(cuid())
+  homeworkId String
+  homework   Homework  @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  note       String    @default("") // یادداشت دانش‌پذیر همراه پاسخ
+  feedback   String? // بازخورد متنی استاد — null = هنوز بررسی نشده
+  feedbackAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  files HomeworkFile[]
+
+  @@unique([homeworkId, userId])
+  @@index([userId])
+}
+
+model HomeworkFile {
+  id           String   @id // ۴۸ hex تصادفی — غیرقابل‌حدس (کلید دانلود)
+  kind         String // ASSIGNMENT (پیوست تکلیف) | SUBMISSION (فایل پاسخ دانش‌پذیر)
+  homeworkId   String
+  homework     Homework @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  submissionId String?
+  submission   HomeworkSubmission? @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  name         String // نام نمایشی پاک‌سازی‌شدهٔ فایل اصلی
+  mime         String // Content-Type از روی پسوند مجاز
+  size         Int
+  url          String? // URL بلاک وقتی Blob فعال است — null = فایل روی FS محلی
+  createdAt    DateTime @default(now())
+
+  @@index([homeworkId])
+  @@index([submissionId])
 }
 
 // ---------------------------------------------------------------------------
