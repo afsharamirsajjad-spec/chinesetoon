@@ -23,13 +23,22 @@ export async function register(): Promise<void> {
     })()
 
     if (isPostgres) {
-      // 🟢 PostgreSQL: فقط try ensureSchema به‌عنوان امن‌سازی نهایی — روی
+      // 🟢 PostgreSQL: try ensureSchema به‌عنوان امن‌سازی نهایی — روی
       // PostgreSQL no-op است. بقیهٔ مراحل SQLite-only skip می‌شوند.
       try {
         const { ensureSchema } = await import('@/lib/ensure-schema')
         await ensureSchema({ force: false, reason: 'startup-postgres' })
       } catch (e) {
         console.error('[instrumentation] ensure-schema (postgres) failed:', e instanceof Error ? e.message : e)
+      }
+      // 🎓 LMS — اسکیمای افزایشیِ idempotent (ستون role، جداول تکالیف/ثبت‌نام/
+      // مواد/جلسات/اطلاعیه‌ها) + چیدمان کلاس‌های HSK 1 تا 5. شکستش اپ را
+      // نمی‌بندد ولی تا قبل از موفقیت، LMS ممکن است خطا بدهد.
+      try {
+        const { ensureLmsSchemaAndCatalog } = await import('@/lib/lms-schema')
+        await ensureLmsSchemaAndCatalog()
+      } catch (e) {
+        console.error('[instrumentation] lms-schema (postgres) failed:', e instanceof Error ? e.message : e)
       }
       return // 🟢 PostgreSQL startup path کامل شد
     }
