@@ -131,6 +131,8 @@ export interface SafeUser {
   telegramId: string | null
   // 🆔 فاز ۶۰ — کد یکتای پایدار دانش‌پذیر (هرگز بازتولید نمی‌شود)
   uniqueCode: string | null
+  // 🎓 LMS — student | teacher (تغییر فقط از پنل ادمین)
+  role: string
   createdAt: string
   lastLoginAt: string | null
 }
@@ -146,6 +148,7 @@ export function toSafeUser(user: {
   telegramUsername: string | null
   telegramId: string | null
   uniqueCode?: string | null
+  role?: string | null
   createdAt: Date
   lastLoginAt: Date | null
 }): SafeUser {
@@ -160,6 +163,7 @@ export function toSafeUser(user: {
     telegramUsername: user.telegramUsername,
     telegramId: user.telegramId,
     uniqueCode: user.uniqueCode ?? null,
+    role: user.role ?? 'student',
     createdAt: user.createdAt.toISOString(),
     lastLoginAt: user.lastLoginAt ? user.lastLoginAt.toISOString() : null,
   }

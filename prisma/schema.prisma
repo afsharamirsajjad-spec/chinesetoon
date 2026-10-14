@@ -275,6 +275,9 @@ model User {
   // ساخته و برای همیشه ذخیره می‌شود — هرگز با restart/redeploy/login دوباره
   // تولید نمی‌شود. DB تنها منبع حقیقت است (بند ۱۰ تسک پایداری)
   uniqueCode       String?   @unique
+  // 🎓 نقش LMS — student (پیش‌فرض) | teacher — فقط ادمین تغییرش می‌دهد؛
+  // ادمین خودش سیستم سشن جداگانه دارد و در این فیلد نمی‌آید
+  role             String    @default("student")
   lastLoginAt      DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
@@ -286,6 +289,12 @@ model User {
   schedules        ClassSchedule[] @relation("ScheduleUser")
   scheduleAlerts   ScheduleNotification[]
   homeworkSubmissions HomeworkSubmission[]
+  // 🎓 LMS
+  taughtClasses CourseClass[] @relation("ClassTeacher")
+  enrollments   ClassEnrollment[]
+  lmsSessionsCreated OnlineSession[] @relation("LmsSessionCreator")
+  lmsAnnouncementsWritten ClassAnnouncement[] @relation("LmsAnnouncementAuthor")
+  announcementReads AnnouncementRead[]
 
   @@index([createdAt])
 }
@@ -339,6 +348,11 @@ model Homework {
   className   String    @default("") // برچسب اختیاری کلاس — فقط نمایشی
   dueAt       DateTime? // مهلت (نمایشی — سخت‌گیری سمت سرور نیست)
   archived    Boolean   @default(false) // آرشیو = از پنل دانش‌پذیر پنهان می‌شود
+  // 🎓 LMS — اتصال اختیاری به کلاس + سقف نمره (وقتی classId هست، دانش‌پذیرهای
+  // ثبت‌نام‌شدهٔ همان کلاس می‌بینند؛ null = برای همهٔ کاربران واردشده)
+  classId     String?
+  class       CourseClass? @relation(fields: [classId], references: [id], onDelete: SetNull)
+  maxScore    Int       @default(100)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -346,6 +360,7 @@ model Homework {
   submissions HomeworkSubmission[]
 
   @@index([createdAt])
+  @@index([classId])
 }
 
 model HomeworkSubmission {
@@ -357,6 +372,10 @@ model HomeworkSubmission {
   note       String    @default("") // یادداشت دانش‌پذیر همراه پاسخ
   feedback   String? // بازخورد متنی استاد — null = هنوز بررسی نشده
   feedbackAt DateTime?
+  // 🎓 LMS نمره‌دهی — status: SUBMITTED | GRADED | RETURNED (برای اصلاح)
+  score      Int?
+  status     String    @default("SUBMITTED")
+  releasedAt DateTime? // نمره/بازخورد فقط بعد از release برای دانش‌پذیر پیدا است
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
@@ -364,6 +383,7 @@ model HomeworkSubmission {
 
   @@unique([homeworkId, userId])
   @@index([userId])
+  @@index([status])
 }
 
 model HomeworkFile {
@@ -381,6 +401,104 @@ model HomeworkFile {
 
   @@index([homeworkId])
   @@index([submissionId])
+}
+
+// ---------------------------------------------------------------------------
+// 🎓 LMS — سیستم آموزش (فاز LMS-1)
+// کلاس = CourseClass موجود (کاتالوگ ادمین). ثبت‌نامِ آموزشیِ جدا از خرید:
+// ClassEnrollment توسط ادمین/استاد مدیریت می‌شود؛ خرید (PAID order) شرط دعوت
+// است اما منبع حقیقتِ دسترسی همین جدول است.
+// ---------------------------------------------------------------------------
+model ClassEnrollment {
+  id           String    @id @default(cuid())
+  classId      String
+  class        CourseClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrolledById String? // کاربرِ واردشدهٔ انجام‌دهندهٔ ثبت‌نام (استاد) — ادمین سشن جدا دارد
+  createdAt    DateTime  @default(now())
+
+  @@unique([classId, userId])
+  @@index([userId])
+}
+
+model LearningMaterial {
+  id           String    @id @default(cuid())
+  classId      String
+  class        CourseClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  title        String
+  description  String    @default("")
+  moduleLabel  String    @default("") // برچسب ماژول/هفته (مثل Week 1)
+  sortOrder    Int       @default(0) // ترتیب درون کلاس (کمتر = بالاتر)
+  published    Boolean   @default(true)
+  visibleFrom  DateTime? // انتشار زمان‌بندی‌شده — null = از الان
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  files MaterialFile[]
+
+  @@index([classId, sortOrder])
+}
+
+model MaterialFile {
+  id         String   @id // ۴۸ hex تصادفی — غیرقابل‌حدس (کلید دانلود)
+  materialId String
+  material   LearningMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  name       String
+  mime       String
+  size       Int
+  url        String? // URL بلاک وقتی Blob فعال است — null = فایل روی FS محلی
+  createdAt  DateTime @default(now())
+
+  @@index([materialId])
+}
+
+model OnlineSession {
+  id          String    @id @default(cuid())
+  classId     String
+  class       CourseClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  title       String
+  description String    @default("")
+  startsAt    DateTime
+  durationMin Int       @default(60)
+  // 🔗 جلسهٔ خارجی — لینک Zoom/Meet/Jitsi؛ ادغام API واقعی بعداً اضافه می‌شود
+  provider    String    @default("external") // external | zoom | google_meet | jitsi
+  meetingUrl  String    @default("")
+  status      String    @default("scheduled") // scheduled | live | completed | cancelled
+  createdById String?
+  createdBy   User?     @relation("LmsSessionCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([classId, startsAt])
+}
+
+model ClassAnnouncement {
+  id        String    @id @default(cuid())
+  classId   String
+  class     CourseClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?     @relation("LmsAnnouncementAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  title     String
+  body      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  reads AnnouncementRead[]
+
+  @@index([classId, createdAt])
+}
+
+model AnnouncementRead {
+  id            String           @id @default(cuid())
+  announcementId String
+  announcement  ClassAnnouncement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt        DateTime         @default(now())
+
+  @@unique([announcementId, userId])
+  @@index([userId])
 }
 
 // ---------------------------------------------------------------------------
@@ -511,10 +629,18 @@ model CourseClass {
   videoUrl         String    @default("") // ویدیوی معرفی (اختیاری)
   // ⚙️ متادیتا
   sortOrder        Int       @default(0) // ترتیب نمایش (کمتر = بالاتر)
+  // 🎓 LMS — استادِ مسئول این کلاس (ادمین تعیین می‌کند؛ null = بدون استاد)
+  teacherId        String?
+  teacher          User?     @relation("ClassTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
   schedules ClassSchedule[] // جلسات برنامه‌ریزی‌شدهٔ این کلاس (فاز ۴۸)
+  enrollments ClassEnrollment[]
+  lmsMaterials LearningMaterial[]
+  lmsSessions OnlineSession[]
+  announcements ClassAnnouncement[]
+  lmsAssignments Homework[]
 
   @@index([status])
   @@index([classType])

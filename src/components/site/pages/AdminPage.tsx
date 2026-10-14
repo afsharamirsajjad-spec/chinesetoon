@@ -55,6 +55,7 @@ import { FaqAdminTab, type AdminFaqItem } from '../admin/FaqAdminTab'
 import { DiscountsAdminTab, type DiscountItem } from '../admin/DiscountsAdminTab'
 import { SchedulingAdminTab } from '../admin/SchedulingAdminTab'
 import { HomeworkAdminTab } from '../admin/HomeworkAdminTab'
+import { AdminLmsPanel } from '../admin/AdminLmsPanel'
 import { PaymentsAdminTab } from '../admin/PaymentsAdminTab'
 import { PaymentSettingsCard, type BankSettingsState } from '../admin/PaymentSettingsCard'
 import { DashboardAdminTab } from '../admin/DashboardAdminTab'
@@ -170,6 +171,8 @@ interface AdminStudent {
   telegramId: string | null
   // 🆔 فاز ۶۰ — کد یکتای پایدار دانش‌پذیر (از DB)
   uniqueCode: string | null
+  // 🎓 LMS — student | teacher
+  role: string
   createdAt: string
   lastLoginAt: string | null
   isNew: boolean
@@ -4233,6 +4236,8 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
               {/* 👥 Students — کاربران ثبت‌نام‌شده با وضعیت خرید واقعی (ثبت‌نام ≠ پرداخت) */}
               {tab === 'students' && (
                 <div>
+                  {/* 🎓 LMS — نقش استاد / استادِ کلاس / ثبت‌نام دانش‌پذیر */}
+                  <AdminLmsPanel token={token!} students={students} />
                   <p className="text-xs text-brown-light bg-butter/20 rounded-xl px-4 py-2.5 mb-4">
                     {a.students.subtitle}
                   </p>

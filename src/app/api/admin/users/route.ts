@@ -46,6 +46,8 @@ export async function GET(req: NextRequest) {
         telegramId: true,
         // 🆔 فاز ۶۰ — کد یکتای پایدار دانش‌پذیر
         uniqueCode: true,
+        // 🎓 LMS — نقش (student | teacher) برای پنل ادمین
+        role: true,
         createdAt: true,
         lastLoginAt: true,
         orders: {
@@ -77,6 +79,7 @@ export async function GET(req: NextRequest) {
       telegramUsername: string | null
       telegramId: string | null
       uniqueCode: string | null
+      role: string
       createdAt: string
       lastLoginAt: string | null
       isNew: boolean
@@ -115,6 +118,7 @@ export async function GET(req: NextRequest) {
         telegramUsername: u.telegramUsername,
         telegramId: u.telegramId,
         uniqueCode: u.uniqueCode ?? null,
+        role: u.role ?? 'student',
         createdAt: u.createdAt.toISOString(),
         lastLoginAt: u.lastLoginAt ? u.lastLoginAt.toISOString() : null,
         isNew: u.createdAt.getTime() >= newCutoff,

@@ -21,6 +21,8 @@ import { AccountPage } from './pages/AccountPage'
 import { PasswordResetPage } from './pages/PasswordResetPage'
 import { AdminPage } from './pages/AdminPage'
 import { CheckoutPage } from './pages/CheckoutPage'
+import { StudentDashboard } from './lms/StudentDashboard'
+import { TeacherDashboard } from './lms/TeacherDashboard'
 import { PageKey } from '@/content/site-content'
 import { useSite } from './site-shell'
 
@@ -101,4 +103,13 @@ export function CheckoutScreen({ orderRef }: { orderRef: string }) {
       replace={replace}
     />
   )
+}
+
+// 🎓 LMS — داشبورد دانش‌پذیر و استاد (گارد نقش داخل خود کامپوننت‌هاست)
+export function StudentScreen() {
+  return <StudentDashboard />
+}
+
+export function TeacherScreen() {
+  return <TeacherDashboard />
 }

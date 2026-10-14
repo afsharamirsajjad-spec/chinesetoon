@@ -19,10 +19,15 @@ export async function GET(req: NextRequest) {
   }
   try {
     const rows = await db.homework.findMany({
-      where: { archived: false },
+      where: {
+        archived: false,
+        // 🎓 تکالیفِ متصل به کلاس فقط برای ثبت‌نام‌شده‌های همان کلاس
+        OR: [{ classId: null }, { class: { enrollments: { some: { userId: user.id } } } }],
+      },
       orderBy: { createdAt: 'desc' },
       take: 200,
       include: {
+        class: { select: { title: true, slug: true } },
         files: {
           orderBy: { createdAt: 'asc' },
           select: { id: true, name: true, mime: true, size: true, createdAt: true },
@@ -47,13 +52,19 @@ export async function GET(req: NextRequest) {
         description: h.description,
         className: h.className,
         dueAt: h.dueAt?.toISOString() ?? null,
+        maxScore: h.maxScore,
+        classTitle: h.class?.title ?? null,
         createdAt: h.createdAt.toISOString(),
         files: h.files,
         mySubmission: sub
           ? {
               id: sub.id,
               note: sub.note,
-              feedback: sub.feedback,
+              // 🎓 نمره/بازخورد فقط بعد از release استاد پیدا است
+              released: sub.releasedAt != null,
+              score: sub.releasedAt ? sub.score : null,
+              status: sub.status,
+              feedback: sub.releasedAt ? sub.feedback : null,
               feedbackAt: sub.feedbackAt?.toISOString() ?? null,
               submittedAt: sub.updatedAt.toISOString(),
               files: sub.files,

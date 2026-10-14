@@ -15,7 +15,7 @@
 
 import { db } from '@/lib/db'
 
-export type NotificationCategory = 'schedule' | 'account' | 'order' | 'payment'
+export type NotificationCategory = 'schedule' | 'account' | 'order' | 'payment' | 'lms'
 
 export interface NotifyInput {
   /** گیرنده — null/undefined یعنی اعلانی ساخته نمی‌شود (سفارش مهمان) */

@@ -28,6 +28,8 @@ export interface SafeUserLike {
   telegramId: string | null
   // 🆔 فاز ۶۰ — کد یکتای پایدار دانش‌پذیر (از /api/auth/me می‌آید)
   uniqueCode?: string | null
+  // 🎓 LMS — student | teacher
+  role?: string
   createdAt: string
   lastLoginAt: string | null
 }

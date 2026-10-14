@@ -31,14 +31,15 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ fileId: str
       mime: true,
       url: true,
       submissionId: true,
-      homework: { select: { archived: true } },
+      homework: { select: { archived: true, classId: true } },
     },
   })
   if (!file) {
     return NextResponse.json({ error: 'File not found' }, { status: 404 })
   }
 
-  // 🔒 ادمین → همه؛ دانش‌پذیر → پیوست تکلیفِ فعال یا فایل پاسخِ خودش
+  // 🔒 ادمین → همه؛ دانش‌پذیر → پیوست تکلیفِ فعال یا فایل پاسخِ خودش.
+  // 🎓 تکالیفِ متصل به کلاس: پیوست فقط برای ثبت‌نام‌شدهٔ همان کلاس
   const admin = await isAuthorized(req)
   if (!admin) {
     const viewer = await getUserFromRequest(req).catch(() => null)
@@ -53,8 +54,18 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ fileId: str
       if (!own || own.userId !== viewer.id) {
         return NextResponse.json({ error: 'File not found' }, { status: 404 })
       }
-    } else if (file.homework.archived) {
-      return NextResponse.json({ error: 'File not found' }, { status: 404 })
+    } else {
+      if (file.homework.classId) {
+        const enrolled = await db.classEnrollment.findUnique({
+          where: { classId_userId: { classId: file.homework.classId, userId: viewer.id } },
+          select: { id: true },
+        })
+        if (!enrolled) {
+          return NextResponse.json({ error: 'File not found' }, { status: 404 })
+        }
+      } else if (file.homework.archived) {
+        return NextResponse.json({ error: 'File not found' }, { status: 404 })
+      }
     }
   }
 
