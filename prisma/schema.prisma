@@ -547,6 +547,8 @@ model UsdtOrder {
   paymentMethod  String    @default("USDT_TRON") // USDT_TRON (تاریخی) | MANUAL_BANK_CARD
   // 🧾 فاز ۵۹ — رسیدِ پرداخت دستی؛ فایل بیرون از public/ با شناسهٔ غیرقابل‌حدس
   receiptId          String? // شناسهٔ غیرقابل‌حدس فایل رسید (random 48-hex) — کلید واکشیِ امن
+  // ☁️ URL بلاب رسید وقتی Vercel Blob فعال است — null = فایل روی FS محلی
+  receiptUrl         String?
   receiptStatus      String? // null | PENDING_REVIEW | APPROVED | REJECTED
   receiptMime        String? // mime واقعی (از magic bytes تشخیص داده می‌شود، نه ادعای مرورگر)
   receiptSize        Int? // حجم بایت — سقف ۵MB

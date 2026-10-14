@@ -486,7 +486,8 @@ export async function submitReceipt(input: {
 
   // فایل اول ذخیره می‌شود (شناسهٔ یکتا — بدون تداخل)؛ اگر گارد وضعیت شکست بخورد
   // فایل یتیم حذف می‌شود. گارد، هم‌زمانیِ دو ارسال موازی را می‌گیرد.
-  await saveReceiptFile(input.receiptId, input.mime, input.fileData)
+  // ☁️ Blob: url برگشتی روی سفارش ذخیره می‌شود؛ FS محلی: url = null
+  const receiptFileUrl = await saveReceiptFile(input.receiptId, input.mime, input.fileData)
   const res = await database.usdtOrder
     .updateMany({
       where: {
@@ -501,6 +502,7 @@ export async function submitReceipt(input: {
         receiptMime: input.mime,
         receiptSize: input.size,
         receiptFileName: input.fileName,
+        receiptUrl: receiptFileUrl,
         receiptSubmittedAt: new Date(),
         rejectionReason: null, // ارسال دوباره = دلیل قبلی پاک می‌شود
         reviewedAt: null,
@@ -512,13 +514,13 @@ export async function submitReceipt(input: {
     .catch(() => 0)
 
   if (res !== 1) {
-    await deleteReceiptFile(input.receiptId)
+    await deleteReceiptFile(input.receiptId, receiptFileUrl)
     return { ok: false, reason: 'CONFLICT' }
   }
 
   // حذف فایل رسید قبلی (ارسال دوباره پس از رد) — بعد از موفقیتِ به‌روزرسانی
   if (order.receiptId && order.receiptId !== input.receiptId) {
-    await deleteReceiptFile(order.receiptId)
+    await deleteReceiptFile(order.receiptId, order.receiptUrl)
   }
 
   await logEvent(resubmitted ? 'RECEIPT_RESUBMITTED' : 'RECEIPT_SUBMITTED', input.ref, undefined, {

@@ -15,9 +15,10 @@
 // ---------------------------------------------------------------------------
 
 import { randomBytes } from 'crypto'
-import { mkdir, readFile, unlink, writeFile } from 'fs/promises'
+import { mkdir, readFile, writeFile, unlink } from 'fs/promises'
 import path from 'path'
 import { sanitizeDisplayName } from '@/lib/receipts'
+import { isBlobConfigured, putBlobFile, delBlobFile } from '@/lib/blob-store'
 
 export const MAX_HOMEWORK_FILE_BYTES = 15 * 1024 * 1024 // ۱۵MB
 export const MAX_HOMEWORK_FILES_PER_UPLOAD = 5
@@ -89,12 +90,9 @@ const HOMEWORK_DIR = path.join(CT_DATA_DIR, 'uploads', 'homework')
 
 /** آیا ذخیرهٔ محلی ممکن است؟ (روی Vercel فقط با Blob) */
 export function isHomeworkStorageAvailable(): boolean {
-  if (process.env.VERCEL === '1' && !process.env.CT_DATA_DIR && !blobToken()) return false
+  if (isBlobConfigured()) return true
+  if (process.env.VERCEL === '1' && !process.env.CT_DATA_DIR) return false
   return true
-}
-
-function blobToken(): string {
-  return (process.env.BLOB_READ_WRITE_TOKEN ?? '').trim()
 }
 
 /** 🟢 خطای واضح وقتی هیچ بک‌اند ذخیره‌ای در دسترس نیست */
@@ -116,16 +114,9 @@ export async function saveHomeworkFile(
   data: Buffer
 ): Promise<{ url: string | null }> {
   if (!isHomeworkFileId(id)) throw new Error('Invalid homework file id')
-  const token = blobToken()
-  if (token) {
-    const blob = await import('@vercel/blob')
-    const res = await blob.put(`${id}.${ext}`, data, {
-      access: 'public',
-      addRandomSuffix: false,
-      token,
-    })
-    return { url: res.url }
-  }
+  // ☁️ اولویت با Blob — روی Vercel تنها گزینه است
+  const url = await putBlobFile(`${id}.${ext}`, data)
+  if (url) return { url }
   if (!isHomeworkStorageAvailable()) throw new HomeworkStorageUnavailableError()
   await mkdir(HOMEWORK_DIR, { recursive: true })
   await writeFile(path.join(HOMEWORK_DIR, `${id}.${ext}`), data)
@@ -145,14 +136,6 @@ export async function readHomeworkFile(id: string, ext: string): Promise<Buffer 
 /** حذف فیزیکی بهترین‌تلاش — شکستش جریان اصلی را نمی‌شکند (رکورد DB منبع حقیقت است) */
 export async function deleteHomeworkFile(id: string, ext: string, url: string | null): Promise<void> {
   if (!isHomeworkFileId(id)) return
-  try {
-    if (url) {
-      const blob = await import('@vercel/blob')
-      await blob.del(url)
-    } else {
-      await unlink(path.join(HOMEWORK_DIR, `${id}.${ext}`)).catch(() => {})
-    }
-  } catch {
-    // بهترین‌تلاش
-  }
+  if (url) await delBlobFile(url)
+  await unlink(path.join(HOMEWORK_DIR, `${id}.${ext}`)).catch(() => {})
 }

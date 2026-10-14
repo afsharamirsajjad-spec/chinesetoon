@@ -21,6 +21,7 @@ import {
   detectReceiptType,
   generateReceiptId,
   sanitizeDisplayName,
+  ReceiptStorageUnavailableError,
 } from '@/lib/receipts'
 import { logAppError } from '@/lib/error-log'
 
@@ -123,6 +124,13 @@ export async function POST(req: NextRequest) {
     const order = await buildPublicStatus(ref)
     return NextResponse.json({ ok: true, resubmitted: result.resubmitted, order }, { status: 201 })
   } catch (e) {
+    // ☁️ ذخیره‌سازی در دسترس نیست (Vercel بدون Blob) — پیام صادقانه و قابل‌اقدام
+    if (e instanceof ReceiptStorageUnavailableError) {
+      return NextResponse.json(
+        { error: e.message, code: 'STORAGE_UNAVAILABLE' },
+        { status: 503 }
+      )
+    }
     console.error('[receipts] upload failed:', e instanceof Error ? e.message : e)
     logAppError({
       category: 'PAYMENT',

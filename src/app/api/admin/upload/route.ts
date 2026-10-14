@@ -85,27 +85,35 @@ export async function POST(req: NextRequest) {
 
   const id = generateImageId()
   try {
-    await saveImageFile(id, detected.mime, bytes)
+    const { url } = await saveImageFile(id, detected.mime, bytes)
+    if (url) {
+      // ☁️ Blob — URL عمومیِ غیرقابل‌حدس مستقیم به‌عنوان src تصویر استفاده می‌شود
+      logAdminAction({
+        actor: getAdminActor(req),
+        action: 'upload.image',
+        targetType: 'IMAGE',
+        targetId: id,
+        meta: { mime: detected.mime, size: bytes.length },
+      })
+      return NextResponse.json({ ok: true, url }, { status: 201 })
+    }
+    // ذخیرهٔ محلی — از مسیر احرازشدهٔ عمومی سرو می‌شود
+    logAdminAction({
+      actor: getAdminActor(req),
+      action: 'upload.image',
+      targetType: 'IMAGE',
+      targetId: id,
+      meta: { mime: detected.mime, size: bytes.length },
+    })
+    return NextResponse.json({ ok: true, url: `/api/images/${id}` }, { status: 201 })
   } catch (e) {
     if (e instanceof ImageStorageUnavailableError) {
       return NextResponse.json(
-        { error: e.message, message: 'Image storage is not available in this environment.', code: 'STORAGE_UNAVAILABLE' },
+        { error: e.message, message: 'Image storage is not configured on the server yet (Vercel Blob). Please contact the administrator.', code: 'STORAGE_UNAVAILABLE' },
         { status: 503 }
       )
     }
     console.error('[admin/upload] save failed:', e instanceof Error ? e.message : e)
     return NextResponse.json({ error: 'Could not save the image. Please try again.', message: 'Could not save the image. Please try again.' }, { status: 500 })
   }
-
-  const url = `/api/images/${id}`
-  // ثبت audit — متادیتای امن (نام اصلی فایل کاربر هرگز لازم نیست؛ فقط نوع/اندازه)
-  logAdminAction({
-    actor: getAdminActor(req),
-    action: 'upload.image',
-    targetType: 'IMAGE',
-    targetId: id,
-    meta: { mime: detected.mime, size: bytes.length },
-  })
-
-  return NextResponse.json({ ok: true, url }, { status: 201 })
 }

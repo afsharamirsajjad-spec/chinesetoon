@@ -15,6 +15,7 @@
 import { randomBytes } from 'crypto'
 import { mkdir, readFile, writeFile, unlink } from 'fs/promises'
 import path from 'path'
+import { isBlobConfigured, putBlobFile, delBlobFile } from '@/lib/blob-store'
 
 export const MAX_RECEIPT_BYTES = 5 * 1024 * 1024 // ۵MB
 
@@ -31,11 +32,11 @@ const CT_DATA_DIR = (process.env.CT_DATA_DIR || '/home/z/data').trim() || '/home
 const RECEIPTS_DIR = path.join(CT_DATA_DIR, 'uploads', 'receipts')
 
 /**
- * 🟢 آیا ذخیرهٔ receipt روی فایل‌سیستم محلی ممکن است؟ روی Vercel (فایل‌سیستم
- * read-only، بدون CT_DATA_DIR قابل‌نوشتن) → false. در توسعهٔ محلی → true.
+ * 🟢 آیا ذخیرهٔ receipt ممکن است؟ روی Vercel فقط با Blob (توکن) —
+ * فایل‌سیستم Vercel فقط-خواندنی است؛ در توسعهٔ محلی FS در دسترس است.
  */
 export function isReceiptStorageAvailable(): boolean {
-  // روی Vercel، اگر توکن Blob تنظیم نشده باشد، ذخیرهٔ FS ممکن نیست.
+  if (isBlobConfigured()) return true
   if (process.env.VERCEL === '1' && !process.env.CT_DATA_DIR) return false
   return true
 }
@@ -109,12 +110,20 @@ async function ensureDir(): Promise<void> {
   await mkdir(RECEIPTS_DIR, { recursive: true })
 }
 
-/** ذخیرهٔ فایل با شناسهٔ امن — مسیر از شناسهٔ hex-اعتبارسنجی‌شده ساخته می‌شود (بدون traversal) */
-export async function saveReceiptFile(id: string, mime: ReceiptMime, data: Buffer): Promise<void> {
+/**
+ * ذخیرهٔ فایل رسید — Blob وقتی توکن هست (خروجی URL)، وگرنه FS محلی (null).
+ * مسیر از شناسهٔ hex-اعتبارسنجی‌شده ساخته می‌شود (بدون traversal).
+ */
+export async function saveReceiptFile(id: string, mime: ReceiptMime, data: Buffer): Promise<string | null> {
   if (!isReceiptId(id)) throw new Error('Invalid receipt id')
-  await ensureDir()
   const ext = RECEIPT_EXT_BY_MIME[mime]
+  // ☁️ اولویت با Blob — روی Vercel تنها گزینه است
+  const url = await putBlobFile(`receipts/${id}.${ext}`, data)
+  if (url) return url
+  if (!isReceiptStorageAvailable()) throw new ReceiptStorageUnavailableError()
+  await ensureDir()
   await writeFile(path.join(RECEIPTS_DIR, `${id}.${ext}`), data, { mode: 0o600 })
+  return null
 }
 
 /** خواندن امن — id همیشه قبل از ساخت مسیر اعتبارسنجی می‌شود */
@@ -129,9 +138,10 @@ export async function readReceiptFile(id: string, mime: ReceiptMime): Promise<Bu
   }
 }
 
-/** حذف فایل رسید قبلی (در ارسال دوباره) — شکست آن جریان اصلی را نمی‌شکند */
-export async function deleteReceiptFile(id: string | null | undefined): Promise<void> {
+/** حذف فایل رسید قبلی (در ارسال دوباره) — Blob یا FS؛ شکست آن جریان اصلی را نمی‌شکند */
+export async function deleteReceiptFile(id: string | null | undefined, url?: string | null): Promise<void> {
   if (!id || !isReceiptId(id)) return
+  if (url) await delBlobFile(url)
   for (const mime of RECEIPT_MIMES) {
     const ext = RECEIPT_EXT_BY_MIME[mime]
     await unlink(path.join(RECEIPTS_DIR, `${id}.${ext}`)).catch(() => {})

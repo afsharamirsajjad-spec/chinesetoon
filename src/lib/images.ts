@@ -14,6 +14,7 @@
 import { randomBytes } from 'crypto'
 import { mkdir, readFile, writeFile } from 'fs/promises'
 import path from 'path'
+import { isBlobConfigured, putBlobFile } from '@/lib/blob-store'
 
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024 // ۵MB
 
@@ -25,6 +26,7 @@ const CT_DATA_DIR = (process.env.CT_DATA_DIR || '/home/z/data').trim() || '/home
 const IMAGES_DIR = path.join(CT_DATA_DIR, 'uploads', 'images')
 
 export function isImageStorageAvailable(): boolean {
+  if (isBlobConfigured()) return true
   if (process.env.VERCEL === '1' && !process.env.CT_DATA_DIR) return false
   return true
 }
@@ -89,13 +91,24 @@ export class ImageStorageUnavailableError extends Error {
   }
 }
 
-/** ذخیرهٔ فایل با شناسهٔ امن — مسیر از شناسهٔ hex-اعتبارسنجی‌شده ساخته می‌شود (بدون traversal) */
-export async function saveImageFile(id: string, mime: ImageMime, data: Buffer): Promise<void> {
+/**
+ * ذخیرهٔ تصویر — Blob وقتی توکن هست (خروجی URL عمومیِ غیرقابل‌حدس که مستقیم
+ * به‌عنوان src تصویر استفاده می‌شود)، وگرنه FS محلی (مسیر /api/images/[id]).
+ */
+export async function saveImageFile(
+  id: string,
+  mime: ImageMime,
+  data: Buffer
+): Promise<{ url: string | null }> {
   if (!isImageId(id)) throw new Error('Invalid image id')
-  if (!isImageStorageAvailable()) throw new ImageStorageUnavailableError()
   const ext = IMAGE_EXT_BY_MIME[mime]
+  // ☁️ اولویت با Blob — روی Vercel تنها گزینه است
+  const blobUrl = await putBlobFile(`images/${id}.${ext}`, data)
+  if (blobUrl) return { url: blobUrl }
+  if (!isImageStorageAvailable()) throw new ImageStorageUnavailableError()
   await mkdir(IMAGES_DIR, { recursive: true })
   await writeFile(path.join(IMAGES_DIR, `${id}.${ext}`), data)
+  return { url: null }
 }
 
 /** خواندن امن — id همیشه قبل از ساخت مسیر اعتبارسنجی می‌شود؛ mime از پسوند فایل می‌آید */

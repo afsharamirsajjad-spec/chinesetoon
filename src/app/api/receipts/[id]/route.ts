@@ -14,7 +14,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isAuthorized } from '@/lib/admin-auth'
 import { getUserFromRequest } from '@/lib/user-auth'
 import { db } from '@/lib/db'
-import { readReceiptFile, isReceiptId, RECEIPT_EXT_BY_MIME, type ReceiptMime } from '@/lib/receipts'
+import {
+  readReceiptFile,
+  isReceiptId,
+  RECEIPT_EXT_BY_MIME,
+  type ReceiptMime,
+} from '@/lib/receipts'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,7 +31,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
 
   const order = await db.usdtOrder.findFirst({
     where: { receiptId: id },
-    select: { userId: true, ref: true, receiptMime: true },
+    select: { userId: true, ref: true, receiptMime: true, receiptUrl: true },
   })
   if (!order) {
     return NextResponse.json({ error: 'Receipt not found' }, { status: 404 })
@@ -44,6 +49,11 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
   const mime = (order.receiptMime ?? '') as ReceiptMime
   if (!RECEIPT_EXT_BY_MIME[mime]) {
     return NextResponse.json({ error: 'Receipt not found' }, { status: 404 })
+  }
+
+  // ☁️ Blob — redirect به URL ذخیره‌شده (شناسهٔ 48hex = غیرقابل‌حدس)
+  if (order.receiptUrl) {
+    return NextResponse.redirect(order.receiptUrl, 302)
   }
 
   const data = await readReceiptFile(id, mime)

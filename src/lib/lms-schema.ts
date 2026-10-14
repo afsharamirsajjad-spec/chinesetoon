@@ -49,6 +49,8 @@ async function runEnsure(): Promise<void> {
   await ddl(`ALTER TABLE "HomeworkSubmission" ADD COLUMN IF NOT EXISTS "score" INTEGER`, 'HomeworkSubmission.score')
   await ddl(`ALTER TABLE "HomeworkSubmission" ADD COLUMN IF NOT EXISTS "status" TEXT NOT NULL DEFAULT 'SUBMITTED'`, 'HomeworkSubmission.status')
   await ddl(`ALTER TABLE "HomeworkSubmission" ADD COLUMN IF NOT EXISTS "releasedAt" TIMESTAMP(3)`, 'HomeworkSubmission.releasedAt')
+  // ☁️ رسیدها روی Vercel Blob — URL رسید روی سفارش
+  await ddl(`ALTER TABLE "UsdtOrder" ADD COLUMN IF NOT EXISTS "receiptUrl" TEXT`, 'UsdtOrder.receiptUrl')
 
   // ---- جدول‌های جدید ----
   await ddl(
