@@ -40,23 +40,39 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   let blogPosts: MetadataRoute.Sitemap = [];
+  let classPages: MetadataRoute.Sitemap = [];
   try {
     const { db } = await import("@/lib/db");
-    const posts = await db.post.findMany({
-      where: { published: true },
-      select: { slug: true, updatedAt: true },
-      orderBy: { updatedAt: "desc" },
-      take: 500,
-    });
+    const [posts, classes] = await Promise.all([
+      db.post.findMany({
+        where: { published: true },
+        select: { slug: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+        take: 500,
+      }),
+      // 🔍 صفحات کلاس‌های فعال — مقصدهای جست‌وجو («HSK 1 course» و…)
+      db.courseClass.findMany({
+        where: { status: "active" },
+        select: { slug: true, updatedAt: true },
+        orderBy: { sortOrder: "asc" },
+        take: 100,
+      }),
+    ]);
     blogPosts = posts.map((p) => ({
       url: `${base}/blog/${p.slug}`,
       lastModified: p.updatedAt,
       changeFrequency: "monthly" as const,
       priority: 0.6,
     }));
+    classPages = classes.map((c) => ({
+      url: `${base}/classes/${c.slug}`,
+      lastModified: c.updatedAt,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    }));
   } catch {
-    // دیتابیس در دسترس نیست — sitemap بدون مقاله‌ها معتبر می‌ماند
+    // دیتابیس در دسترس نیست — sitemap بدون مقاله‌ها/کلاس‌ها معتبر می‌ماند
   }
 
-  return [...staticRoutes, ...blogPosts];
+  return [...staticRoutes, ...classPages, ...blogPosts];
 }

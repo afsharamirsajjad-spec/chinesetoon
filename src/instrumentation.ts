@@ -40,6 +40,13 @@ export async function register(): Promise<void> {
       } catch (e) {
         console.error('[instrumentation] lms-schema (postgres) failed:', e instanceof Error ? e.message : e)
       }
+      // 📰 مقاله‌های وبلاگ — سیدر idempotent (فقط رکوردهای غایب)
+      try {
+        const { ensureBlogSeed } = await import('@/lib/blog-seed')
+        await ensureBlogSeed()
+      } catch (e) {
+        console.error('[instrumentation] blog-seed failed:', e instanceof Error ? e.message : e)
+      }
       return // 🟢 PostgreSQL startup path کامل شد
     }
 
