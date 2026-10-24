@@ -148,11 +148,14 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
 
   const navigateTo = useCallback(
     (page: PageKey) => {
-      if (pageFromPathname(window.location.pathname) === page) {
+      const target = page === 'home' ? '/' : `/${page}`
+      // مقایسه با «مسیر واقعی» نه مپ منو: /lesson/x برای هایلایت منو «learn»
+      // است، اما دکمهٔ «All lessons» روی همان صفحه باید واقعاً به /learn برود
+      if (window.location.pathname === target) {
         window.scrollTo({ top: 0, behavior: 'smooth' })
         return
       }
-      go(page === 'home' ? '/' : `/${page}`)
+      go(target)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     },
     [go]
