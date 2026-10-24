@@ -19,8 +19,24 @@ import { getUserFromRequest } from '@/lib/user-auth'
 import { buildPublicStatus, adminCancelOrder, getOrderByRef } from '@/lib/payments/service'
 import { ensurePaymentScheduler } from '@/lib/payments/scheduler'
 import { logAdminAction } from '@/lib/audit'
+import { isSchemaDriftError } from '@/lib/ensure-schema'
 
 export const dynamic = 'force-dynamic'
+
+/** ♻️ خودترمیمی اسکیما — اگر ستون/جدول روی دیتابیس زنده غایب باشد (P2021/P2022)،
+ *  DDL افزایشیِ امن یک‌بار اجرا و خواندن دقیقاً یک‌بار دوباره تلاش می‌شود */
+async function getOrderByRefWithHeal(ref: string) {
+  try {
+    return await getOrderByRef(ref)
+  } catch (initialError) {
+    if (isSchemaDriftError(initialError)) {
+      const { ensureLmsSchema } = await import('@/lib/lms-schema')
+      await ensureLmsSchema()
+      return await getOrderByRef(ref)
+    }
+    throw initialError
+  }
+}
 
 export async function GET(req: NextRequest, ctx: { params: Promise<{ ref: string }> }) {
   // ضد سوءاستفاده: ۱۲۰ بررسی وضعیت در دقیقه برای هر IP (حداقل ۱۰ برابر نیاز واقعی)
@@ -34,7 +50,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ ref: string
   // 🔒 گارد مالکیت (ضد IDOR): سفارش‌های «مهمانِ قدیمی» (userId=null، جریان
   // USDTِ قبل از الزام حساب) برای سازگاریِ نمایش وضعیت عمومی می‌مانند — هیچ
   // PII/رسیدی در پاسخ عمومی نیست و ref یکتا با آنتروپی بالا ساخته می‌شود.
-  const target = await getOrderByRef(ref)
+  const target = await getOrderByRefWithHeal(ref)
   if (target?.userId) {
     const [viewer, admin] = await Promise.all([getUserFromRequest(req), isAuthorized(req)])
     if (!admin && viewer?.id !== target.userId) {

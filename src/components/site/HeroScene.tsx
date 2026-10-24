@@ -3,18 +3,17 @@
 //  یک صحنهٔ باغیِ پانوراما که کل هیرو را می‌پوشاند و متن و دکمه‌ها
 //  به‌صورت طبیعی داخل آن می‌نشینند:
 //    آسمان گرادیانی → خورشید کره‌ای → ابرهای راننده → پرنده‌ها →
-//    برگ‌های شناور → رشته‌تپه‌های سبز → درخت تُون (香椿) با تابلوی برند →
-//    چیپ‌های واژه و حباب گفتگو روی تاج درخت.
+//    برگ‌های شناور → رشته‌تپه‌های سبز.
+//  (درخت تُون به درخواست مالک حذف شد.)
 //  تمام اجزا pointer-events-none و aria-hidden هستند؛ فقط دکوراسیون‌اند.
 //  پالت دست‌نخورده: sage/cream/butter/peach/brown + سبز/زنگاریِ خود لوگو.
 // ---------------------------------------------------------------------
 
-import { Frond, Leaflet, Berries, Blossom, LEAF, RUST, RUST_DARK, CREAM, SAGE_FILL } from './ToonBranch'
+import { Leaflet, CREAM, SAGE_FILL } from './ToonBranch'
 import type { LeafMode } from './ToonBranch'
 
 const SAGE_DARK = '#8DB585'
 const BROWN_LIGHT = '#7A6F62'
-const LEAF_DARK = '#4E6A55'
 
 /* ---------------- ☁️ ابر — سه بیضی نرم با خط پایین ---------------- */
 function Cloud({ className = '', dur = 26, delay = 0 }: { className?: string; dur?: number; delay?: number }) {
@@ -80,131 +79,7 @@ function DriftLeaf({
   )
 }
 
-/* خوشهٔ برگ انتهای شاخه — برگ‌ها + دایرهٔ مرکزی (بیرون از درخت تعریف می‌شود) */
-function Cluster({ x, y, r, fronds }: { x: number; y: number; r: number; fronds: { rot: number; len: number; mode?: LeafMode }[] }) {
-  return (
-    <g>
-      {fronds.map((f, i) => (
-        <Frond key={i} x={x} y={y} rot={f.rot} len={f.len} mode={f.mode ?? 'outline'} dur={6 + (i % 3)} delay={i * 0.5} />
-      ))}
-      <circle cx={x} cy={y} r={r} fill={SAGE_FILL} stroke={LEAF} strokeWidth="2.4" />
-    </g>
-  )
-}
-
-/* ---------------- 🌳 درخت تُون — قهرمان صحنه ---------------- */
-// تنهٔ منحنیِ باریک‌شونده + سه شاخه که هر کدام دقیقاً «داخل» خوشهٔ برگ
-// تمام می‌شوند (شاخه‌ها تا مرکز تاج برگ می‌روند تا برگ‌ها هرگز جدا از
-// درخت دیده نشوند) + تاج پرپشت از دایره‌های سیج + برگ‌های مرکب برند
-// که از دل تاج بیرون می‌زنند + توت، گل سفید و تابلوی آویز «香椿».
-function ToonTree({ className = '' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 520 620" className={className} fill="none" aria-hidden="true">
-      {/* سایهٔ نرم زیر درخت */}
-      <ellipse cx="290" cy="606" rx="130" ry="14" fill={LEAF} opacity="0.08" />
-
-      {/* 🪧 تابلوی آویز «香椿» — با دو بند از تنه */}
-      <g>
-        <path d="M292 470 Q 268 478 246 486" stroke={BROWN_LIGHT} strokeWidth="2.4" fill="none" />
-        <path d="M292 520 Q 272 528 252 534" stroke={BROWN_LIGHT} strokeWidth="2.4" fill="none" />
-        <g className="animate-ct-wiggle" style={{ transformBox: 'fill-box', transformOrigin: '50% 0%' }}>
-          <rect x="186" y="486" width="130" height="52" rx="12" fill={CREAM} stroke={LEAF} strokeWidth="2.6" />
-          <rect x="193" y="493" width="116" height="38" rx="8" stroke={LEAF} strokeWidth="1.3" opacity="0.4" />
-          <text x="251" y="522" textAnchor="middle" fontSize="27" fontWeight="700" letterSpacing="5" fill={LEAF_DARK}>
-            香椿
-          </text>
-          <circle cx="194" cy="494" r="2.6" fill={RUST} />
-          <circle cx="308" cy="494" r="2.6" fill={RUST} />
-        </g>
-      </g>
-
-      {/* تنه — منحنی نرم و باریک‌شونده با ریشهٔ پهن */}
-      <path
-        d="M258 610 Q 272 596 296 594 Q 288 540 286 488 Q 284 428 286 372 Q 287 318 280 252 Q 276 216 274 186"
-        stroke={LEAF_DARK} strokeWidth="11" strokeLinecap="round"
-      />
-      <path d="M274 186 Q 273 172 277 158" stroke={LEAF} strokeWidth="7" strokeLinecap="round" />
-      {/* بافت خفیف تنه */}
-      <path d="M287 560 Q 284 500 285 440 M283 380 Q 281 330 278 280" stroke={LEAF} strokeWidth="1.6" opacity="0.35" strokeLinecap="round" />
-
-      {/* شاخه‌ها — هر شاخه تا «مرکز» خوشهٔ برگ پیش می‌رود */}
-      <path d="M285 430 C 256 400, 226 370, 197 344" stroke={LEAF} strokeWidth="5.5" strokeLinecap="round" />
-      <path d="M286 398 C 314 356, 340 324, 364 298" stroke={LEAF} strokeWidth="5.5" strokeLinecap="round" />
-      <path d="M282 344 C 268 326, 254 312, 239 298" stroke={LEAF} strokeWidth="4.5" strokeLinecap="round" />
-
-      {/* تاج و خوشه‌ها — تابِ خیلی ملایم حول سرِ تنه */}
-      <g className="animate-ct-sway" style={{ transformBox: 'view-box', transformOrigin: '272px 250px', animationDuration: '8.5s' }}>
-        {/* تاج اصلی — پرپشت از دایره‌های روی‌هم */}
-        <g stroke={LEAF} strokeWidth="2.4">
-          <circle cx="270" cy="188" r="52" fill={SAGE_FILL} />
-          <circle cx="224" cy="206" r="37" fill={SAGE_FILL} />
-          <circle cx="316" cy="206" r="38" fill={SAGE_FILL} />
-          <circle cx="252" cy="160" r="34" fill={SAGE_FILL} />
-          <circle cx="292" cy="157" r="33" fill={SAGE_FILL} />
-          <circle cx="202" cy="232" r="24" fill={SAGE_FILL} />
-          <circle cx="338" cy="234" r="23" fill={SAGE_FILL} />
-          {/* هایلایت‌های روشن روی تاج */}
-          <circle cx="258" cy="168" r="20" fill="#DCEED8" stroke="none" opacity="0.8" />
-          <circle cx="300" cy="182" r="15" fill="#DCEED8" stroke="none" opacity="0.7" />
-        </g>
-
-        {/* برگ‌های مرکب برند — پایه‌ها داخل تاج، رو به بیرون */}
-        <Frond x={252} y={178} rot={235} len={92} mode="outline" dur={6.8} delay={0.2} />
-        <Frond x={284} y={172} rot={292} len={98} mode="outline" dur={7.4} delay={0.6} />
-        <Frond x={266} y={160} rot={265} len={88} mode="sage" dur={6.4} delay={0.9} />
-        <Frond x={238} y={196} rot={208} len={78} mode="sage" dur={7.0} delay={0.4} />
-        <Frond x={300} y={192} rot={330} len={80} mode="rust" dur={6.6} delay={1.1} />
-        <Frond x={318} y={214} rot={12} len={72} mode="outline" dur={7.2} delay={0.8} />
-
-        {/* خوشهٔ شاخهٔ چپ */}
-        <Cluster x={197} y={344} r={26} fronds={[{ rot: 196, len: 62 }, { rot: 232, len: 54, mode: 'sage' }]} />
-        {/* خوشهٔ شاخهٔ راست */}
-        <Cluster x={364} y={298} r={27} fronds={[{ rot: 14, len: 64 }, { rot: 46, len: 56, mode: 'sage' }]} />
-        {/* خوشهٔ کوچک میانی */}
-        <Cluster x={239} y={298} r={20} fronds={[{ rot: 246, len: 48, mode: 'rust' }]} />
-
-        {/* توت و گل‌های سفید — لبهٔ تاج */}
-        <Berries x={330} y={158} rot={-14} />
-        <Berries x={212} y={178} rot={16} />
-        <Berries x={352} y={272} rot={30} />
-        <Blossom x={296} y={142} s={0.95} />
-        <Blossom x={236} y={150} s={0.8} />
-        <Blossom x={326} y={216} s={0.75} />
-        <Blossom x={206} y={262} s={0.65} />
-      </g>
-
-      {/* بوته‌های پای درخت */}
-      <g>
-        <g transform="translate(120 588)">
-          <circle cx="-20" cy="-2" r="18" fill={SAGE_FILL} stroke={LEAF} strokeWidth="2" />
-          <circle cx="2" cy="-8" r="24" fill={SAGE_FILL} stroke={LEAF} strokeWidth="2" />
-          <circle cx="24" cy="0" r="17" fill={SAGE_FILL} stroke={LEAF} strokeWidth="2" />
-          <circle cx="6" cy="-24" r="3" fill={RUST} />
-        </g>
-        <g transform="translate(448 598) scale(0.8)">
-          <circle cx="-20" cy="-2" r="18" fill={SAGE_FILL} stroke={LEAF} strokeWidth="2" />
-          <circle cx="2" cy="-8" r="24" fill={SAGE_FILL} stroke={LEAF} strokeWidth="2" />
-          <circle cx="24" cy="0" r="17" fill={SAGE_FILL} stroke={LEAF} strokeWidth="2" />
-          <Blossom x={-4} y={-34} s={0.7} />
-        </g>
-      </g>
-
-      {/* علف‌های کوچک پای تنه */}
-      {[
-        { x: 160, y: 610, s: 1 },
-        { x: 356, y: 612, s: 0.9 },
-        { x: 412, y: 604, s: 0.8 },
-        { x: 96, y: 602, s: 0.8 },
-      ].map((t, i) => (
-        <g key={i} transform={`translate(${t.x} ${t.y}) scale(${t.s})`} stroke={SAGE_DARK} strokeWidth="2.4" strokeLinecap="round">
-          <path d="M0 0 Q -5 -13 -9 -17" />
-          <path d="M0 0 Q 0 -15 2 -19" />
-          <path d="M0 0 Q 6 -11 10 -15" />
-        </g>
-      ))}
-    </svg>
-  )
-}
+/* ---------------- 🌳 درخت تُون — به درخواست مالک حذف شد ---------------- */
 
 /* ================= 🌄 صحنهٔ کامل هیرو ================= */
 export function HeroScene() {
@@ -275,32 +150,6 @@ export function HeroScene() {
         <circle cx="520" cy="210" r="2.4" fill={SAGE_DARK} opacity="0.7" />
         <circle cx="1230" cy="210" r="2.6" fill={SAGE_DARK} opacity="0.6" />
       </svg>
-
-      {/* 🌳 درخت تُون + چیپ‌های واژه + حباب گفتگو — لنگر در سمت راست، روی تپه */}
-      <div className="absolute bottom-[36px] sm:bottom-[44px] md:bottom-[62px] -right-[64px] sm:-right-[24px] md:right-0 lg:right-8 xl:right-16 w-[300px] sm:w-[350px] md:w-[390px] lg:w-[440px] xl:w-[490px] animate-ct-fadeInUp delay-200">
-        <ToonTree className="w-full h-auto" />
-
-        {/* 💬 حباب گفتگو — تاج درخت حرف می‌زند (absolute! چون .speech-bubble موقعیت را بازنویسی می‌کند) */}
-        <div className="speech-bubble animate-ct-wiggle absolute! top-[-2%] -left-[8%] lg:-left-[5%] hidden sm:block">
-          <p className="text-sm font-medium text-brown whitespace-nowrap">
-            你好！Let&apos;s learn! 🎉
-          </p>
-        </div>
-
-        {/* 🏷️ چیپ واژهٔ 香 — روی تاج، بالا-راست */}
-        <div className="absolute top-[13%] right-[6%] bg-butter rounded-2xl px-3.5 py-2 shadow-md animate-ct-float hidden sm:block">
-          <span className="text-lg font-bold text-brown-dark">香</span>
-          <span className="text-xs text-brown-light block">xiāng · fragrant</span>
-        </div>
-        {/* 🏷️ چیپ واژهٔ 椿 — لبهٔ چپ تاج */}
-        <div
-          className="absolute top-[40%] -left-[4%] lg:-left-[1%] bg-white/95 backdrop-blur rounded-2xl px-3.5 py-2 shadow-md animate-ct-float hidden sm:block md:hidden lg:block"
-          style={{ animationDelay: '1s' }}
-        >
-          <span className="text-lg font-bold text-sage-dark">椿</span>
-          <span className="text-xs text-brown-light block">chūn · toon tree</span>
-        </div>
-      </div>
     </div>
   )
 }

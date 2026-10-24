@@ -24,8 +24,24 @@ import {
   ReceiptStorageUnavailableError,
 } from '@/lib/receipts'
 import { logAppError } from '@/lib/error-log'
+import { isSchemaDriftError } from '@/lib/ensure-schema'
 
 export const dynamic = 'force-dynamic'
+
+/** ♻️ خودترمیمی اسکیما — اگر ستون/جدول روی دیتابیس زنده غایب باشد (P2021/P2022)،
+ *  DDL افزایشیِ امن یک‌بار اجرا و عملیات دقیقاً یک‌بار دوباره تلاش می‌شود */
+async function submitReceiptWithHeal(input: Parameters<typeof submitReceipt>[0]) {
+  try {
+    return await submitReceipt(input)
+  } catch (initialError) {
+    if (isSchemaDriftError(initialError)) {
+      const { ensureLmsSchema } = await import('@/lib/lms-schema')
+      await ensureLmsSchema()
+      return await submitReceipt(input)
+    }
+    throw initialError
+  }
+}
 
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
@@ -87,7 +103,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await submitReceipt({
+    const result = await submitReceiptWithHeal({
       ref,
       viewerUserId: user.id,
       receiptId: generateReceiptId(),

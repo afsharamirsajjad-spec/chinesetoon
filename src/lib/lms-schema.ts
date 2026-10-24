@@ -21,27 +21,46 @@ import { db } from '@/lib/db'
 
 const g = globalThis as unknown as { __ctLmsSchemaPromise?: Promise<void> }
 
-/** اجرای یک‌باره در هر پروسه — همیشه بدون throw (شکست DDL اپ را نمی‌بندد) */
+/**
+ * اجرای یک‌باره در هر پروسه — شکست هرگز کش نمی‌شود: اگر runEnsure خطا دهد،
+ * کش پاک می‌شود تا فراخوانی بعدی (مثلاً خودترمیمی مسیرهای پرداخت) دوباره
+ * تلاش کند. (قبلاً شکست با catch در یک promise «موفق» کش می‌شد و تلاش‌های
+ * بعدی همیشه بی‌اثر بودند — علت خطای ۵00 صفحهٔ پرداخت.)
+ */
 export function ensureLmsSchema(): Promise<void> {
   if (!g.__ctLmsSchemaPromise) {
     g.__ctLmsSchemaPromise = runEnsure().catch((e: unknown) => {
-      console.error('[lms-schema] ensure failed (app continues with previous schema):', e instanceof Error ? e.message : e)
+      console.error('[lms-schema] ensure failed (will retry on next call):', e instanceof Error ? e.message : e)
+      g.__ctLmsSchemaPromise = undefined
     })
   }
   return g.__ctLmsSchemaPromise
 }
 
+let ddlFailures = 0
+
+/**
+ * اجرای DDL افزایشی — هر عبارت مستقل است: شکست فقط لاگ می‌شود و بقیهٔ
+ * عبارت‌ها اجرا می‌شوند. یک جدولِ غایب روی دیتابیس زنده (مثلاً Homework
+ * قبل از اعمال مهاجرت‌ها) نباید ستونِ حیاتیِ جدولی دیگر — مثل
+ * UsdtOrder.receiptUrl — را مسدود کند. همهٔ عبارت‌ها idempotent هستند.
+ */
 async function ddl(sql: string, label: string): Promise<void> {
   try {
     await db.$executeRawUnsafe(sql)
   } catch (e) {
-    console.error(`[lms-schema] failed: ${label}:`, e instanceof Error ? e.message : e)
-    throw e
+    ddlFailures++
+    console.error(`[lms-schema] failed (skipped, others continue): ${label}:`, e instanceof Error ? e.message : e)
   }
 }
 
 async function runEnsure(): Promise<void> {
+  ddlFailures = 0
   // ---- ستون‌های جدید روی جداول موجود (فقط افزایشی) ----
+  // ☁️ ستون حیاتی پرداخت — عمداً اول از همه: رسیدهای Vercel Blob بدون آن
+  // هر کوئری سفارش (create/find) با P2022 می‌شکند؛ باید حتی وقتی جدول‌های
+  // LMS هنوز روی دیتابیس زنده ساخته نشده‌اند هم اعمال شود.
+  await ddl(`ALTER TABLE "UsdtOrder" ADD COLUMN IF NOT EXISTS "receiptUrl" TEXT`, 'UsdtOrder.receiptUrl')
   await ddl(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "role" TEXT NOT NULL DEFAULT 'student'`, 'User.role')
   await ddl(`ALTER TABLE "CourseClass" ADD COLUMN IF NOT EXISTS "teacherId" TEXT`, 'CourseClass.teacherId')
   await ddl(`ALTER TABLE "Homework" ADD COLUMN IF NOT EXISTS "classId" TEXT`, 'Homework.classId')
@@ -49,8 +68,6 @@ async function runEnsure(): Promise<void> {
   await ddl(`ALTER TABLE "HomeworkSubmission" ADD COLUMN IF NOT EXISTS "score" INTEGER`, 'HomeworkSubmission.score')
   await ddl(`ALTER TABLE "HomeworkSubmission" ADD COLUMN IF NOT EXISTS "status" TEXT NOT NULL DEFAULT 'SUBMITTED'`, 'HomeworkSubmission.status')
   await ddl(`ALTER TABLE "HomeworkSubmission" ADD COLUMN IF NOT EXISTS "releasedAt" TIMESTAMP(3)`, 'HomeworkSubmission.releasedAt')
-  // ☁️ رسیدها روی Vercel Blob — URL رسید روی سفارش
-  await ddl(`ALTER TABLE "UsdtOrder" ADD COLUMN IF NOT EXISTS "receiptUrl" TEXT`, 'UsdtOrder.receiptUrl')
 
   // ---- جدول‌های جدید ----
   await ddl(
@@ -173,7 +190,9 @@ async function runEnsure(): Promise<void> {
     }
   }
 
-  console.info('[lms-schema] LMS schema ensured (additive, idempotent)')
+  console.info(
+    `[lms-schema] LMS schema ensured (additive, idempotent${ddlFailures > 0 ? `, ${ddlFailures} statement(s) skipped — see errors above` : ''})`
+  )
 }
 
 // ---------------------------------------------------------------------------

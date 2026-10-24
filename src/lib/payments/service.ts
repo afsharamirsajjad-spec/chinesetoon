@@ -35,6 +35,7 @@ import { deriveOrderStatus } from '@/lib/order-status'
 import { notifyUser, notifyOrderEvent } from '@/lib/notifications'
 import { getBankCardSettings, isBankCardReady } from '@/lib/payment-settings'
 import { saveReceiptFile, deleteReceiptFile, type ReceiptMime } from '@/lib/receipts'
+import { isSchemaDriftError } from '@/lib/ensure-schema'
 
 // دیتابیس در db.ts همیشه کلاینت دارد (گارد داخلی با ری‌لود کلاینت قدیمی)؛
 // از نظر تایپ ممکن است undefined بیاید — این alias تایپ را متمرکز حل می‌کند
@@ -507,7 +508,12 @@ export async function submitReceipt(input: {
       },
     })
     .then((r) => r.count)
-    .catch(() => 0)
+    .catch((e: unknown) => {
+      // خطای ناهم‌خوانی اسکیما (جدول/ستون غایب) هرگز نباید مثل «تغییر هم‌زمانِ
+      // وضعیت» قورت داده شود — باید به route برسد تا خودترمیمی DDL فعال شود
+      if (isSchemaDriftError(e)) throw e
+      return 0
+    })
 
   if (res !== 1) {
     await deleteReceiptFile(input.receiptId, receiptFileUrl)

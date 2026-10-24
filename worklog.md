@@ -137,3 +137,18 @@ Changes:
 - Boot log about TRON wallet is gone; no crypto code path remains in src/.
 
 Verification: bun x tsc --noEmit (0 errors); bun run build (compiled successfully, all 36 routes generated; pre-existing local prisma DATABASE_URL warning unrelated); bun test tests/ (16 pass / 0 fail); eslint on all changed files (clean).
+
+---
+Task ID: HERO-TREE-REMOVE + RECEIPTURL-HEAL-FIX
+Task: (1) Remove the toon tree from the hero (owner request). (2) Fix production 500 "column UsdtOrder.receiptUrl does not exist" when opening the payment page.
+
+Changes (1) — hero tree:
+- HeroScene.tsx: removed ToonTree (trunk/crown/hanging 香椿 sign/bushes/grass) plus the speech bubble and 香/椿 word chips anchored to it; cleaned now-unused imports (Frond/Berries/Blossom/LEAF/RUST/RUST_DARK/LEAF_DARK) and Cluster helper. Hero keeps sun, clouds, birds, drifting leaves, 学 background char, green hills.
+- Deleted dead src/components/site/HeroLandscape.tsx (never imported).
+
+Changes (2) — receiptUrl 500 fix. Root cause: ensureLmsSchema cached its FIRST run result forever — if any DDL failed at cold start (e.g. Homework tables missing on Neon because migrations never ran there), the .catch() turned the failure into a RESOLVED cached promise, so every later drift-retry (payments/orders POST) was a no-op; and UsdtOrder.receiptUrl DDL sat AFTER the Homework DDLs, so it never ran.
+- lms-schema.ts: DDL statements are now independent (per-statement catch, log + continue) so one missing table can't block others; UsdtOrder.receiptUrl DDL moved FIRST; failed ensure is no longer cached (cache cleared on failure so the next call retries); summary log reports skipped statements.
+- /api/payments/orders/[ref] GET (payment status page) and /api/receipts POST (receipt upload): added P2021/P2022 self-heal retry (same contract as order creation).
+- service.ts submitReceipt: the updateMany .catch(()=>0) no longer swallows schema-drift errors (rethrown so the route's self-heal can fire) instead of returning a misleading CONFLICT.
+
+Verification: bun x tsc --noEmit (0 errors); eslint on changed files (clean); bun test tests/ (16 pass / 0 fail); bun run build (compiled successfully).
