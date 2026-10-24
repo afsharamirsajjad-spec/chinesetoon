@@ -32,6 +32,7 @@ import { siteContent, PageKey } from '@/content/site-content'
 import { AccountSchedule } from '@/components/site/AccountSchedule'
 import { AccountNotifications } from '@/components/site/AccountNotifications'
 import { AccountHomework } from '@/components/site/AccountHomework'
+import { GoogleSignInButton, GoogleErrorBanner } from '@/components/site/GoogleSignIn'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { COUNTRIES, flagFromCode } from '@/lib/countries'
 import { refreshUser, logoutUser, useUser, OrderLike } from '@/lib/user-store'
@@ -425,6 +426,16 @@ export function AccountPage({ onNavigate, onToast, go }: AccountPageProps) {
                   >
                     {c.tabLogin}
                   </button>
+                </div>
+
+                {/* 🔵 بنر خطای ورود با گوگل (از ?googleError=… در callback) */}
+                <div className="mb-5">
+                  <GoogleErrorBanner />
+                </div>
+
+                {/* 🔵 Continue with Google — بالای هر دو فرم، با جداکننده */}
+                <div className="space-y-4 mb-6">
+                  <GoogleSignInButton />
                 </div>
 
                 {tab === 'register' ? (

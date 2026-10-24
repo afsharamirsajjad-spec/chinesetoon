@@ -1628,6 +1628,20 @@ export const siteContent = {
     rememberMe: "Remember me for 30 days",
     passwordHint: "At least 8 characters.",
     forgotPasswordLink: "Forgot password?",
+    // 🔵 ورود با گوگل (OAuth) — دکمهٔ مشترک هر دو تب + خطاهای callback
+    googleButton: "Continue with Google",
+    googleOrEmail: "or continue with email",
+    googleErrors: {
+      not_configured: "Google sign-in is not configured on the server yet. Please use email sign-in.",
+      cancelled: "Google sign-in was cancelled.",
+      google_error: "Google returned an error. Please try again.",
+      invalid_response: "Invalid response from Google. Please try again.",
+      state_mismatch: "Sign-in session expired — please click Continue with Google again.",
+      exchange_failed: "Could not verify your Google account. Please try again.",
+      email_not_verified: "Your Google email is not verified. Verify it in your Google account first.",
+      rate_limited: "Too many attempts — please wait a few minutes and try again.",
+      could_not_sign_in: "Could not sign in with Google. Please try again or use email.",
+    },
     // 🔁 فراموشی رمز عبور (/forgot-password — جریان کدمحور)
     forgotTitle: "Reset Your Password",
     forgotSubtitle: "Enter the email you registered with and we'll email you a 6-digit verification code.",
