@@ -27,7 +27,7 @@ import {
   User,
   XCircle,
 } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { siteContent } from '@/content/site-content'
 
 const a = siteContent.admin
@@ -730,6 +730,10 @@ export function PaymentsAdminTab({
                 </>
               )}
             </DialogTitle>
+            {/* ♿ توضیح دیالوگ — رفع هشدار aria-describedby Radix */}
+            <DialogDescription className="text-xs text-brown-light">
+              Order details, payment status and receipt review for administrators.
+            </DialogDescription>
           </DialogHeader>
 
           {detailLoading && !detail && (

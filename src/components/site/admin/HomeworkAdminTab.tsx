@@ -26,6 +26,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -374,6 +375,10 @@ export function HomeworkAdminTab({ token, onToast }: { token: string; onToast?: 
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>New Assignment</DialogTitle>
+            {/* ♿ توضیح دیالوگ — رفع هشدار aria-describedby Radix */}
+            <DialogDescription className="text-xs text-brown-light">
+              Create a new assignment with attachments for your students.
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={submitCreate} className="space-y-4">
             <div>
@@ -434,6 +439,9 @@ export function HomeworkAdminTab({ token, onToast }: { token: string; onToast?: 
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{detail?.title ?? 'Loading…'}</DialogTitle>
+            <DialogDescription className="text-xs text-brown-light">
+              Student submissions, files and your feedback for this assignment.
+            </DialogDescription>
           </DialogHeader>
           {detailLoading || !detail ? (
             <div className="py-8 text-center">
@@ -534,6 +542,9 @@ export function HomeworkAdminTab({ token, onToast }: { token: string; onToast?: 
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Feedback</DialogTitle>
+            <DialogDescription className="text-xs text-brown-light">
+              Write feedback for this student submission — they see it after you save.
+            </DialogDescription>
           </DialogHeader>
           <textarea
             className={`${inputCls} resize-none`}

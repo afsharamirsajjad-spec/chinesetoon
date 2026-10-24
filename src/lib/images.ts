@@ -15,7 +15,7 @@
 // ---------------------------------------------------------------------------
 
 import { createHash } from 'crypto'
-import { isBlobConfigured, putBlobFile, headBlobFile } from '@/lib/blob-store'
+import { isBlobConfigured, putBlobFile, headBlobFile, BlobConfigError } from '@/lib/blob-store'
 
 export const MAX_IMAGE_BYTES = 4 * 1024 * 1024 // ۴MB — امن زیر حد 4.5MB سرورلس Vercel
 
@@ -62,12 +62,10 @@ export function detectImageType(bytes: Uint8Array): DetectedImageType | null {
   return null
 }
 
-/** 🟢 خطای پیکربندی — توکن Blob تنظیم نیست؛ پیام کاملاً قابل‌اقدام */
+/** 🟢 خطای پیکربندی — توکن Blob غایب/نامعتبر؛ پیام کاملاً قابل‌اقدام */
 export class ImageStorageUnavailableError extends Error {
-  constructor() {
-    super(
-      'Image storage is not configured. Connect a Vercel Blob store to this project (Storage → Create → Blob) so BLOB_READ_WRITE_TOKEN is set, then redeploy.'
-    )
+  constructor(message = 'Image storage is not configured. Connect a Vercel Blob store to this project (Storage → Create → Blob) so BLOB_READ_WRITE_TOKEN is set, then redeploy.') {
+    super(message)
     this.name = 'ImageStorageUnavailableError'
   }
 }
@@ -94,7 +92,14 @@ export async function saveImageFile(mime: ImageMime, data: Buffer): Promise<Save
   const ext = IMAGE_EXT_BY_MIME[mime]
   const hash = createHash('sha256').update(data).digest('hex')
   const pathname = `images/${hash}.${ext}`
-  const url = await putBlobFile(pathname, data)
+  let url: string | null
+  try {
+    url = await putBlobFile(pathname, data)
+  } catch (e) {
+    // توکن نامعتبر/حذف‌شده → پیام پیکربندی شفاف (503) — نه 500 مبهم
+    if (e instanceof BlobConfigError) throw new ImageStorageUnavailableError(e.message)
+    throw e
+  }
   if (!url) throw new ImageStorageUnavailableError()
   return { url, pathname, id: hash.slice(0, 24) }
 }

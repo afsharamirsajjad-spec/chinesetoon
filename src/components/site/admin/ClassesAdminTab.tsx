@@ -30,7 +30,7 @@ import {
   ImagePlus,
   X,
 } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
 import { siteContent } from '@/content/site-content'
 import { SUPPORTED_TIMEZONES, timezoneLabel } from '@/lib/timezones'
@@ -622,6 +622,10 @@ function ClassEditorDialog({
             <DialogTitle className="text-lg font-bold text-brown-dark text-left truncate">
               {isNew ? a.formTitleNew : a.formTitleEdit}
             </DialogTitle>
+            {/* ♿ توضیح دیالوگ — رفع هشدار aria-describedby Radix */}
+            <DialogDescription className="text-xs text-brown-light text-left">
+              Edit class details, pricing, cover image and visibility.
+            </DialogDescription>
           </DialogHeader>
           <div className="flex items-center gap-2 shrink-0">
             <button
@@ -1071,7 +1075,7 @@ function ClassEditorDialog({
 
         {/* پیش‌نمایش همان نمای عمومی — کامپوننت مشترک با صفحهٔ کلاس‌ها */}
         <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-          <DialogContent className="bg-cream border-sage-light/30 rounded-3xl max-w-lg max-h-[88vh] overflow-y-auto p-0">
+          <DialogContent aria-describedby={undefined} className="bg-cream border-sage-light/30 rounded-3xl max-w-lg max-h-[88vh] overflow-y-auto p-0">
             <div className="px-5 pt-4 pb-2 text-[11px] font-semibold uppercase tracking-wider text-sage-dark">
               {a.previewTitle}
               {(form.status === 'draft' || form.status === 'inactive' || form.status === 'archived') && (
@@ -1145,7 +1149,7 @@ function DeleteConfirmDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !busy && onOpenChange(v)}>
-      <DialogContent className="bg-cream border-peach/40 rounded-3xl max-w-md p-6">
+      <DialogContent aria-describedby={undefined} className="bg-cream border-peach/40 rounded-3xl max-w-md p-6">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold text-brown-dark text-left flex items-center gap-2">
             <Trash2 className="w-4 h-4 text-red-600" aria-hidden="true" />
