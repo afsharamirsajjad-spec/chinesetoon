@@ -2,25 +2,31 @@ import type { MetadataRoute } from "next";
 import { siteContent } from "@/content/site-content";
 
 // ---------------------------------------------------------------------------
-// 🗺️ sitemap.xml — فاز SEO: روت‌های واقعی App Router.
+// 🗺️ sitemap.xml — روت‌های واقعی App Router + محتوای عمومی دیتابیس.
 //
-// قبلاً سایت یک SPA هش‌محور بود و فقط `/` در sitemap بود — نتیجه: گوگل تنها یک
-// URL ایندکس‌پذیر داشت و Search Console خطا می‌داد. حالا هر نما روت مستقل دارد:
-//
+// صفحات ثابت عمومی:
 //   /  /classes  /learn  /about  /blog  /reviews  /support  /register
-//   + مقاله‌های وبلاگ (/blog/<slug> — از دیتابیس، فقط published)
+// محتوای پویا (فقطِ عمومی/منتشرشده — با هر تغییر پنل، خودکار آپدیت می‌شود):
+//   /classes/<slug>  ← CourseClass با status=active (صفحات غیر active خودشان
+//                      noindex هستند — اینجا هم نمی‌آیند)
+//   /lesson/<slug>   ← Lesson با published=true (صفحهٔ عمومی ایندکس‌پذیر؛
+//                      مدل Lesson ستون updatedAt ندارد، پس lastModified برایش
+//                      ساخته نمی‌شود — تاریخ جعل نمی‌شود)
+//   /blog/<slug>     ← Post با published=true (با updatedAt معتبر)
 //
-// روت‌های شخصی (account/admin/pay/lesson/forgot/reset) عمداً اینجا نیستند:
-//  • account/admin/pay — noindex هستند (metadata robots) و محتوای شخصی‌اند
-//  • lesson/<slug> — محتوای درسی از پنل تغییر می‌کند و برای جست‌وجو هدف نیست؛
-//    اگر روزی خواستید ایندکس شوند، همین‌جا با db.lesson اضافه کنید.
+// روت‌های خصوصی عمداً اینجا نیستند (همگی noindex و/یا پشت احراز هویت‌اند):
+//   /account /admin /student /teacher /pay/* /forgot-password /reset-password
+//   و همهٔ /api/* — همچنین quiz ها (درون صفحهٔ /learn رندر می‌شوند، روت
+//   مستقل ندارند) و FAQ (درون /support).
 //
 // دامنهٔ canonical (https://www.chinesetoon.com) از siteContent می‌آید — همان
 // منبع robots.ts و metadataBase — تا www/non-www هرگز واگرا نشود.
 //
 // ⚙️ revalidate: هر ساعت دوباره ساخته می‌شود (روی Vercel پس از اولین درخواست)
-// تا مقاله‌های جدید پنل ادمین بدون deploy تازه وارد sitemap شوند. اگر دیتابیس
-// در دسترس نباشد، sitemap فقط با روت‌های ثابت ساخته می‌شود (هرگز خطا نمی‌دهد).
+// تا محتوای جدید پنل ادمین بدون deploy تازه وارد/خارج sitemap شود. اگر
+// دیتابیس در دسترس نباشد، sitemap فقط با روت‌های ثابت ساخته می‌شود (هرگز
+// خطا نمی‌دهد). تعداد URLها (< ۱۰۰۰) بسیار زیر سقف ۵۰هزار URL گوگل است؛
+// اگر روزی از سقف گذشت، باید به sitemap-index شکسته شود.
 // ---------------------------------------------------------------------------
 
 export const revalidate = 3600;
@@ -41,9 +47,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   let blogPosts: MetadataRoute.Sitemap = [];
   let classPages: MetadataRoute.Sitemap = [];
+  let lessonPages: MetadataRoute.Sitemap = [];
   try {
     const { db } = await import("@/lib/db");
-    const [posts, classes] = await Promise.all([
+    const [posts, classes, lessons] = await Promise.all([
       db.post.findMany({
         where: { published: true },
         select: { slug: true, updatedAt: true },
@@ -56,6 +63,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         select: { slug: true, updatedAt: true },
         orderBy: { sortOrder: "asc" },
         take: 100,
+      }),
+      // 📚 درس‌های منتشرشدهٔ عمومی — /learn به هر درس لینک می‌دهد
+      db.lesson.findMany({
+        where: { published: true },
+        select: { slug: true },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        take: 500,
       }),
     ]);
     blogPosts = posts.map((p) => ({
@@ -70,9 +84,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.8,
     }));
+    // Lesson ستون updatedAt ندارد → lastModified حذف می‌شود (تاریخ جعل نمی‌شود)
+    lessonPages = lessons.map((l) => ({
+      url: `${base}/lesson/${l.slug}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    }));
   } catch {
-    // دیتابیس در دسترس نیست — sitemap بدون مقاله‌ها/کلاس‌ها معتبر می‌ماند
+    // دیتابیس در دسترس نیست — sitemap بدون محتوای پویا معتبر می‌ماند
   }
 
-  return [...staticRoutes, ...classPages, ...blogPosts];
+  // 🔁 ضد URL تکراری (نباید پیش بیاید؛ slug ها یکتا و پیشوندها متمایزند)
+  const seen = new Set<string>();
+  return [...staticRoutes, ...classPages, ...lessonPages, ...blogPosts].filter((e) => {
+    if (seen.has(e.url)) return false;
+    seen.add(e.url);
+    return true;
+  });
 }

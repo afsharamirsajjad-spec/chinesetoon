@@ -161,3 +161,28 @@ Changes:
 - HeroScene.tsx: new WordChip component (hanzi + pinyin · meaning) rendered as three floating cards on the right sky — 你好 nǐ hǎo · hello (butter), 谢谢 xièxie · thanks (glass white), 再见 zàijiàn · bye (sage) — with gentle ct-float animation, staggered delays, slight rotations, and progressive visibility (sm / md / lg) so mobile hero text stays clean. Positioned to avoid sun/clouds/birds/hills overlaps.
 
 Verification: bun x tsc --noEmit (0 errors); eslint (clean); bun run build (compiled successfully).
+
+---
+Task ID: SEO-ROBOTS-SITEMAP-1
+Task: Technical SEO audit — robots.txt AI-crawler policy + complete auto-updating sitemap.
+
+Changes:
+- src/app/robots.ts: rewritten. Explicit crawler groups — search/answer crawlers (Googlebot, OAI-SearchBot for ChatGPT Search, Claude-SearchBot, PerplexityBot) and independent model-training groups (GPTBot, ClaudeBot, Google-Extended), all currently allowed; catch-all * stays Allow: /. Only /api/ is disallowed for all groups (no indexable content, rate-limited, crawl budget). Removed the non-standard Yandex-only `host` directive. Sitemap pinned to canonical https://www.chinesetoon.com/sitemap.xml. Private HTML pages intentionally left crawlable so their noindex meta is visible; robots.txt is not access control (auth unchanged).
+- src/app/sitemap.ts: added published lessons (/lesson/<slug>, Lesson.published=true) — public indexable pages with canonical metadata; no lastModified for lessons (model has no updatedAt — dates are not fabricated). Kept active classes and published posts with their real updatedAt. Added duplicate-URL guard. Documented exclusions (private/noindex routes, quizzes rendered inside /learn, FAQ inside /support) and the 50k-URL limit rationale. revalidate=3600 keeps it auto-updating on Vercel without deploys.
+- No duplicate implementations: confirmed public/ has no robots.txt/sitemap.xml; only the native app-router metadata routes exist.
+
+Verification (LOCAL — production DB rows not verifiable locally because local DATABASE_URL is stale):
+- /robots.txt → 200 with all 8 groups + Sitemap line, no Host.
+- /sitemap.xml → 200, valid XML, 8 static URLs, all https://www.chinesetoon.com (0 non-canonical); DB-failure fallback path proven (local DB unreachable).
+- All 8 static URLs return HTTP 200 (no redirects/broken).
+- bun x tsc --noEmit (0), eslint (clean), bun run build (compiled successfully), bun test (16 pass).
+
+---
+Task ID: LESSON-BACK-BUTTON-1
+Task: Fix "All lessons" back button not working on /lesson/<slug>.
+
+Root cause: navigateTo compared the target page with pageFromPathname(), which maps /lesson/* to 'learn' for menu highlighting — so from a lesson page, navigating to 'learn' looked like "already there" and only scrolled to top.
+
+Change: src/components/site/site-shell.tsx — navigateTo now compares against the real target path (window.location.pathname === target); same-page clicks still just scroll to top.
+
+Verification: tsc (0 errors), eslint (clean), next build (compiled successfully).
