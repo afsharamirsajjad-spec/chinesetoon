@@ -20,6 +20,7 @@ import {
   RECEIPT_EXT_BY_MIME,
   type ReceiptMime,
 } from '@/lib/receipts'
+import { fetchBlobResponse } from '@/lib/blob-store'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,9 +52,28 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     return NextResponse.json({ error: 'Receipt not found' }, { status: 404 })
   }
 
-  // ☁️ Blob — redirect به URL ذخیره‌شده (شناسهٔ 48hex = غیرقابل‌حدس)
+  // ☁️ Blob — استریم سمت سرور با توکن (استور خصوصی هم کار می‌کند؛ هم‌خوان با
+  // سیاست احراز این مسیر — URL خام بلاب هرگز به کلاینت لو نمی‌رود)
   if (order.receiptUrl) {
-    return NextResponse.redirect(order.receiptUrl, 302)
+    const ext = RECEIPT_EXT_BY_MIME[mime]
+    try {
+      const upstream = await fetchBlobResponse(order.receiptUrl)
+      return new NextResponse(upstream.body, {
+        status: 200,
+        headers: {
+          'Content-Type': mime,
+          ...(upstream.headers.get('content-length')
+            ? { 'Content-Length': upstream.headers.get('content-length') as string }
+            : {}),
+          'Content-Disposition': `inline; filename="receipt-${order.ref}.${ext}"`,
+          'Cache-Control': 'private, no-store',
+          'X-Content-Type-Options': 'nosniff',
+        },
+      })
+    } catch (e) {
+      console.error('[receipts] blob read failed:', e instanceof Error ? e.message : e)
+      return NextResponse.json({ error: 'Receipt not found' }, { status: 404 })
+    }
   }
 
   const data = await readReceiptFile(id, mime)

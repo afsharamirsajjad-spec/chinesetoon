@@ -14,6 +14,7 @@ import { db } from '@/lib/db'
 import { getUserFromRequest } from '@/lib/user-auth'
 import { isAuthorized } from '@/lib/admin-auth'
 import { readHomeworkFile, isHomeworkFileId, HOMEWORK_FILE_EXT_BY_MIME } from '@/lib/homework-files'
+import { fetchBlobResponse } from '@/lib/blob-store'
 
 export const dynamic = 'force-dynamic'
 
@@ -69,9 +70,32 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ fileId: str
     }
   }
 
-  // 🟢 Blob فعال است → redirect به URL بلاب (امضاشده نیست اما شناسه غیرقابل‌حدس است)
+  // ☁️ Blob — استریم سمت سرور با توکن (استور خصوصی هم کار می‌کند؛ هم‌خوان با
+  // سیاست احراز این مسیر — URL خام بلاب هرگز به کلاینت لو نمی‌رود)
   if (file.url) {
-    return NextResponse.redirect(file.url, 302)
+    const ext = HOMEWORK_FILE_EXT_BY_MIME[file.mime]
+    if (!ext) {
+      return NextResponse.json({ error: 'File not found' }, { status: 404 })
+    }
+    try {
+      const upstream = await fetchBlobResponse(file.url)
+      const safeName = (file.name || `homework-${fileId}`).replace(/"/g, '')
+      return new NextResponse(upstream.body, {
+        status: 200,
+        headers: {
+          'Content-Type': file.mime,
+          ...(upstream.headers.get('content-length')
+            ? { 'Content-Length': upstream.headers.get('content-length') as string }
+            : {}),
+          'Content-Disposition': `attachment; filename="${safeName}"`,
+          'Cache-Control': 'private, no-store',
+          'X-Content-Type-Options': 'nosniff',
+        },
+      })
+    } catch (e) {
+      console.error('[homework/files] blob read failed:', e instanceof Error ? e.message : e)
+      return NextResponse.json({ error: 'File not found' }, { status: 404 })
+    }
   }
 
   // ذخیرهٔ محلی — از FS خوانده و attachment سرو می‌شود

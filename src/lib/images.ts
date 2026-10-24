@@ -29,6 +29,11 @@ export const IMAGE_EXT_BY_MIME: Record<ImageMime, string> = {
   'image/gif': 'gif',
 }
 
+/** mime از پسوند — برای سرو مسیر قدیمی/جدید */
+export const IMAGE_MIME_BY_EXT: Record<string, ImageMime> = Object.fromEntries(
+  (Object.keys(IMAGE_EXT_BY_MIME) as ImageMime[]).map((m) => [IMAGE_EXT_BY_MIME[m], m])
+)
+
 export interface DetectedImageType {
   mime: ImageMime
 }
@@ -75,12 +80,20 @@ function requireBlob(): void {
 }
 
 export interface SavedImage {
-  /** URL دائمی عمومی تصویر — مستقیم در فیلدهای image دیتابیس ذخیره می‌شود */
+  /** URL تصویر — استور عمومی: URL دائمی CDN بلاب؛ استور خصوصی: مسیر پایدار
+   *  خود سایت (/api/images/c/<hash>.<ext>) که سمت سرور با توکن استریم می‌کند */
   url: string
   /** نام فایل در Blob — «images/<sha256>.<ext>» (محتوامحور، ضد duplicate) */
   pathname: string
   /** ۲۴ نویسهٔ اول هش — شناسهٔ نمایشی برای audit log */
   id: string
+}
+
+/** الگوی نام فایل محتوامحور — ضد path traversal (فقط hex + پسوند مجاز) */
+const CONTENT_FILE_RE = /^[a-f0-9]{64}\.(jpg|png|webp|gif)$/
+
+export function isContentImageFile(file: string): boolean {
+  return CONTENT_FILE_RE.test(file)
 }
 
 /**
@@ -93,15 +106,24 @@ export async function saveImageFile(mime: ImageMime, data: Buffer): Promise<Save
   const hash = createHash('sha256').update(data).digest('hex')
   const pathname = `images/${hash}.${ext}`
   let url: string | null
+  let isPrivate = false
   try {
-    url = await putBlobFile(pathname, data)
+    const put = await putBlobFile(pathname, data)
+    if (!put) throw new ImageStorageUnavailableError()
+    url = put.url
+    isPrivate = put.isPrivate
   } catch (e) {
     // توکن نامعتبر/حذف‌شده → پیام پیکربندی شفاف (503) — نه 500 مبهم
     if (e instanceof BlobConfigError) throw new ImageStorageUnavailableError(e.message)
     throw e
   }
-  if (!url) throw new ImageStorageUnavailableError()
-  return { url, pathname, id: hash.slice(0, 24) }
+  return {
+    // استور خصوصی: URL خام به‌صورت عمومی دانلود نمی‌شود → مسیر پایدار سایت
+    // که سمت سرور با توکن استریم می‌کند (rendering پایدار بین دیپلوی‌ها)
+    url: isPrivate ? `/api/images/c/${hash}.${ext}` : url,
+    pathname,
+    id: hash.slice(0, 24),
+  }
 }
 
 /** شناسهٔ لگاسی — URLهای قدیمی به شکل /api/images/<48hex> */

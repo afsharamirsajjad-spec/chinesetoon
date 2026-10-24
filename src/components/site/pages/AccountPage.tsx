@@ -428,15 +428,19 @@ export function AccountPage({ onNavigate, onToast, go }: AccountPageProps) {
                   </button>
                 </div>
 
-                {/* 🔵 بنر خطای ورود با گوگل (از ?googleError=… در callback) */}
-                <div className="mb-5">
-                  <GoogleErrorBanner />
-                </div>
+                {/* 🔵 بنر خطای ورود با گوگل (از ?googleError=… در callback) — فقط وقتی فلگ فعال باشد */}
+                {c.googleSignInEnabled && (
+                  <div className="mb-5">
+                    <GoogleErrorBanner />
+                  </div>
+                )}
 
-                {/* 🔵 Continue with Google — بالای هر دو فرم، با جداکننده */}
-                <div className="space-y-4 mb-6">
-                  <GoogleSignInButton />
-                </div>
+                {/* 🔵 Continue with Google — بالای هر دو فرم، با جداکننده (قابل فعال‌سازی با فلگ محتوا) */}
+                {c.googleSignInEnabled && (
+                  <div className="space-y-4 mb-6">
+                    <GoogleSignInButton />
+                  </div>
+                )}
 
                 {tab === 'register' ? (
                   /* ---------------- 📝 فرم ثبت‌نام ---------------- */

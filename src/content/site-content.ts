@@ -1629,6 +1629,9 @@ export const siteContent = {
     passwordHint: "At least 8 characters.",
     forgotPasswordLink: "Forgot password?",
     // 🔵 ورود با گوگل (OAuth) — دکمهٔ مشترک هر دو تب + خطاهای callback
+    // ⏸️ enabled=false → دکمه/بنر از UI حذف می‌شود (مسیرهای API سر جایشان می‌مانند)؛
+    // بعد از تأیید OAuth در Google Cloud Console فقط همین فلگ true می‌شود
+    googleSignInEnabled: false,
     googleButton: "Continue with Google",
     googleOrEmail: "or continue with email",
     googleErrors: {

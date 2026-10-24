@@ -117,9 +117,10 @@ async function ensureDir(): Promise<void> {
 export async function saveReceiptFile(id: string, mime: ReceiptMime, data: Buffer): Promise<string | null> {
   if (!isReceiptId(id)) throw new Error('Invalid receipt id')
   const ext = RECEIPT_EXT_BY_MIME[mime]
-  // ☁️ اولویت با Blob — روی Vercel تنها گزینه است
-  const url = await putBlobFile(`receipts/${id}.${ext}`, data)
-  if (url) return url
+  // ☁️ اولویت با Blob — روی Vercel تنها گزینه است (استور خصوصی هم پشتیبانی می‌شود:
+  // URL ذخیره‌شده توسط مسیر دانلود سایت با توکن سمت سرور خوانده می‌شود)
+  const put = await putBlobFile(`receipts/${id}.${ext}`, data)
+  if (put) return put.url
   if (!isReceiptStorageAvailable()) throw new ReceiptStorageUnavailableError()
   await ensureDir()
   await writeFile(path.join(RECEIPTS_DIR, `${id}.${ext}`), data, { mode: 0o600 })

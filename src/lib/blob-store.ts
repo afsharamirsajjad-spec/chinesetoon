@@ -2,14 +2,19 @@
 // ☁️ Vercel Blob — لایهٔ ذخیره‌سازی مشترک فایل‌های آپلودی
 //
 // Vercel فایل‌سیستم فقط-خواندنی دارد؛ بدون Blob هیچ آپلودی (رسید/تصویر/تکالیف)
-// ممکن نیست. اگر BLOB_READ_WRITE_TOKEN تنظیم باشد فایل‌ها به Blob می‌روند
-// (pathname از شناسهٔ 48hex یا sha256 ساخته می‌شود = URL capability)؛ وگرنه
-// مسیر FS محلی (توسعه/سندباکس) فعال است.
+// ممکن نیست. اگر BLOB_READ_WRITE_TOKEN تنظیم باشد فایل‌ها به Blob می‌روند؛
+// وگرنه مسیر FS محلی (توسعه/سندباکس) فعال است.
+//
+// 🔒 سازگاری با استورهای «خصوصی» (پیش‌فرض استورهای جدید Vercel):
+//  • putBlobFile اول access:'public' را امتحان می‌کند؛ اگر استور خصوصی بود
+//    (خطای «Cannot use public access on a private store») خودکار با
+//    access:'private' دوباره آپلود می‌کند و حالت استور کش می‌شود.
+//  • فایل‌های استور خصوصی با URL خام قابل دانلود نیستند → fetchBlobResponse
+//    با هدر Bearer توکن سمت سرور می‌گیرد و مسیرهای API سایت استریم می‌کنند
+//    (همان الگوی احراز خود SDK).
 //
 // خطاها: SDK خطاهای اختصاصی‌اش را از entry عمومی صادر نمی‌کند؛ به همین دلیل
-// putBlobFile خطاها را بر اساس پیام طبقه‌بندی و مشکلات پیکربندی (توکن نامعتبر/
-// store حذف‌شده) را به‌صورت BlobConfigError با پیام قابل‌اقدام بالا می‌دهد تا
-// مسیرها 503 شفاف بدهند — نه 500 مبهم.
+// بر اساس پیام طبقه‌بندی و مشکلات پیکربندی به BlobConfigError تبدیل می‌شوند.
 // ---------------------------------------------------------------------------
 
 const BLOB_TOKEN = () => (process.env.BLOB_READ_WRITE_TOKEN ?? '').trim()
@@ -46,25 +51,69 @@ function wrapBlobError(e: unknown): never {
   throw e
 }
 
+// حالت استور پس از اولین آپلود کش می‌شود (private stores: تلاش public بی‌فایده است)
+const g = globalThis as unknown as { __ctBlobStorePrivate?: boolean }
+
+export interface PutBlobResult {
+  url: string
+  /** true = استور خصوصی است؛ URL خام به‌صورت عمومی قابل دانلود نیست و باید
+   *  از مسیر API سایت (fetchBlobResponse) سرو شود */
+  isPrivate: boolean
+}
+
 /**
- * آپلود به Blob — خروجی URL عمومیِ غیرقابل‌حدس.
- * اگر توکن تنظیم نباشد null برمی‌گردد (تماس‌دهنده به FS fallback می‌کند)؛
- * اگر توکن نامعتبر باشد BlobConfigError می‌دهد (نه 500 مبهم).
+ * آپلود به Blob — با سازگاری خودکار استور خصوصی:
+ * public اول؛ خطای «private store» → retry با access:'private' + کش حالت.
+ * توکن تنظیم نباشد null برمی‌گردد (تماس‌دهنده به FS fallback می‌کند).
  */
-export async function putBlobFile(pathname: string, data: Buffer): Promise<string | null> {
+export async function putBlobFile(pathname: string, data: Buffer): Promise<PutBlobResult | null> {
   const token = BLOB_TOKEN()
   if (!token) return null
+  const blob = await import('@vercel/blob')
+  const opts = { addRandomSuffix: false, token } as const
   try {
-    const blob = await import('@vercel/blob')
-    const res = await blob.put(pathname, data, {
-      access: 'public',
-      addRandomSuffix: false,
-      token,
-    })
-    return res.url
+    if (g.__ctBlobStorePrivate) {
+      const res = await blob.put(pathname, data, { ...opts, access: 'private' })
+      return { url: res.url, isPrivate: true }
+    }
+    const res = await blob.put(pathname, data, { ...opts, access: 'public' })
+    return { url: res.url, isPrivate: false }
   } catch (e) {
+    const msg = messageOf(e)
+    if (/private store/i.test(msg)) {
+      // استور خصوصی است — یک‌بار با private دوباره
+      g.__ctBlobStorePrivate = true
+      try {
+        const res = await blob.put(pathname, data, { ...opts, access: 'private' })
+        return { url: res.url, isPrivate: true }
+      } catch (e2) {
+        wrapBlobError(e2)
+      }
+    }
     wrapBlobError(e)
   }
+}
+
+/**
+ * دریافت فایل از Blob سمت سرور — با هدر Bearer (الگوی احراز خود SDK)؛
+ * برای استورهای خصوصی تنها راه خواندن است و برای public هم بی‌ضرر است.
+ * خروجی Response خام است تا مسیر API بتواند استریم/هدرهای خودش را بدهد.
+ */
+export async function fetchBlobResponse(url: string): Promise<Response> {
+  const token = BLOB_TOKEN()
+  if (!token) throw new BlobConfigError('BLOB_READ_WRITE_TOKEN is not configured on the server.')
+  const res = await fetch(url, {
+    headers: { authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(15_000),
+  })
+  if (!res.ok) {
+    throw new BlobConfigError(
+      res.status === 403 || res.status === 401
+        ? 'Vercel Blob rejected the access token while reading a file — check BLOB_READ_WRITE_TOKEN.'
+        : `Blob read failed (status ${res.status}).`
+    )
+  }
+  return res
 }
 
 /** حذف از Blob — بهترین‌تلاش، هرگز throw نمی‌کند */

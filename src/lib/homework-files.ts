@@ -114,9 +114,10 @@ export async function saveHomeworkFile(
   data: Buffer
 ): Promise<{ url: string | null }> {
   if (!isHomeworkFileId(id)) throw new Error('Invalid homework file id')
-  // ☁️ اولویت با Blob — روی Vercel تنها گزینه است
-  const url = await putBlobFile(`${id}.${ext}`, data)
-  if (url) return { url }
+  // ☁️ اولویت با Blob — روی Vercel تنها گزینه است (استور خصوصی هم پشتیبانی می‌شود:
+  // URL ذخیره‌شده توسط مسیر دانلود سایت با توکن سمت سرور خوانده می‌شود)
+  const put = await putBlobFile(`${id}.${ext}`, data)
+  if (put) return { url: put.url }
   if (!isHomeworkStorageAvailable()) throw new HomeworkStorageUnavailableError()
   await mkdir(HOMEWORK_DIR, { recursive: true })
   await writeFile(path.join(HOMEWORK_DIR, `${id}.${ext}`), data)

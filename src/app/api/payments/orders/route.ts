@@ -17,6 +17,7 @@ import { createOrder, PaymentNotConfiguredError, ProductNotFoundError, OrderLimi
 import { ensurePaymentScheduler } from '@/lib/payments/scheduler'
 import { guardResponse } from '@/lib/http-guard'
 import { logAppError } from '@/lib/error-log'
+import { isSchemaDriftError } from '@/lib/ensure-schema'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,8 +53,11 @@ export async function POST(req: NextRequest) {
   const productId = typeof body.productId === 'string' ? body.productId.trim().slice(0, 64) : ''
   if (!productId) return NextResponse.json({ error: 'productId is required' }, { status: 400 })
 
-  try {
-    const order = await createOrder({
+  // ♻️ خودترمیمی اسکیما (هم‌قرارداد با /api/auth/login): اگر جدول/ستونی روی
+  // دیتابیس زنده غایب باشد (P2021/P2022)، DDL افزایشیِ امن یک‌بار اجرا و
+  // ساخت سفارش دقیقاً یک‌بار دوباره تلاش می‌شود — بدون هیچ تغییر مخرب
+  const attemptCreate = async () =>
+    createOrder({
       productId,
       // 👤 مشخصات تماس از پروفایل تأییدشدهٔ کاربر می‌آید — نه از مرورگر
       contactName: `${user.firstName} ${user.lastName}`.trim(),
@@ -63,6 +67,20 @@ export async function POST(req: NextRequest) {
       // 🎟️ فقط «کد» از مرورگر می‌آید — اعتبار و محاسبهٔ تخفیف سرور است
       discountCode: typeof body.discountCode === 'string' ? body.discountCode.trim().slice(0, 40) : null,
     })
+
+  try {
+    let order
+    try {
+      order = await attemptCreate()
+    } catch (initialError) {
+      if (isSchemaDriftError(initialError)) {
+        const { ensureLmsSchema } = await import('@/lib/lms-schema')
+        await ensureLmsSchema()
+        order = await attemptCreate()
+      } else {
+        throw initialError
+      }
+    }
     return NextResponse.json({ order }, { status: 201 })
   } catch (e) {
     if (e instanceof PaymentNotConfiguredError) {
