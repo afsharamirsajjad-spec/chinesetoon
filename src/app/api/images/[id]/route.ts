@@ -1,38 +1,32 @@
 // ---------------------------------------------------------------------------
-// 🖼️ GET /api/images/[id] — سروِ تصاویر عمومی آپلودشدهٔ ادمین
+// 🖼️ GET /api/images/[id] — سازگاری با URLهای تصویریِ قدیمیِ id-محور
 //
-// تصاویر پیش‌نمایش کلاس‌ها/مقالات عمومی‌اند — برخلاف رسیدها (خصوصی/مالکی‌محور)
-// اینجا هیچ احرازی لازم نیست؛ فقط:
-//  • id باید ۴۸ hex معتبر باشد (هیچ مسیری از ورودی کاربر ساخته نمی‌شود)
-//  • پاسخ با Cache-Control immutable — شناسه هر آپلود یکتاست
+// معماری جدید: آپلود مستقیماً URL دائمی CDN بلاب را برمی‌گرداند و همان در
+// فیلدهای image دیتابیس ذخیره می‌شود — این مسیر فقط برای ارجاع‌های قدیمیِ
+// «/api/images/<48hex>» است: در Blob جست‌وجو می‌شود و redirect می‌کند.
+// چنین URLهایی هرگز روی Vercel کار نکرده‌اند (دیسک فقط-خواندنی) — پس هیچ
+// محتوای واقعی از این مسیر وابسته نیست؛ حذف تصادفی محتوا رخ نمی‌دهد.
 // ---------------------------------------------------------------------------
 
 import { NextRequest, NextResponse } from 'next/server'
-import { readImageFile, isImageId, IMAGE_EXT_BY_MIME } from '@/lib/images'
+import { findLegacyImageUrl } from '@/lib/images'
+import { ImageStorageUnavailableError } from '@/lib/images'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  const { id } = await ctx.params
-  const clean = id.trim().toLowerCase()
-  if (!isImageId(clean)) {
+  const { id: raw } = await ctx.params
+  const id = raw.trim().toLowerCase()
+  try {
+    const url = await findLegacyImageUrl(id)
+    if (url) return NextResponse.redirect(url, 302)
+    return NextResponse.json({ error: 'Image not found' }, { status: 404 })
+  } catch (e) {
+    // Blob پیکربندی نیست — هیچ تصویر قدیمی‌ای هم وجود ندارد؛ 404 صادقانه
+    if (e instanceof ImageStorageUnavailableError) {
+      return NextResponse.json({ error: 'Image not found' }, { status: 404 })
+    }
+    console.error('[images] legacy lookup failed:', e instanceof Error ? e.message : e)
     return NextResponse.json({ error: 'Image not found' }, { status: 404 })
   }
-
-  const found = await readImageFile(clean)
-  if (!found) {
-    return NextResponse.json({ error: 'Image not found' }, { status: 404 })
-  }
-
-  const ext = IMAGE_EXT_BY_MIME[found.mime]
-  return new NextResponse(new Uint8Array(found.data), {
-    status: 200,
-    headers: {
-      'Content-Type': found.mime,
-      'Content-Length': String(found.data.length),
-      'Content-Disposition': `inline; filename="${clean}.${ext}"`,
-      'Cache-Control': 'public, max-age=31536000, immutable',
-      'X-Content-Type-Options': 'nosniff',
-    },
-  })
 }

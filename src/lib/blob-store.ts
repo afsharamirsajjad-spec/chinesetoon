@@ -40,3 +40,20 @@ export async function delBlobFile(url: string): Promise<void> {
     console.error('[blob] delete failed (non-fatal):', e instanceof Error ? e.message : e)
   }
 }
+
+/**
+ * جست‌وجوی pathname در Blob — اگر وجود داشت URL آن، وگرنه null.
+ * برای سازگاری با ارجاع‌های قدیمیِ id-محور (بدون آپلود مجدد).
+ */
+export async function headBlobFile(pathname: string): Promise<string | null> {
+  if (!BLOB_TOKEN()) return null
+  try {
+    const blob = await import('@vercel/blob')
+    const meta = await blob.head(pathname)
+    return meta?.url ?? null
+  } catch (e) {
+    // head برای pathname غایب هم ممکن است خطای عمومی بدهد — غیرحیاتی است
+    console.error('[blob] head failed (non-fatal):', e instanceof Error ? e.message : e)
+    return null
+  }
+}

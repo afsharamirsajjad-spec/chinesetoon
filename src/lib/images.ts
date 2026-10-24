@@ -1,35 +1,23 @@
 // ---------------------------------------------------------------------------
-// 🖼️ ذخیرهٔ امن تصاویر آپلودی ادمین (پیش‌نمایش کلاس‌ها / تصویر مقالات)
+// 🖼️ ذخیره‌سازی تصاویر — معماری production (Vercel Blob فقط)
 //
-// اصول امنیتی (هم‌خانوادهٔ receipts.ts):
-//  • فایل هرگز در public/ نوشته نمی‌شود — در uploads/images/ بیرون از وب‌روت
-//    (CT_DATA_DIR) ذخیره و فقط از مسیر GET /api/images/[id] سرو می‌شود
-//  • شناسهٔ فایل = ۴۸ نویسهٔ hex تصادفی (غیرقابل‌حدس) — نام اصلی فایل هرگز
-//    روی دیسک نمی‌رود و هیچ مسیری از ورودی کاربر ساخته نمی‌شود
-//  • نوع فایل از «magic bytes» تشخیص داده می‌شود، نه از ادعای مرورگر
-//  • فقط JPEG/PNG/WEBP/GIF — SVG عمداً پذیرفته نیست (می‌تواند اسکریپت داشته باشد)
-//  • سقف ۵ مگابایت
+// تصمیم معماری (بازطراحی به درخواست مالک):
+//  • Vercel Blob تنها بک‌اندِ ذخیرهٔ دائمی تصاویر است — هیچ مسیر دیسک محلی،
+//    هیچ mkdir/writeFile برای فایل دائمی باقی نمانده (فایل‌سیستم Vercel
+//    فقط-خواندنی است و مسیرهای /home/z روی آن وجود ندارند).
+//  • pathname محتوامحور (content-addressed) است: sha256 بایت‌های تصویر →
+//    «images/<hash>.<ext>». نتیجه: آپلود دوبارهٔ همان تصویر همان URL را می‌دهد
+//    (ضد duplicate، ضد رشد بی‌رویهٔ Blob) و URLها تغییرناپذیرند → کش دائمی امن.
+//  • متادیتا در اسکیمای موجود می‌ماند: URL تصویر در فیلدهای image (CourseClass/
+//    Post/…) ذخیره می‌شود — بدون تغییر destructive در دیتابیس.
+//  • اعتبارسنجی نوع فایل با magic bytes (نه ادعای مرورگر) — فقط JPEG/PNG/WEBP/GIF.
+//  • سقف ۴ مگابایت: زیر حد ۴.۵MB بدنهٔ serverless Vercel (با سربار multipart).
 // ---------------------------------------------------------------------------
 
-import { randomBytes } from 'crypto'
-import { mkdir, readFile, writeFile } from 'fs/promises'
-import path from 'path'
-import { isBlobConfigured, putBlobFile } from '@/lib/blob-store'
+import { createHash } from 'crypto'
+import { isBlobConfigured, putBlobFile, headBlobFile } from '@/lib/blob-store'
 
-export const MAX_IMAGE_BYTES = 5 * 1024 * 1024 // ۵MB
-
-// 🗄️ همان سیاست پایداری رسیدها — در «داده‌های پایدار» بیرون از پوشهٔ پروژه
-// تا redeploy پروژه هرگز تصاویر آپلودشده را از بین نبرد.
-// 🟢 Vercel: فایل‌سیستم read-only است؛ تا فعال‌شدن Vercel Blob خطای واضح
-// برمی‌گردد (نه EROFS مبهم) — همان محدودیت شناخته‌شدهٔ رسیدها.
-const CT_DATA_DIR = (process.env.CT_DATA_DIR || '/home/z/data').trim() || '/home/z/data'
-const IMAGES_DIR = path.join(CT_DATA_DIR, 'uploads', 'images')
-
-export function isImageStorageAvailable(): boolean {
-  if (isBlobConfigured()) return true
-  if (process.env.VERCEL === '1' && !process.env.CT_DATA_DIR) return false
-  return true
-}
+export const MAX_IMAGE_BYTES = 4 * 1024 * 1024 // ۴MB — امن زیر حد 4.5MB سرورلس Vercel
 
 export const IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const
 export type ImageMime = (typeof IMAGE_MIMES)[number]
@@ -41,22 +29,13 @@ export const IMAGE_EXT_BY_MIME: Record<ImageMime, string> = {
   'image/gif': 'gif',
 }
 
-/** شناسهٔ غیرقابل‌حدس فایل — ۴۸ نویسهٔ hex (۱۹۲ بیت آنتروپی) */
-export function generateImageId(): string {
-  return randomBytes(24).toString('hex')
-}
-
-export function isImageId(id: string): boolean {
-  return /^[a-f0-9]{48}$/.test(id)
-}
-
 export interface DetectedImageType {
   mime: ImageMime
 }
 
 /**
  * تشخیص نوع واقعی تصویر با magic bytes — هر نوع دیگری (SVG، اجرایی، آرشیو و…)
- * قطعاً رد می‌شود.
+ * قطعاً رد می‌شود (SVG می‌تواند اسکریپت داشته باشد).
  */
 export function detectImageType(bytes: Uint8Array): DetectedImageType | null {
   if (bytes.length < 12) return null
@@ -83,45 +62,58 @@ export function detectImageType(bytes: Uint8Array): DetectedImageType | null {
   return null
 }
 
-/** 🟢 خطای واضح وقتی ذخیرهٔ تصویر روی فایل‌سیستم ممکن نیست (Vercel read-only FS) */
+/** 🟢 خطای پیکربندی — توکن Blob تنظیم نیست؛ پیام کاملاً قابل‌اقدام */
 export class ImageStorageUnavailableError extends Error {
   constructor() {
-    super('Image file storage is not available in this environment. Configure Vercel Blob (BLOB_READ_WRITE_TOKEN) for production image uploads.')
+    super(
+      'Image storage is not configured. Connect a Vercel Blob store to this project (Storage → Create → Blob) so BLOB_READ_WRITE_TOKEN is set, then redeploy.'
+    )
     this.name = 'ImageStorageUnavailableError'
   }
 }
 
-/**
- * ذخیرهٔ تصویر — Blob وقتی توکن هست (خروجی URL عمومیِ غیرقابل‌حدس که مستقیم
- * به‌عنوان src تصویر استفاده می‌شود)، وگرنه FS محلی (مسیر /api/images/[id]).
- */
-export async function saveImageFile(
-  id: string,
-  mime: ImageMime,
-  data: Buffer
-): Promise<{ url: string | null }> {
-  if (!isImageId(id)) throw new Error('Invalid image id')
-  const ext = IMAGE_EXT_BY_MIME[mime]
-  // ☁️ اولویت با Blob — روی Vercel تنها گزینه است
-  const blobUrl = await putBlobFile(`images/${id}.${ext}`, data)
-  if (blobUrl) return { url: blobUrl }
-  if (!isImageStorageAvailable()) throw new ImageStorageUnavailableError()
-  await mkdir(IMAGES_DIR, { recursive: true })
-  await writeFile(path.join(IMAGES_DIR, `${id}.${ext}`), data)
-  return { url: null }
+function requireBlob(): void {
+  if (!isBlobConfigured()) throw new ImageStorageUnavailableError()
 }
 
-/** خواندن امن — id همیشه قبل از ساخت مسیر اعتبارسنجی می‌شود؛ mime از پسوند فایل می‌آید */
-export async function readImageFile(id: string): Promise<{ mime: ImageMime; data: Buffer } | null> {
-  if (!isImageId(id)) return null
+export interface SavedImage {
+  /** URL دائمی عمومی تصویر — مستقیم در فیلدهای image دیتابیس ذخیره می‌شود */
+  url: string
+  /** نام فایل در Blob — «images/<sha256>.<ext>» (محتوامحور، ضد duplicate) */
+  pathname: string
+  /** ۲۴ نویسهٔ اول هش — شناسهٔ نمایشی برای audit log */
+  id: string
+}
+
+/**
+ * ذخیرهٔ تصویر در Vercel Blob با pathname محتوامحور.
+ * آپلود دوبارهٔ بایت‌های یکسان = همان pathname = همان URL (بدون فایل تکراری).
+ */
+export async function saveImageFile(mime: ImageMime, data: Buffer): Promise<SavedImage> {
+  requireBlob()
+  const ext = IMAGE_EXT_BY_MIME[mime]
+  const hash = createHash('sha256').update(data).digest('hex')
+  const pathname = `images/${hash}.${ext}`
+  const url = await putBlobFile(pathname, data)
+  if (!url) throw new ImageStorageUnavailableError()
+  return { url, pathname, id: hash.slice(0, 24) }
+}
+
+/** شناسهٔ لگاسی — URLهای قدیمی به شکل /api/images/<48hex> */
+export function isLegacyImageId(id: string): boolean {
+  return /^[a-f0-9]{48}$/.test(id)
+}
+
+/**
+ * یافتن URL یک تصویر قدیمیِ id-محور در Blob (سازگاری با ارجاع‌های پیشین).
+ * چون قبلاً id تصادفی بود و پسوند در URL نبود، هر چهار پسوند امتحان می‌شود.
+ */
+export async function findLegacyImageUrl(id: string): Promise<string | null> {
+  if (!isLegacyImageId(id)) return null
+  requireBlob()
   for (const mime of IMAGE_MIMES) {
-    const ext = IMAGE_EXT_BY_MIME[mime]
-    try {
-      const data = await readFile(path.join(IMAGES_DIR, `${id}.${ext}`))
-      return { mime, data }
-    } catch {
-      // این پسوند نیست — پسوند بعدی
-    }
+    const url = await headBlobFile(`images/${id}.${IMAGE_EXT_BY_MIME[mime]}`)
+    if (url) return url
   }
   return null
 }
