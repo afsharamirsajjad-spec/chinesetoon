@@ -47,7 +47,7 @@ function refineValue(data: { type: string; value: number }): string | null {
     return 'Percent value must be between 0 and 100'
   }
   if (data.type === 'fixed' && (data.value <= 0 || data.value > 2000)) {
-    return 'Fixed discount must be between 0 and 2000 USDT'
+    return 'Fixed discount must be between 0 and 2000 USD'
   }
   return null
 }

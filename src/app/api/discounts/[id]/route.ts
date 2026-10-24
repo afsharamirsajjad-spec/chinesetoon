@@ -69,7 +69,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         return NextResponse.json({ error: 'Percent value must be between 0 and 100' }, { status: 400 })
       }
       if (effectiveType === 'fixed' && (d.value <= 0 || d.value > 2000)) {
-        return NextResponse.json({ error: 'Fixed discount must be between 0 and 2000 USDT' }, { status: 400 })
+        return NextResponse.json({ error: 'Fixed discount must be between 0 and 2000 USD' }, { status: 400 })
       }
     } else if (d.type && d.type !== existing.type) {
       // فقط نوع عوض شد و value نیامده — value فعلی باید در بازهٔ نوع جدید جا شود
@@ -77,7 +77,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         return NextResponse.json({ error: 'Existing value is not valid for a percent discount (0-100)' }, { status: 400 })
       }
       if (d.type === 'fixed' && (existing.value <= 0 || existing.value > 2000)) {
-        return NextResponse.json({ error: 'Existing value is not valid for a fixed discount (0-2000 USDT)' }, { status: 400 })
+        return NextResponse.json({ error: 'Existing value is not valid for a fixed discount (0-2000 USD)' }, { status: 400 })
       }
     }
     const updated = await db.discount.update({

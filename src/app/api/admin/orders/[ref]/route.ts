@@ -34,9 +34,8 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ ref: string
       select: {
         ref: true, userId: true, productId: true, productTitle: true,
         contactName: true, contactEmail: true, expectedMicro: true, status: true,
-        currency: true, network: true, paymentMode: true, paymentAddress: true,
-        addressIndex: true, expiresAt: true, createdAt: true, updatedAt: true,
-        txHash: true, txAmountMicro: true, txFrom: true, paidAt: true,
+        currency: true, paymentMethod: true,
+        expiresAt: true, createdAt: true, updatedAt: true, paidAt: true,
         pricePerSession: true, packageSessions: true, baseAmount: true,
         tierPercent: true, discountCode: true, discountAmount: true,
         discountType: true, discountValue: true,
@@ -100,7 +99,6 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ ref: string
       events,
       // انقضای خام برای نمایش شمارش معکوس ادمین
       expiresAt: order.expiresAt.toISOString(),
-      addressIndex: order.addressIndex,
       currency: order.currency,
     })
   } catch (e) {

@@ -110,7 +110,6 @@ interface PayDetailData {
     receiptFileName: string | null
     receiptMime: string | null
     receiptSize: number | null
-    legacy: { network: string; paymentMode: string; paymentAddress: string; txHash: string | null } | null
   }
   customer: PayCustomer & {
     countryCode?: string | null
@@ -146,8 +145,8 @@ function statusBadge(s: string): { label: string; cls: string } {
   }
 }
 
-function methodLabel(paymentMethod: string): string {
-  return paymentMethod === 'MANUAL_BANK_CARD' ? 'Manual Bank Card' : 'Legacy USDT'
+function methodLabel(paymentMethod: string | null | undefined): string {
+  return paymentMethod === 'MANUAL_BANK_CARD' ? 'Manual Bank Card' : paymentMethod || '—'
 }
 
 // 💰 نمایش مبلغ — همیشه «$X.XX USD»؛ مقدار ناموجود = —
@@ -190,7 +189,6 @@ const FILTERS: { key: string; label: string; countKey?: keyof PayCounts }[] = [
   { key: 'rejected', label: pa.filterRejected, countKey: 'rejected' },
   { key: 'cancelled', label: pa.filterCancelled, countKey: 'cancelled' },
   { key: 'expired', label: pa.filterExpired },
-  { key: 'legacy', label: pa.filterLegacy },
 ]
 
 export function PaymentsAdminTab({
@@ -724,9 +722,6 @@ export function PaymentsAdminTab({
                   <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${statusBadge(detail.order.status).cls}`}>
                     {statusBadge(detail.order.status).label}
                   </span>
-                  {detail.order.paymentMethod === 'USDT_TRON' && (
-                    <span className="text-[10px] font-bold bg-neutral-200 text-neutral-600 px-2.5 py-1 rounded-full">{pa.legacyBadge}</span>
-                  )}
                 </>
               )}
             </DialogTitle>
@@ -822,18 +817,6 @@ export function PaymentsAdminTab({
                   <InfoCell label={pa.pPaid} value={detail.order.paidAt ? fmtDateTime(detail.order.paidAt) : '—'} />
                   <InfoCell label={pa.pResubmits} value={String(detail.order.receiptResubmits ?? 0)} />
                 </div>
-                {/* جریان قدیمی USDT — شبکه/آدرس/تراکنش سفارش‌های تاریخی */}
-                {detail.order.legacy && (
-                  <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 mt-2.5 space-y-1 text-[11px] text-brown-light">
-                    <p className="font-bold text-brown-dark text-[10px] uppercase tracking-wider mb-1">{pa.legacyBadge}</p>
-                    <p>
-                      Network: <span className="font-semibold text-brown-dark">{detail.order.legacy.network}</span> · Mode:{' '}
-                      <span className="font-semibold text-brown-dark">{detail.order.legacy.paymentMode}</span>
-                    </p>
-                    <p className="break-all font-mono">{detail.order.legacy.paymentAddress}</p>
-                    {detail.order.legacy.txHash && <p className="break-all font-mono">tx: {detail.order.legacy.txHash}</p>}
-                  </div>
-                )}
               </section>
 
               {/* 🧾 رسید */}

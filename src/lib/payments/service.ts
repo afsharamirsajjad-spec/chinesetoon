@@ -1,9 +1,9 @@
 // ---------------------------------------------------------------------------
-// 💳 سرویس سفارش‌ها و پرداخت دستی کارت بانکی (فاز ۵۹)
+// 💳 سرویس سفارش‌ها و پرداخت دستی کارت بانکی
 //
-// از این فاز، روشِ فعالِ پرداخت «انتقال دستی بانکی + آپلود رسید + تأیید ادمین»
-// است. جریانِ آنلاینِ قبلی (USDT/TRON) از جریانِ خرید حذف شده؛ ردیف‌های قدیمی
-// و اسنپ‌شات‌هایشان در همان جدول حفظ می‌شوند (paymentMethod = USDT_TRON).
+// روشِ فعالِ پرداخت «انتقال دستی بانکی + آپلود رسید + تأیید ادمین» است.
+// جریان آنلاین ارز دیجیتال (USDT/TRON) به‌طور کامل از کد حذف شده؛
+// ستون‌های جدول سفارش فقط برای سازگاری با داده‌های تاریخی حفظ شده‌اند.
 //
 // اصول سخت‌گیرانهٔ این سرویس:
 //  ۱) قیمت/مبلغ هرگز از مرورگر پذیرفته نمی‌شود — فقط productId و «کدِ» تخفیف
@@ -19,8 +19,6 @@
 //     PENDING → RECEIPT_SUBMITTED → PAID | REJECTED → (ارسال دوبارهٔ رسید) → RECEIPT_SUBMITTED
 //     PENDING → CANCELLED (ادمین) — و PENDINGِ منقضی در نمایش EXPIRED است.
 //     RECEIPT_SUBMITTED هرگز منقضی نمی‌شود؛ تصمیم با انسان است نه تایمر.
-//  ۶) وضعیت‌های تاریخیِ USDT (DETECTED/UNDERPAID/EXPIRED) فقط برای ردیف‌های
-//     قدیمی معتبرند و در جریان جدید ساخته نمی‌شوند.
 // ---------------------------------------------------------------------------
 
 import { randomBytes } from 'crypto'
@@ -45,7 +43,7 @@ const database = db as PrismaClient
 // سفارشِ «باز» = هنوز تصمیم نهایی نگرفته. PENDING (وظیفهٔ پرداخت مشتری) و
 // RECEIPT_SUBMITTED (در انتظار بررسی ادمین) هر دو سقف سفارشِ باز را اشغال
 // می‌کنند؛ فقط PENDING منقضی می‌شود.
-const ACTIVE_STATUSES = ['PENDING', 'DETECTED', 'RECEIPT_SUBMITTED'] as const
+const ACTIVE_STATUSES = ['PENDING', 'RECEIPT_SUBMITTED'] as const
 
 // ⏱️ پنجرهٔ ضد ارسالِ تکراری (idempotency): اگر همان کاربر همان محصول را در
 // این بازه دوباره سفارش دهد (مثلاً دابل‌کلیک)، همان سفارشِ بازِ قبلی برمی‌گردد
@@ -97,10 +95,8 @@ function isWriteConflict(e: unknown): boolean {
 type EventKind =
   | 'CREATED' | 'PAID' | 'EXPIRED' | 'CANCELLED'
   | 'DUPLICATE_SUPPRESSED'
-  // 🧾 فاز ۵۹ — رویدادهای جریان رسیدِ دستی
+  // 🧾 رویدادهای جریان رسیدِ دستی
   | 'RECEIPT_SUBMITTED' | 'RECEIPT_RESUBMITTED' | 'RECEIPT_APPROVED' | 'RECEIPT_REJECTED'
-  // 🧊 رویدادهای قدیمیِ جریان USDT — فقط برای ردیف‌های تاریخی در گزارش‌ها
-  | 'TX_SEEN' | 'DETECTED' | 'VERIFIED' | 'UNDERPAID' | 'UNMATCHED' | 'DUPLICATE_IGNORED' | 'API_ERROR' | 'PAGING_LIMIT' | 'LATE_PAYMENT'
 
 async function logEvent(kind: EventKind, orderRef?: string, txHash?: string, detail?: Record<string, unknown>) {
   try {
@@ -223,7 +219,7 @@ function publicOrder(o: {
     discountAmount: o.discountAmount != null ? o.discountAmount.toFixed(2) : null,
     discountType: o.discountType ?? null,
     discountValue: o.discountValue != null ? o.discountValue.toFixed(2) : null,
-    paymentMethod: o.paymentMethod ?? 'USDT_TRON',
+    paymentMethod: o.paymentMethod ?? undefined,
     receiptStatus: o.receiptStatus ?? null,
     receiptSubmittedAt: o.receiptSubmittedAt?.toISOString() ?? null,
     rejectionReason: o.rejectionReason ?? null,
@@ -612,18 +608,9 @@ export async function rejectManualPayment(ref: string, actor: string, reason: st
 // انقضای سفارش‌های قدیمیِ پرداخت‌نشده — فقط PENDING؛ RECEIPT_SUBMITTED هرگز
 // ---------------------------------------------------------------------------
 
-/**
- * فیلتر شبکه — سفارش‌های «شبکهٔ دیگر» هرگز لمس نمی‌شوند. مقدار قدیمی «TRON»
- * هم‌ارز mainnet است؛ «BANK» فقط سفارش‌های پرداخت دستی را می‌گیرد.
- */
-function networkFilter(network: string): { in: string[] } {
-  if (network === 'BANK') return { in: ['BANK'] }
-  return { in: network === 'mainnet' ? ['mainnet', 'TRON'] : [network] }
-}
-
-export async function expireStaleOrders(network: string = 'BANK'): Promise<number> {
+export async function expireStaleOrders(): Promise<number> {
   const stale = await database.usdtOrder.findMany({
-    where: { status: 'PENDING', expiresAt: { lt: new Date() }, network: networkFilter(network) },
+    where: { status: 'PENDING', expiresAt: { lt: new Date() } },
     select: { ref: true, userId: true },
   })
   let n = 0

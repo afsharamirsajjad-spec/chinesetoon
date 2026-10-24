@@ -39,13 +39,7 @@ export interface AdminOrderRow {
   discountAmount: string | null
   // 💳 پرداخت
   payment: {
-    method: string // USDT · TRC20
-    network: string
-    mode: string // hd | shared
-    address: string
-    txHash: string | null
-    txAmountUsd: string | null
-    txFrom: string | null
+    method: string // MANUAL_BANK_CARD
     paidAt: string | null
   }
   // 🏷️ وضعیت‌ها
@@ -80,13 +74,8 @@ export async function buildAdminOrderRows(
     expiresAt: Date
     createdAt: Date
     updatedAt: Date
-    txHash: string | null
-    txAmountMicro: number | null
-    txFrom: string | null
     paidAt: Date | null
-    paymentMode: string
-    paymentAddress: string
-    network: string
+    paymentMethod: string | null
     pricePerSession: number | null
     packageSessions: number | null
     baseAmount: number | null
@@ -192,13 +181,7 @@ export async function buildAdminOrderRows(
       discountValue: o.discountValue != null ? o.discountValue.toFixed(2) : null,
       discountAmount: o.discountAmount != null ? o.discountAmount.toFixed(2) : null,
       payment: {
-        method: 'USDT · TRC20',
-        network: o.network,
-        mode: o.paymentMode,
-        address: o.paymentAddress,
-        txHash: o.txHash,
-        txAmountUsd: o.txAmountMicro != null ? microToUsdString(o.txAmountMicro) : null,
-        txFrom: o.txFrom,
+        method: o.paymentMethod ?? '—',
         paidAt: o.paidAt?.toISOString() ?? null,
       },
       rawStatus: o.status,
@@ -224,12 +207,8 @@ export function paymentStatusWhere(status: string, now = new Date()): Prisma.Usd
       return { status: 'PENDING', expiresAt: { gt: now } }
     case 'EXPIRED':
       return { status: 'PENDING', expiresAt: { lt: now } }
-    case 'DETECTED':
-      return { status: 'DETECTED' }
     case 'PAID':
       return { status: 'PAID' }
-    case 'UNDERPAID':
-      return { status: 'UNDERPAID' }
     case 'CANCELLED':
       return { status: 'CANCELLED' }
     default:

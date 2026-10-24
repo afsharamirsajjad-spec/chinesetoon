@@ -19,7 +19,6 @@ import {
   Inbox,
   RefreshCw,
   X,
-  Copy,
   Check,
   ExternalLink,
   Ban,
@@ -57,12 +56,6 @@ interface OrderRow {
   discountAmount: string | null
   payment: {
     method: string
-    network: string
-    mode: string
-    address: string
-    txHash: string | null
-    txAmountUsd: string | null
-    txFrom: string | null
     paidAt: string | null
   }
   rawStatus: string
@@ -94,7 +87,6 @@ interface DetailData {
   events: Array<{ id: string; kind: string; orderRef: string | null; txHash: string | null; detail: string; createdAt: string }>
   expiresAt: string
   nextSessionAt?: string | null
-  addressIndex: number | null
   currency: string
 }
 
@@ -198,7 +190,6 @@ export function OrdersAdminTab({ token, onToast }: { token: string; onToast?: (m
   const [detailRef, setDetailRef] = useState<string | null>(null)
   const [detail, setDetail] = useState<DetailData | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
-  const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // جست‌وجو با debounce — هر کلید درخواست نمی‌زند
@@ -256,16 +247,6 @@ export function OrdersAdminTab({ token, onToast }: { token: string; onToast?: (m
   const closeDetail = () => {
     setDetailRef(null)
     setDetail(null)
-  }
-
-  const copyText = async (key: string, text: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopiedKey(key)
-      setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500)
-    } catch {
-      /* کلیپ‌بورد در دسترس نیست */
-    }
   }
 
   const cancelOrder = async (ref: string) => {
@@ -437,8 +418,8 @@ export function OrdersAdminTab({ token, onToast }: { token: string; onToast?: (m
                 </span>
                 <span className="text-right text-xs text-brown tabular-nums">{o.sessions ?? '—'}</span>
                 <span className="text-right text-xs font-bold text-sage-dark tabular-nums">{o.amountUsd}</span>
-                <span className="text-[10px] text-brown-light font-mono truncate" title={`${o.payment.method} · ${o.payment.network} · ${o.payment.mode}`}>
-                  USDT·{o.payment.mode === 'hd' ? 'HD' : 'SH'}
+                <span className="text-[10px] text-brown-light truncate" title={o.payment.method}>
+                  {o.payment.method === 'MANUAL_BANK_CARD' ? 'Bank Card' : 'Legacy'}
                 </span>
                 <span>
                   <Badge cls={PAY_STYLES[o.paymentStatus]}>{PAY_LABELS[o.paymentStatus]}</Badge>
@@ -454,7 +435,7 @@ export function OrdersAdminTab({ token, onToast }: { token: string; onToast?: (m
                   <span className="font-mono text-sm font-bold text-brown-dark">{o.ref}</span>
                   <Badge cls={PAY_STYLES[o.paymentStatus]}>{PAY_LABELS[o.paymentStatus]}</Badge>
                   <Badge cls={ENROLL_STYLES[o.enrollmentStatus]}>{ENROLL_LABELS[o.enrollmentStatus]}</Badge>
-                  <span className="text-sm font-bold text-sage-dark tabular-nums ms-auto">{o.amountUsd} USDT</span>
+                  <span className="text-sm font-bold text-sage-dark tabular-nums ms-auto">{o.amountUsd} USD</span>
                 </div>
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-brown-light">
                   <span className="font-semibold text-brown">{o.customer.name}</span>
@@ -559,7 +540,7 @@ export function OrdersAdminTab({ token, onToast }: { token: string; onToast?: (m
                   <KV k={a.colUpdated} v={fmtDate(detail.order.updatedAt)} />
                   <KV k={a.ttl} v={fmtDate(detail.expiresAt)} />
                   <div className="sm:col-span-2 bg-white/70 border border-sage-light/25 rounded-xl px-3.5 py-3 space-y-1.5">
-                    <Row left={a.colBase} right={detail.order.baseAmount ? `${detail.order.baseAmount} USDT` : a.discountNone} />
+                    <Row left={a.colBase} right={detail.order.baseAmount ? `${detail.order.baseAmount} USD` : a.discountNone} />
                     {detail.order.tierPercent != null && detail.order.tierPercent > 0 && (
                       <Row left={a.tierDiscount} right={`−${detail.order.tierPercent}%`} />
                     )}
@@ -571,7 +552,7 @@ export function OrdersAdminTab({ token, onToast }: { token: string; onToast?: (m
                           : a.discountNone
                       }
                     />
-                    <Row left={a.finalAmount} right={`${detail.order.amountUsd} USDT`} bold />
+                    <Row left={a.finalAmount} right={`${detail.order.amountUsd} USD`} bold />
                     <p className="text-[10px] text-brown-light/80 pt-1 border-t border-sage-light/20">{a.snapshotNote}</p>
                   </div>
                 </Section>
@@ -614,39 +595,7 @@ export function OrdersAdminTab({ token, onToast }: { token: string; onToast?: (m
 
                 {/* 💳 پرداخت */}
                 <Section title={a.blockPayment} icon={<CreditCard className="w-4 h-4 text-sage-dark" />}>
-                  <KV k={a.method} v={`${detail.order.payment.method} · ${detail.order.payment.mode === 'hd' ? 'HD (unique address)' : 'shared address + unique amount'}`} />
-                  <KV k={a.network} v={detail.order.payment.network} mono />
-                  <KV
-                    k={a.address}
-                    v={
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className="font-mono break-all">{detail.order.payment.address}</span>
-                        <CopyBtn
-                          copied={copiedKey === 'addr'}
-                          onClick={() => copyText('addr', detail.order.payment.address)}
-                          label={a.copy}
-                        />
-                      </span>
-                    }
-                  />
-                  {detail.addressIndex != null && <KV k={a.addressIndex} v={`#${detail.addressIndex}`} />}
-                  {detail.order.payment.txHash ? (
-                    <>
-                      <KV
-                        k={a.txHash}
-                        v={
-                          <span className="inline-flex items-center gap-1.5">
-                            <span className="font-mono break-all">{detail.order.payment.txHash}</span>
-                            <CopyBtn copied={copiedKey === 'tx'} onClick={() => copyText('tx', detail.order.payment.txHash || '')} label={a.copy} />
-                          </span>
-                        }
-                      />
-                      <KV k={a.txAmount} v={detail.order.payment.txAmountUsd ? `${detail.order.payment.txAmountUsd} USDT` : '—'} />
-                      {detail.order.payment.txFrom && <KV k={a.txFrom} v={detail.order.payment.txFrom} mono />}
-                    </>
-                  ) : (
-                    <KV k={a.txHash} v="—" />
-                  )}
+                  <KV k={a.method} v={detail.order.payment.method === 'MANUAL_BANK_CARD' ? 'Manual Bank Card' : detail.order.payment.method} />
                   <KV k={a.paidAt} v={fmtDate(detail.order.payment.paidAt)} />
                 </Section>
 
@@ -790,18 +739,5 @@ function Row({ left, right, bold }: { left: string; right: string; bold?: boolea
       <span className="text-brown-light">{left}</span>
       <span className={bold ? 'font-bold text-sage-dark tabular-nums' : 'font-semibold text-brown-dark tabular-nums'}>{right}</span>
     </div>
-  )
-}
-
-function CopyBtn({ copied, onClick, label }: { copied: boolean; onClick: () => void; label: string }) {
-  return (
-    <button
-      onClick={onClick}
-      title={label}
-      aria-label={label}
-      className="w-6 h-6 rounded-lg bg-cream border border-sage-light/40 text-brown-light hover:text-brown hover:border-sage transition-all cursor-pointer inline-flex items-center justify-center flex-shrink-0"
-    >
-      {copied ? <Check className="w-3 h-3 text-sage-dark" /> : <Copy className="w-3 h-3" />}
-    </button>
   )
 }

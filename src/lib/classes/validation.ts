@@ -72,7 +72,7 @@ export const classPayloadSchema = z.object({
   packageSessions: z.number().int().min(1, 'At least 1 session').max(500).default(1),
   // ⚠️ فاز ۴۷: packagePrice دیگر از مرورگر پذیرفته نمی‌شود — سرور خودش از
   // pricePerSession × packageSessions محاسبه می‌کند (فیلد فقط برای سازگاری فرم‌های قدیمی اختیاری است)
-  packagePrice: priceSchema.refine((n) => n > 0 && n <= 2000, 'Package price must be between 0.01 and 2000 USDT').optional(),
+  packagePrice: priceSchema.refine((n) => n > 0 && n <= 2000, 'Package price must be between 0.01 and 2000 USD').optional(),
   priceNote: z.string().trim().max(200, 'Max 200 characters').default(''),
   sessionDurationMin: z.number().int().min(5).max(600).nullable().optional(),
   format: z.enum(['online', 'offline', 'hybrid']).default('online'),

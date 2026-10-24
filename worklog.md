@@ -118,3 +118,22 @@ Stage Summary:
 - WeChat → https://u.wechat.com/kIy5ADbROlbIgMxEWkk0jZQ?s=3 (Footer, About — converted from non-clickable span to clickable anchor)
 - Email → mailto:chinese.toon.org@gmail.com (Footer, About ×2, Support)
 - All external links open in new tab (target=_blank rel=noopener noreferrer). Email opens via mailto. Zero placeholder/broken URLs remaining. Visual design 100% preserved.
+
+---
+Task ID: CRYPTO-REMOVE-1
+Task: Remove TRON/USDT crypto payment code entirely (owner request) — card payment only
+
+Changes:
+- Deleted files: src/lib/payments/trongrid.ts, tron-address.ts, hd-address.ts (TRON network scan / address validation / HD xpub derivation), src/app/api/payments/wallet/route.ts (disabled stub), scripts/payments-keygen-offline.mjs (offline TRON keygen), scripts/test-task49-chain.ts (e2e for removed DETECTED→PAID crypto chain).
+- src/lib/payments/config.ts rewritten: removed TRON networks table, wallet override (SiteSetting paymentsWallet), xpub validation, USDT contract checks, trongrid API key, TRANSFER_TOPIC/ABI consts, PAYMENT_TTL, and the boot-time "[payments] Network: TRON Mainnet …" log (the warning the owner saw). Kept: product catalog (getProducts/findProduct/getActiveProductsAsync) + integer micro-USD helpers (usdToMicro/microToDisplay, MICRO_PER_USD).
+- scheduler.ts: dropped legacy TRON sweep; only expires stale PENDING orders (SCHEDULER_VERSION → 6).
+- service.ts: removed legacy crypto event kinds (TX_SEEN/DETECTED/VERIFIED/UNDERPAID/…), DETECTED from ACTIVE_STATUSES, network filter in expireStaleOrders; paymentMethod snapshot no longer defaults to USDT_TRON.
+- admin-orders.ts + /api/admin/orders(+[ref]): payment block is now {method from DB paymentMethod, paidAt}; removed network/mode/address/txHash/txAmount/txFrom selects; paymentStatusWhere dropped DETECTED/UNDERPAID.
+- /api/admin/payments(+[ref]): removed "legacy" filter bucket and legacy TRON block in detail response.
+- /api/admin/users/[id], /api/admin/search, /api/admin/export, /api/auth/me: dropped paymentAddress/paymentMode/txHash/txFrom/txAmountMicro from responses; orders CSV now exports payment_method instead of tx_hash/payment_mode.
+- UI: PaymentsAdminTab (legacy filter+badge+network block removed), OrdersAdminTab (USDT·HD/SH badge, address/tx rows, copy helpers removed; amounts labeled USD), CheckoutPage (legacy USDT branch removed), AccountPage (methodManual shown only for MANUAL_BANK_CARD), AdminPage students (paymentAddress/tronscan tx link/txFrom removed, midTrunc removed).
+- site-content: removed filterLegacy/legacyBadge/legacyNote/dOrderTx/dOrderFrom/dOrderAddress/network/address/addressIndex/txHash/txAmount/txFrom labels; user-facing USDT texts → USD (discount errors, package price message, money.ts comment).
+- DB intentionally untouched (UsdtOrder table + historical columns stay for existing prod data; ensure-schema DDL defaults kept for compat). Prisma schema unchanged.
+- Boot log about TRON wallet is gone; no crypto code path remains in src/.
+
+Verification: bun x tsc --noEmit (0 errors); bun run build (compiled successfully, all 36 routes generated; pre-existing local prisma DATABASE_URL warning unrelated); bun test tests/ (16 pass / 0 fail); eslint on all changed files (clean).

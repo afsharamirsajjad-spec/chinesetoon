@@ -2,7 +2,7 @@
 // 💳 GET /api/admin/payments — فهرست سفارش‌های پرداخت برای پنل ادمین (فاز ۵۹)
 //
 // فیلترها: unpaid (پرداخت‌نشدهٔ باز) | receipt_submitted | approved | rejected
-//          | cancelled | expired (پرداخت‌نشدهٔ منقضی) | legacy (جریان قدیمی USDT)
+//          | cancelled | expired (پرداخت‌نشدهٔ منقضی)
 // جست‌وجو: شناسهٔ سفارش / نام / ایمیل / عنوان کلاس / ایمیل یا نام کاربر
 // پاسخ: ردیف‌های آمادهٔ نمایش + شمارندهٔ هر فیلتر برای badge تب
 //
@@ -26,7 +26,7 @@ import { isSchemaDriftError } from '@/lib/ensure-schema'
 
 export const dynamic = 'force-dynamic'
 
-type StatusFilter = 'all' | 'unpaid' | 'receipt_submitted' | 'approved' | 'rejected' | 'cancelled' | 'expired' | 'legacy'
+type StatusFilter = 'all' | 'unpaid' | 'receipt_submitted' | 'approved' | 'rejected' | 'cancelled' | 'expired'
 
 /** اعتبارسنجی امن پارامترهای صفحه‌بندی — مقادیر خراب/منفی/اعشاری به عدد صحیح امن می‌رسند
  *  (skip پرستما باید int باشد؛ page=1.9 خام → خطای اعتبارسنجی پرستما → 500) */
@@ -69,9 +69,6 @@ export async function GET(req: NextRequest) {
     case 'expired':
       where.status = 'PENDING'
       where.expiresAt = { lte: now }
-      break
-    case 'legacy':
-      where.paymentMethod = 'USDT_TRON'
       break
     default:
       break

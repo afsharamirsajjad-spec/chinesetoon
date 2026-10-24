@@ -209,14 +209,9 @@ interface StudentOrder {
   ref: string
   productTitle: string
   productId: string
-  paymentMode: string
-  paymentAddress: string
   amountUsd: string
-  paidUsd: string | null
   rawStatus: string
   status: string // وضعیت واقعی — PENDING منقضی = EXPIRED
-  txHash: string | null
-  txFrom: string | null
   createdAt: string
   expiresAt: string
   paidAt: string | null
@@ -397,11 +392,6 @@ function downloadCsv(filename: string, rows: (string | number | null | undefined
 function flagOf(code: string): string {
   if (!/^[A-Za-z]{2}$/.test(code)) return ''
   return String.fromCodePoint(...[...code.toUpperCase()].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65))
-}
-
-// ✂️ نمایش وسط‌بریدهٔ هش/آدرس‌های طولانی — نسخهٔ کامل با title دیده می‌شود
-function midTrunc(s: string, head = 12, tail = 6): string {
-  return s.length > head + tail + 3 ? `${s.slice(0, head)}…${s.slice(-tail)}` : s
 }
 
 function NewBadge({ show }: { show: boolean }) {
@@ -702,9 +692,9 @@ function StudentDetailBody({ detail, onClose }: { detail: StudentDetail; onClose
                       ${o.amountUsd} USD
                     </span>
                   </div>
-                  {o.status === 'UNDERPAID' && o.paidUsd && (
+                  {o.status === 'UNDERPAID' && (
                     <p className="text-xs font-semibold text-brown bg-peach-light/50 rounded-lg px-3 py-1.5 mb-2 inline-block">
-                      Paid {o.paidUsd} of {o.amountUsd} USD
+                      Underpaid
                     </p>
                   )}
                   <div className="grid sm:grid-cols-3 gap-x-4 gap-y-1.5 text-[11px] text-brown-light">
@@ -717,37 +707,6 @@ function StudentDetailBody({ detail, onClose }: { detail: StudentDetail; onClose
                     {o.paidAt && (
                       <p>
                         <span className="font-bold text-brown">{a.students.dOrderPaidOn}:</span> {fmtDate(o.paidAt)}
-                      </p>
-                    )}
-                  </div>
-                  <div className="mt-2 space-y-1 text-[11px] text-brown-light min-w-0">
-                    <p className="truncate">
-                      <span className="font-bold text-brown">{a.students.dOrderAddress}:</span>{' '}
-                      <span className="font-mono" title={o.paymentAddress}>
-                        {midTrunc(o.paymentAddress)}
-                      </span>
-                    </p>
-                    {o.txHash && (
-                      <p className="truncate">
-                        <span className="font-bold text-brown">{a.students.dOrderTx}:</span>{' '}
-                        <a
-                          href={`https://tronscan.org/#/transaction/${o.txHash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title={o.txHash}
-                          className="font-mono text-sage-dark hover:underline inline-flex items-center gap-1"
-                        >
-                          {midTrunc(o.txHash, 10, 8)}
-                          <ExternalLink className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
-                        </a>
-                      </p>
-                    )}
-                    {o.txFrom && (
-                      <p className="truncate">
-                        <span className="font-bold text-brown">{a.students.dOrderFrom}:</span>{' '}
-                        <span className="font-mono" title={o.txFrom}>
-                          {midTrunc(o.txFrom)}
-                        </span>
                       </p>
                     )}
                   </div>

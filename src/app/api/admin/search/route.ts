@@ -46,14 +46,13 @@ export async function GET(req: NextRequest) {
         take: TAKE_PER_TYPE,
         select: { id: true, firstName: true, lastName: true, email: true, country: true, createdAt: true, lastLoginAt: true },
       }),
-      // 🪙 سفارش‌ها — ref/ایمیل/نام تماس
+      // 💳 سفارش‌ها — ref/ایمیل/نام تماس
       db.usdtOrder.findMany({
         where: {
           OR: [
             { ref: { contains: q.toUpperCase() } },
             { contactEmail: { contains: q } },
             { contactName: { contains: q } },
-            { paymentAddress: { contains: q } },
           ],
         },
         orderBy: { createdAt: 'desc' },

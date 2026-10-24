@@ -1056,8 +1056,8 @@ function OrderRow({ order }: { order: OrderLike }) {
             {enroll}
           </p>
         )}
-        {/* 💳 فاز ۵۹ — روش پرداخت + دلیل ردّ (برای سفارش‌های ردشده) */}
-        {order.paymentMethod !== 'USDT_TRON' && (
+        {/* 💳 روش پرداخت + دلیل ردّ (برای سفارش‌های ردشده) */}
+        {order.paymentMethod === 'MANUAL_BANK_CARD' && (
           <p className="text-[11px] text-brown-light mt-0.5">{siteContent.payments.ui.methodManual}</p>
         )}
         {order.status === 'REJECTED' && order.rejectionReason && (

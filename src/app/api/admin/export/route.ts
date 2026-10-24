@@ -68,19 +68,19 @@ export async function GET(req: NextRequest) {
         select: {
           ref: true, productTitle: true, productId: true, contactName: true, contactEmail: true,
           expectedMicro: true, status: true, baseAmount: true, tierPercent: true, discountCode: true,
-          discountAmount: true, discountType: true, discountValue: true, txHash: true, paidAt: true,
-          createdAt: true, expiresAt: true, paymentMode: true,
+          discountAmount: true, discountType: true, discountValue: true, paymentMethod: true, paidAt: true,
+          createdAt: true, expiresAt: true,
         },
       })
       rows = orders.length
       csv = toCsv(
-        ['ref', 'product_title', 'product_id', 'contact_name', 'contact_email', 'amount_usd', 'status_raw', 'status_derived', 'base_amount', 'tier_percent', 'discount_code', 'discount_amount', 'discount_type', 'discount_value', 'tx_hash', 'paid_at', 'created_at', 'expires_at', 'payment_mode'],
+        ['ref', 'product_title', 'product_id', 'contact_name', 'contact_email', 'amount_usd', 'status_raw', 'status_derived', 'base_amount', 'tier_percent', 'discount_code', 'discount_amount', 'discount_type', 'discount_value', 'payment_method', 'paid_at', 'created_at', 'expires_at'],
         orders.map((o) => [
           o.ref, o.productTitle, o.productId, o.contactName, o.contactEmail,
           microToUsdString(o.expectedMicro), o.status, deriveOrderStatus(o, now),
           o.baseAmount ?? '', o.tierPercent ?? '', o.discountCode ?? '', o.discountAmount ?? '',
-          o.discountType ?? '', o.discountValue ?? '', o.txHash ?? '', o.paidAt ?? '',
-          o.createdAt, o.expiresAt, o.paymentMode,
+          o.discountType ?? '', o.discountValue ?? '', o.paymentMethod ?? '', o.paidAt ?? '',
+          o.createdAt, o.expiresAt,
         ])
       )
     } else if (type === 'payments') {

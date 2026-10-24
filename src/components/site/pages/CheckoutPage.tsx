@@ -53,7 +53,6 @@ interface OrderView {
   discountType?: string | null
   discountValue?: string | null
   currency: string
-  network: string
   expiresAt: string
   createdAt: string
   paidAt: string | null
@@ -597,11 +596,10 @@ export function CheckoutPage({ orderRef, initialProductId, onNavigate, go, repla
     }
   }, [orderRef])
 
-  // 💳 تنظیمات کارت — فقط وقتی سفارشِ دستی در جریان پرداخت/ارسال دوباره است
+  // 💳 تنظیمات کارت — فقط وقتی سفارش در جریان پرداخت/ارسال دوباره است
   useEffect(() => {
     const status = order?.status
-    const isManual = order?.paymentMethod !== 'USDT_TRON' // سفارش‌های جدید همیشه دستی‌اند
-    if (!order || !isManual || (status !== 'PENDING' && status !== 'REJECTED')) {
+    if (!order || (status !== 'PENDING' && status !== 'REJECTED')) {
       setBank(null)
       return
     }
@@ -637,7 +635,6 @@ export function CheckoutPage({ orderRef, initialProductId, onNavigate, go, repla
   }, [go])
 
   const status = order?.status ?? 'PENDING'
-  const isLegacyUsdt = order?.paymentMethod === 'USDT_TRON'
 
   // ---------------------------------------------------------------
   //  حالت‌های خاص
@@ -898,20 +895,6 @@ export function CheckoutPage({ orderRef, initialProductId, onNavigate, go, repla
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-sage-dark" />
           <p className="text-sm text-brown-light">{p.loading}</p>
         </div>
-      </CheckoutShell>
-    )
-  }
-
-  // 🧊 سفارش‌های قدیمی جریان USDT — هیچ UI پرداختِ آنلاینی دیگر نشان داده نمی‌شود
-  if (isLegacyUsdt && (status === 'PENDING' || status === 'DETECTED' || status === 'UNDERPAID')) {
-    return (
-      <CheckoutShell>
-        <BackButton onClick={goBack} />
-        <div className="bg-peach/10 border border-peach/40 rounded-3xl p-6 md:p-8 text-center animate-ct-fadeInUp mb-5">
-          <TriangleAlert className="w-8 h-8 text-peach-dark mx-auto mb-3" />
-          <p className="text-sm text-brown leading-relaxed">{p.legacyNote}</p>
-        </div>
-        <SummaryCard order={order} />
       </CheckoutShell>
     )
   }

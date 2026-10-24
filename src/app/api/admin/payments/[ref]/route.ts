@@ -85,11 +85,6 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ ref: string
         createdAt: o.createdAt.toISOString(),
         updatedAt: o.updatedAt.toISOString(),
         expiresAt: o.expiresAt.toISOString(),
-        // جریان قدیمی USDT — فقط برای سفارش‌های تاریخی پر است
-        legacy:
-          o.paymentMethod === 'USDT_TRON'
-            ? { network: o.network, paymentMode: o.paymentMode, paymentAddress: o.paymentAddress, txHash: o.txHash }
-            : null,
       },
       customer: user
         ? {

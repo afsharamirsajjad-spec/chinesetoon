@@ -7,7 +7,7 @@
 //
 // پارامترها:
 //   q          = جست‌وجو در ref / ایمیل / نام
-//   status     = all | PENDING | DETECTED | PAID | UNDERPAID | EXPIRED | CANCELLED
+//   status     = all | PENDING | PAID | EXPIRED | CANCELLED
 //   enrollment = all | REGISTERED | ORDERED | PAID | PREFERENCES_SUBMITTED
 //                | SCHEDULE_PROPOSED | ENROLLED | COMPLETED
 //   page       = ۱-base (پیش‌فرض ۱)   pageSize = حداکثر ۱۰۰ (پیش‌فرض ۲۵)
@@ -61,9 +61,8 @@ export async function GET(req: NextRequest) {
       select: {
         ref: true, userId: true, productId: true, productTitle: true,
         contactName: true, contactEmail: true, expectedMicro: true, status: true,
-        expiresAt: true, createdAt: true, updatedAt: true, txHash: true,
-        txAmountMicro: true, txFrom: true, paidAt: true, paymentMode: true,
-        paymentAddress: true, network: true, pricePerSession: true,
+        expiresAt: true, createdAt: true, updatedAt: true, paidAt: true,
+        paymentMethod: true, pricePerSession: true,
         packageSessions: true, baseAmount: true, tierPercent: true,
         discountCode: true, discountAmount: true, discountType: true, discountValue: true,
       },

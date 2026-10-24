@@ -1,11 +1,8 @@
 // ---------------------------------------------------------------------------
 // ⏱️ شیدولر سفارش‌ها — حلقهٔ سبک روی globalThis (سازگار با HMR حالت توسعه)
 //
-// فاز ۵۹: با حذف جریان آنلاین USDT/TRON، دیگر هیچ اسکن زنجیره‌ای وجود ندارد.
-// تنها کار باقی‌مانده، بهداشت سفارش‌هاست — هر ۶۰ ثانیه:
-//   ۱) سفارش‌های قدیمیِ پرداخت‌نشدهٔ بانکی (PENDING + منقضی) EXPIRED می‌شوند
-//      (سهمیهٔ کد تخفیفشان هم آزاد می‌شود)
-//   ۲) سفارش‌های قدیمیِ USDT (شبکهٔ TRON) هم برای سازگاریِ تاریخی منقضی می‌شوند
+// تنها کار، بهداشت سفارش‌هاست — هر ۶۰ ثانیه سفارش‌های قدیمیِ پرداخت‌نشدهٔ
+// بانکی (PENDING + منقضی) EXPIRED می‌شوند (سهمیهٔ کد تخفیفشان هم آزاد می‌شود).
 // RECEIPT_SUBMITTED هرگز منقضی نمی‌شود (تصمیم با ادمین است، نه تایمر) و
 // هیچ مسیر خودکاری برای PAID وجود ندارد — تأیید فقط دستیِ ادمین است.
 //
@@ -17,7 +14,7 @@
 import { expireStaleOrders } from './service'
 
 const SWEEP_INTERVAL_MS = 60_000
-const SCHEDULER_VERSION = 5 // ← بالابردن نسخه = تعویض حلقه‌های کهنه پس از HMR
+const SCHEDULER_VERSION = 6 // ← بالابردن نسخه = تعویض حلقه‌های کهنه پس از HMR
 
 const g = globalThis as unknown as {
   __ctPayScheduler?: ReturnType<typeof setInterval>
@@ -34,14 +31,13 @@ export function ensurePaymentScheduler(): void {
   const iv = setInterval(() => {
     if (g.__ctPaySweepRunning) return // دور قبلی هنوز تمام نشده — رد شود (idempotent)
     g.__ctPaySweepRunning = true
-    Promise.resolve()
-      .then(async () => {
-        const bank = await expireStaleOrders('BANK')
-        const legacy = await expireStaleOrders('mainnet')
-        if (bank + legacy > 0) {
-          console.log(`[payments] expiry sweep: ${bank} bank + ${legacy} legacy orders expired`)
-        }
-      })
+      Promise.resolve()
+        .then(async () => {
+          const expired = await expireStaleOrders()
+          if (expired > 0) {
+            console.log(`[payments] expiry sweep: ${expired} orders expired`)
+          }
+        })
       .catch((e) => {
         console.error('[payments] expiry sweep failed:', e instanceof Error ? e.message : e)
       })
