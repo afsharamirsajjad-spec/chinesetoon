@@ -3,8 +3,8 @@
 //  یک صحنهٔ باغیِ پانوراما که کل هیرو را می‌پوشاند و متن و دکمه‌ها
 //  به‌صورت طبیعی داخل آن می‌نشینند:
 //    آسمان گرادیانی → خورشید کره‌ای → ابرهای راننده → پرنده‌ها →
-//    برگ‌های شناور → رشته‌تپه‌های سبز.
-//  (درخت تُون به درخواست مالک حذف شد.)
+//    برگ‌های شناور → کارت‌های واژهٔ شناور → رشته‌تپه‌های سبز.
+//  (درخت تُون به درخواست مالک حذف شد؛ کارت‌های واژه جای آن را گرفتند.)
 //  تمام اجزا pointer-events-none و aria-hidden هستند؛ فقط دکوراسیون‌اند.
 //  پالت دست‌نخورده: sage/cream/butter/peach/brown + سبز/زنگاریِ خود لوگو.
 // ---------------------------------------------------------------------
@@ -79,7 +79,37 @@ function DriftLeaf({
   )
 }
 
-/* ---------------- 🌳 درخت تُون — به درخواست مالک حذف شد ---------------- */
+/* ---------------- 🏷️ کارت واژهٔ شناور — هویت آموزش زبان ---------------- */
+// جای درخت حذف‌شده: کارت‌های واژهٔ کوچک (هانزی + پینیین) که آرام در
+// آسمونِ سمت راست شناورند. همه pointer-events-none هستند (ریشهٔ صحنه).
+function WordChip({
+  hanzi,
+  pinyin,
+  className = '',
+  tone = 'butter',
+  delay = 0,
+}: {
+  hanzi: string
+  pinyin: string
+  className?: string
+  tone?: 'butter' | 'white' | 'sage'
+  delay?: number
+}) {
+  const tones: Record<string, string> = {
+    butter: 'bg-butter text-brown-dark',
+    white: 'bg-white/95 backdrop-blur text-sage-dark',
+    sage: 'bg-sage-light/70 backdrop-blur text-sage-dark',
+  }
+  return (
+    <div
+      className={`absolute pointer-events-none rounded-2xl px-3.5 py-2 shadow-md animate-ct-float ${tones[tone]} ${className}`}
+      style={{ animationDelay: `${delay}s` }}
+    >
+      <span className="block text-lg font-bold leading-tight">{hanzi}</span>
+      <span className="text-xs text-brown-light block">{pinyin}</span>
+    </div>
+  )
+}
 
 /* ================= 🌄 صحنهٔ کامل هیرو ================= */
 export function HeroScene() {
@@ -111,6 +141,12 @@ export function HeroScene() {
       <div className="char-bg top-[26%] left-[34%] hidden md:block" style={{ fontSize: '240px', opacity: 0.05 }}>
         学
       </div>
+
+      {/* 🏷️ کارت‌های واژهٔ شناور — سمت راست (جای درخت حذف‌شده)؛ از موبایل به
+          ترتیب اضافه می‌شوند تا متن هیرو شلوغ نشود */}
+      <WordChip hanzi="你好" pinyin="nǐ hǎo · hello" className="right-[28%] top-[300px] -rotate-2 hidden sm:block" tone="butter" />
+      <WordChip hanzi="谢谢" pinyin="xièxie · thanks" className="right-[10%] top-[380px] rotate-2 hidden md:block" tone="white" delay={1.2} />
+      <WordChip hanzi="再见" pinyin="zàijiàn · bye" className="right-[21%] top-[465px] -rotate-1 hidden lg:block" tone="sage" delay={2.2} />
 
       {/* ⛰️ رشته‌تپه‌ها — تمام‌عرض، کشیده‌شونده */}
       <svg

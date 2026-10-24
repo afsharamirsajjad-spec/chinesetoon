@@ -152,3 +152,12 @@ Changes (2) — receiptUrl 500 fix. Root cause: ensureLmsSchema cached its FIRST
 - service.ts submitReceipt: the updateMany .catch(()=>0) no longer swallows schema-drift errors (rethrown so the route's self-heal can fire) instead of returning a misleading CONFLICT.
 
 Verification: bun x tsc --noEmit (0 errors); eslint on changed files (clean); bun test tests/ (16 pass / 0 fail); bun run build (compiled successfully).
+
+---
+Task ID: HERO-WORDCHIPS-1
+Task: Fill the empty right side of the hero (after tree removal) with floating word cards (owner picked this option).
+
+Changes:
+- HeroScene.tsx: new WordChip component (hanzi + pinyin · meaning) rendered as three floating cards on the right sky — 你好 nǐ hǎo · hello (butter), 谢谢 xièxie · thanks (glass white), 再见 zàijiàn · bye (sage) — with gentle ct-float animation, staggered delays, slight rotations, and progressive visibility (sm / md / lg) so mobile hero text stays clean. Positioned to avoid sun/clouds/birds/hills overlaps.
+
+Verification: bun x tsc --noEmit (0 errors); eslint (clean); bun run build (compiled successfully).
