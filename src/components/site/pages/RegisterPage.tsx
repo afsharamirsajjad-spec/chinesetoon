@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useSyncExternalStore } from 'react'
-import { ArrowRight, BookOpen, CalendarDays, Check, Clock, Globe2, Info, Loader2, Lock, TicketPercent, TriangleAlert, UserRound, Wallet, X } from 'lucide-react'
+import { ArrowRight, BookOpen, CalendarDays, Check, Clock, Globe2, Info, Loader2, Lock, TicketPercent, TriangleAlert, UserRound, Wallet } from 'lucide-react'
 import { appNavigate } from '@/lib/nav'
 import { siteContent } from '@/content/site-content'
 import { useUser } from '@/lib/user-store'
@@ -566,6 +566,11 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
     // 👤 نام/ایمیل/تلفن سمت سرور از پروفایل حساب تأییدشده خوانده می‌شود — نه از مرورگر
     const payload = {
       ...form,
+      // 🎓 با کلاسِ انتخاب‌شده، سطح از خودِ کلاس می‌آید (فیلد سطح مخفی است)؛
+      // fallback آخر = عنوان کلاس تا اعتبارسنجی min(1) سرور هرگز شکست نخورد
+      level: lockedClass
+        ? catalogLock?.level || fileLock?.level || form.level || selectedClass
+        : form.level,
       classTitle: selectedClass ?? '',
       // 🗓️ ترجیحات برنامه — سرور همه را دوباره اعتبارسنجی می‌کند
       timezone: sched.timezone,
@@ -679,7 +684,10 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
               </div>
             ) : !submitted ? (
               <div className="bg-white rounded-3xl p-8 md:p-10 shadow-lg border border-sage-light/20">
-                {/* کلاس انتخاب‌شده از صفحهٔ کلاس‌ها / نتیجهٔ آزمون */}
+                {/* کلاس انتخاب‌شده از صفحهٔ کلاس‌ها / نتیجهٔ آزمون — فقط نمایش؛
+                    دکمهٔ حذف عمداً نیست: پاک‌کردن انتخاب، قیمت/فرم را ریست می‌کرد و
+                    اطلاعات کاربر می‌پرید. برای تعویض کلاس، از صفحهٔ کلاس‌ها کلاس
+                    دیگری انتخاب می‌شود (انتخاب جدید، جایگزین قبلی می‌شود). */}
                 {selectedClass && (
                   <div className="animate-ct-fadeInUp mb-7 flex items-center gap-3 bg-sage-light/25 border border-sage/30 rounded-2xl px-4 py-3">
                     <span className="w-9 h-9 rounded-xl bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
@@ -691,14 +699,6 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
                       </p>
                       <p className="text-sm font-semibold text-brown-dark truncate">{selectedClass}</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={clearSelectedClass}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-brown-light hover:text-brown hover:bg-white/70 transition-colors cursor-pointer flex-shrink-0"
-                      aria-label={c.selectedClassRemove}
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
                   </div>
                 )}
 
@@ -727,6 +727,10 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
                     </div>
                   )}
 
+                  {/* 🎓 سطح فقط وقتی پرسیده می‌شود که هنوز کلاسی انتخاب نشده —
+                      کلاسِ انتخاب‌شده سطح خودش را تعیین می‌کند (مثلاً HSK 1) و
+                      دوباره پرسیدنِ سطح تکراری و گیج‌کننده است */}
+                  {!lockedClass && (
                   <div>
                     <label htmlFor="reg-level" className={labelCls}>
                       {c.level}
@@ -748,6 +752,7 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
                       ))}
                     </select>
                   </div>
+                  )}
 
                   {/* 🔒 نوع کلاس — وقتی کلاس مشخصی انتخاب شده، از تنظیمات همان کلاس خوانده
                       می‌شود و کاربر نمی‌تواند آن را عوض کند؛ بدون کلاس انتخابی، ترجیح آزاد است */}

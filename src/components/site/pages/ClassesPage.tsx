@@ -21,8 +21,6 @@ import {
   Package,
   Ban,
   Tag,
-  TicketPercent,
-  Loader2,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useCloseOnNavigate } from '../use-nav-close'
@@ -92,133 +90,6 @@ function fileItemToPublic(item: (typeof c.items)[number]): ClassItem {
 
 const FILE_ITEMS: ClassItem[] = c.items.map(fileItemToPublic)
 
-// ---------------------------------------------------------------------------
-// 🎟️ جعبهٔ کد تخفیف — فقط صفحهٔ عمومی (پیش‌نمایش ادمین بدون کد است)
-// کد سمت سرور اعتبارسنجی می‌شود؛ اینجا فقط نمایشِ نتیجهٔ محاسبهٔ سرور.
-// کدِ تأییدشده در sessionStorage ذخیره می‌شود تا چک‌اوت آن را به API سفارش بدهد؛
-// سرور هنگام ساخت سفارش دوباره کامل اعتبارسنجی و محاسبه می‌کند.
-// ---------------------------------------------------------------------------
-export const DISCOUNT_CODE_STORAGE_KEY = 'ct_discount_code'
-
-function DiscountCodeBox({ productId }: { productId: string }) {
-  const [code, setCode] = useState('')
-  const [applied, setApplied] = useState<{ code: string; amount: number; final: number } | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-
-  useEffect(() => {
-    // اگر کدِ معتبری از قبل ذخیره شده، وضعیتش تازه شود
-    try {
-      const saved = sessionStorage.getItem(DISCOUNT_CODE_STORAGE_KEY)
-      if (saved) setCode(saved)
-    } catch {
-      /* بدون sessionStorage */
-    }
-  }, [])
-
-  const apply = async () => {
-    const trimmed = code.trim().toUpperCase()
-    if (!trimmed || busy) return
-    setBusy(true)
-    setError('')
-    try {
-      const res = await fetch('/api/discounts/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId, code: trimmed }),
-      })
-      const data = (await res.json().catch(() => ({}))) as {
-        pricing?: { codeDiscount: number; final: number; code: string | null }
-        codeRejected?: string | null
-      }
-      if (!res.ok || !data.pricing) {
-        setError(c.discount?.invalidCode ?? 'This code is not valid.')
-        return
-      }
-      if (data.codeRejected || !data.pricing.code || data.pricing.codeDiscount <= 0) {
-        setApplied(null)
-        try {
-          sessionStorage.removeItem(DISCOUNT_CODE_STORAGE_KEY)
-        } catch {
-          /* */
-        }
-        // 🎟️ فاز ۵۸ — پیام شفاف بر اساس دلیل رد سمت سرور
-        const rejectedMap = siteContent.payments.ui.codeRejected as Record<string, string> | undefined
-        setError(
-          ((data.codeRejected && rejectedMap?.[data.codeRejected]) || c.discount?.invalidCode) ??
-            'This code is not valid.'
-        )
-        return
-      }
-      setApplied({ code: data.pricing.code, amount: data.pricing.codeDiscount, final: data.pricing.final })
-      try {
-        sessionStorage.setItem(DISCOUNT_CODE_STORAGE_KEY, data.pricing.code)
-      } catch {
-        /* */
-      }
-    } catch {
-      setError(c.discount?.invalidCode ?? 'This code is not valid.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const remove = () => {
-    setApplied(null)
-    setCode('')
-    setError('')
-    try {
-      sessionStorage.removeItem(DISCOUNT_CODE_STORAGE_KEY)
-    } catch {
-      /* */
-    }
-  }
-
-  return (
-    <div className="mt-4 rounded-xl border border-dashed border-sage/40 bg-sage-light/10 p-3.5">
-      <p className="text-[11px] font-bold uppercase tracking-wider text-sage-dark mb-2 flex items-center gap-1.5">
-        <TicketPercent className="w-3.5 h-3.5" aria-hidden="true" /> {c.discount?.haveCode ?? 'Discount code'}
-      </p>
-      {applied ? (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-xs font-bold text-brown-dark bg-butter/40 rounded-full px-3 py-1 inline-flex items-center gap-1.5">
-            <Tag className="w-3 h-3" aria-hidden="true" /> {applied.code}
-          </span>
-          <span className="text-xs font-semibold text-sage-dark">− ${applied.amount.toFixed(2)} · total ${applied.final.toFixed(2)}</span>
-          <button type="button" onClick={remove} className="text-[11px] font-semibold text-brown-light hover:text-red-500 cursor-pointer">
-            {c.discount?.remove ?? 'Remove'}
-          </button>
-        </div>
-      ) : (
-        <div className="flex gap-2">
-          <input
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder={c.discount?.placeholder ?? 'CHINESE10'}
-            aria-label={c.discount?.haveCode ?? 'Discount code'}
-            maxLength={24}
-            className="flex-1 min-w-0 bg-white border border-sage-light/40 rounded-xl px-3 py-2 text-sm font-mono tracking-wider text-brown-dark uppercase placeholder:text-brown-light/50 focus:outline-none focus:ring-2 focus:ring-sage/40 focus:border-sage transition-colors"
-          />
-          <button
-            type="button"
-            onClick={apply}
-            disabled={busy || !code.trim()}
-            className="shrink-0 bg-sage text-brown-dark px-4 py-2 rounded-xl text-xs font-bold hover:bg-sage-dark transition-colors cursor-pointer disabled:opacity-60 min-h-[38px] inline-flex items-center gap-1.5"
-          >
-            {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />}
-            {c.discount?.apply ?? 'Apply'}
-          </button>
-        </div>
-      )}
-      {error && (
-        <p role="alert" className="text-[11px] font-semibold text-peach bg-peach-light/30 rounded-lg px-3 py-1.5 mt-2">
-          {error}
-        </p>
-      )}
-    </div>
-  )
-}
-
 interface ClassesPageProps {
   onNavigate: (page: PageKey) => void
   /** ‎#/classes/<slug> — دیالوگ جزئیات این کلاس به‌صورت خودکار باز می‌شود */
@@ -232,12 +103,9 @@ interface ClassesPageProps {
 export function ClassDetailContent({
   item,
   onRegister,
-  showDiscountCode = false,
 }: {
   item: ClassItem
   onRegister: (title: string) => void
-  /** 🎟️ فقط صفحهٔ عمومی — پیش‌نمایش ادمین بدون جعبهٔ کد */
-  showDiscountCode?: boolean
 }) {
   const color = colorMap[item.color as keyof typeof colorMap] ?? colorMap.sage
   const isFull = item.status === 'full'
@@ -368,11 +236,6 @@ export function ClassDetailContent({
               </span>
             )}
           </div>
-          {showDiscountCode && item.productId && item.status !== 'full' && (
-            <div className="w-full">
-              <DiscountCodeBox productId={item.productId} />
-            </div>
-          )}
         </div>
 
         {/* سرفصل‌ها */}
@@ -768,7 +631,7 @@ export function ClassesPage({ onNavigate, initialSlug }: ClassesPageProps) {
       {/* پنجرهٔ جزئیات کلاس — بدنهٔ مشترک با Preview ادمین */}
       <Dialog open={!!detail} onOpenChange={(open) => !open && setDetail(null)}>
         <DialogContent className="bg-cream border-sage-light/30 rounded-3xl max-w-lg max-h-[85vh] overflow-y-auto p-0">
-          {detail && <ClassDetailContent item={detail} onRegister={handleRegister} showDiscountCode />}
+          {detail && <ClassDetailContent item={detail} onRegister={handleRegister} />}
         </DialogContent>
       </Dialog>
     </div>

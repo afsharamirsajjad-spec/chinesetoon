@@ -186,3 +186,39 @@ Root cause: navigateTo compared the target page with pageFromPathname(), which m
 Change: src/components/site/site-shell.tsx — navigateTo now compares against the real target path (window.location.pathname === target); same-page clicks still just scroll to top.
 
 Verification: tsc (0 errors), eslint (clean), next build (compiled successfully).
+
+---
+Task ID: SEO-BLOG-5-ARTICLES-1
+Task: Create and publish five comprehensive English SEO articles in the existing blog system.
+
+Architecture (reused, nothing new built):
+- Articles live in the Prisma Post table; publishing workflow = idempotent seed script (same pattern as seed-blog-task75.ts, upsert by unique slug, views/createdAt preserved).
+- Renderer extended minimally: src/lib/blog-format.ts (pure parser: inline bold/link tokens, markdown table blocks, word counting) + blog-parts.tsx PostContent now renders [text](href) links (internal via next/link, external target=_blank rel=noopener), markdown tables as responsive styled tables, and ### sub-headings. Existing posts unaffected (bold/## behave identically).
+- Sitemap (revalidate=3600) automatically picks up published posts — no manual URL list.
+
+New files:
+- src/lib/blog-format.ts — shared pure parser (renderer + seed + tests).
+- tests/blog-render.test.ts — 14 unit tests for the parser (30/30 total tests pass).
+- scripts/seo-articles/{types,hsk-exam-guide,china-scholarships,learn-chinese-beginners,study-in-china,hsk-1-study-guide}.ts — the five articles.
+- scripts/seed-blog-seo.ts — seed runner: upserts validated articles; --check mode validates format/word count/excerpt length/table syntax/internal links against a whitelist of real site paths/https-only external links (allowlisted official domains), exits non-zero on any violation.
+
+Articles (all pass --check with 0 warnings):
+1. complete-guide-to-hsk-exam — ~2015 words (hsk/sage) — fact-checked: HSK 2.0 per-level question counts/durations/scores (20L+20R 200/120 … 50L+50R+essay 300), HSK 3.0 three-stages-nine-levels with 7–9 live since 2022, HSKK 3 levels — Wikipedia + chinesetest.cn.
+2. china-scholarships-for-international-students — ~2016 words (culture/butter) — CSC Type A/B/C pathways, coverage description without invented amounts; official links: campuschina.org, US embassy CGS page.
+3. how-to-learn-chinese-for-beginners — ~2019 words (tips/sage) — pinyin/tones/vocab/grammar with verified hanzi-pinyin-English examples, 15/30/60-min routines, 4-week plan.
+4. study-in-china-guide — ~2050 words (culture/peach) — universities, language requirements, costs as explicit variable estimates only, X1 vs admission distinction, city choice; no fabricated visa rules.
+5. hsk-1-study-guide — ~2278 words (hsk/sage) — exact format (20+20 items, 200/120), real vocabulary sample from the 150-word list, 5 grammar patterns, 30-day plan, ORIGINAL practice questions clearly labeled as not official.
+
+Verification: bun scripts/seed-blog-seo.ts --check (all valid), tsc (0 errors), eslint (clean), bun test (30 pass / 0 fail), next build (compiled successfully).
+
+NOT yet published: local .env DATABASE_URL is stale (points to /home/z/... sqlite path) so seeding must run against the production Postgres (DATABASE_URL + `bun scripts/seed-blog-seo.ts`). Sitemap will include the five URLs automatically after the seed runs.
+
+---
+Task ID: REGISTER-UX-FIXES-1
+Task: Three registration-flow fixes (owner request): X button wiped everything; level asked redundantly when a class is selected; discount code removed from class details.
+
+Changes:
+- RegisterPage.tsx: (1) removed the destructive X (deselect) button from the selected-class card — clearing the selection used to wipe the price box and force re-picking level/type from scratch; to switch class, pick another on /classes (new selection replaces the old one). (2) The Level select is now hidden when a class is selected (lockedClass) — the class defines its level; the submitted level is derived from the class itself (catalogLock.level → fileLock.level → form.level → class title as last-resort fallback so server min(1) validation never fails).
+- ClassesPage.tsx: removed DiscountCodeBox from the class-detail dialog (plus the showDiscountCode prop, DISCOUNT_CODE_STORAGE_KEY export and now-unused TicketPercent/Loader2 imports). Discount codes remain fully supported — CheckoutPage has its own code input/apply UI.
+
+Verification: tsc (0 errors), eslint (clean), bun test (30 pass / 0 fail), next build (compiled successfully).
