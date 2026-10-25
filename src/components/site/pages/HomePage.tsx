@@ -199,32 +199,51 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
   return (
     <div id="page-home">
-      {/* ================= Hero — تصویرسازی تمام‌عرض برند ================= */}
-      {/* به‌جای کارت جداگانهٔ سمت راست، کل هیرو یک صحنهٔ باغی پانوراما است:
-          آسمان گرادیانی، خورشید، ابر، تپه‌ها و درخت تُون — متن و دکمه‌ها
-          طبیعی داخل صحنه نشسته‌اند. پالت سایت دست‌نخورده مانده است. */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-cream via-butter-light/50 to-sage-light/40">
-        {/* 🌄 صحنهٔ کامل — همهٔ اجزا دکوری و pointer-events-none */}
+      {/* ================= Hero — ادیتوریال پرمیوم ================= */}
+      {/* پس‌زمینهٔ ادیتوریال (HeroScene): کرم گرم + نور طبیعی نرم پشت تیتر،
+          واترمارک محو 学، و فقط دو شاخهٔ گیاهی تُون در گوشه‌های پایین به‌عنوان
+          لهجه — ترکیب‌بندی خلوت با تایپوگرافیِ وسط‌چین قهرمان. هیچ تصویرسازی
+          داستانی (میز/مبلمان/ابر/پرنده) نیست و پالت برند دست‌نخورده است. */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-cream via-cream to-sage-light/30">
+        {/* 🌿 صحنهٔ پس‌زمینه — همهٔ اجزا دکوری و pointer-events-none */}
         <HeroScene />
 
-        {/* ✍️ محتوای هیرو — لایهٔ رو، هم‌تراز چپ */}
-        <div className="relative z-10 max-w-7xl mx-auto px-6 pt-32 md:pt-40 lg:pt-44 pb-[380px] sm:pb-[340px] md:pb-36 lg:pb-40 xl:pb-48">
-          <div className="max-w-xl animate-ct-fadeInUp">
+        {/* ✍️ محتوای هیرو — لایهٔ رو، وسط‌چین (همان محتوای قبلی، بدون تغییر متن) */}
+        <div className="relative z-10 max-w-7xl mx-auto px-6 pt-32 md:pt-40 lg:pt-44 pb-24 sm:pb-28 md:pb-32">
+          <div className="max-w-2xl mx-auto text-center flex flex-col items-center animate-ct-fadeInUp">
             <div className="inline-flex items-center gap-2 bg-sage-light/40 rounded-full px-4 py-1.5 mb-6">
               <span className="w-2 h-2 bg-sage rounded-full"></span>
               <span className="text-xs font-medium text-sage-dark">{hero.badge}</span>
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-brown-dark leading-tight mb-6">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-brown-dark leading-tight mb-6">
               {hero.titleTop}
               <br />
               {hero.titleMiddle}
               <br />
-              <span className="text-sage-dark">{hero.titleHighlight}</span>
+              {/* خط هایلایت با زیرخطِ قلم‌مویی ظریف — لهجهٔ چینیِ ترکیب */}
+              <span className="relative inline-block text-sage-dark">
+                {hero.titleHighlight}
+                <svg
+                  aria-hidden="true"
+                  className="absolute left-0 -bottom-2.5 w-full h-[10px] lg:h-[12px]"
+                  viewBox="0 0 220 12"
+                  preserveAspectRatio="none"
+                  fill="none"
+                >
+                  <path
+                    d="M4 9 C 62 3, 158 2, 216 7"
+                    stroke="#8DB585"
+                    strokeWidth="4.5"
+                    strokeLinecap="round"
+                    opacity="0.5"
+                  />
+                </svg>
+              </span>
             </h1>
-            <p className="text-lg text-brown-light leading-relaxed mb-8 max-w-lg">
+            <p className="text-lg md:text-xl lg:text-2xl text-brown-light leading-relaxed mb-8 max-w-xl lg:max-w-2xl mx-auto">
               {hero.subtitle}
             </p>
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-4 justify-center">
               <button
                 onClick={() => onNavigate('register')}
                 className="btn-lift bg-sage text-brown-dark px-8 py-4 rounded-full text-base font-semibold flex items-center gap-2 hover:bg-sage-dark hover:shadow-[0_8px_24px_rgba(141,181,133,0.45)] active:scale-[0.98] transition-all cursor-pointer"

@@ -222,3 +222,25 @@ Changes:
 - ClassesPage.tsx: removed DiscountCodeBox from the class-detail dialog (plus the showDiscountCode prop, DISCOUNT_CODE_STORAGE_KEY export and now-unused TicketPercent/Loader2 imports). Discount codes remain fully supported — CheckoutPage has its own code input/apply UI.
 
 Verification: tsc (0 errors), eslint (clean), bun test (30 pass / 0 fail), next build (compiled successfully).
+
+---
+Task ID: HERO-EDITORIAL-REDESIGN-1
+Task: Premium editorial redesign of the homepage hero (owner direction: refined composition, not a collection of illustrations). Replaces the same-day "study room" scene version.
+
+Design:
+- HeroScene.tsx rewritten (v3, editorial): soft natural light halo behind the centered headline, ultra-faint dark-green 学 watermark (3.5%), two elegant toon-leaf sprigs (ToonBranch Leaflet/Berries, sage + rust accents) anchored to the bottom corners and cropped by the edge with a very slow 12s sway, two tiny drifting leaves, soft green ground wash + one thin cream hairline for visual anchoring. No clouds/birds/sun/hills/pagodas/desk/laptop/chair — no narrative illustration objects at all.
+- HomePage hero: content stays centered with unchanged text/buttons/links; highlighted headline line gets a subtle brush-stroke underline (decorative SVG, text untouched); section gradient calmed (cream → cream → sage-light/30); bottom padding reduced for a compact premium header (pb-24/28/32 instead of 250-320px scene reserve).
+- Mobile: left sprig small, right sprig hidden below sm, watermark hidden below md — compact, no overflow.
+- Scope: only HeroScene.tsx + the hero section markup in HomePage.tsx. No global CSS, header, footer, or shared component changes. No new dependencies.
+
+Verification: tsc (0 errors), eslint (clean), next build (compiled successfully), bun test (30 pass). Visual verification via in-app browser screenshots — desktop 1440x900 (centered editorial composition confirmed), mobile 390x844 (compact, centered, no overflow, right sprig hidden) — both verified clean of glitches/overlaps.
+
+---
+Task ID: HERO-CLEANUP-BIGTYPE-1
+Task: (1) Remove the toon sprig branches from the editorial hero (owner request). (2) Make the hero text larger on desktop/Windows.
+
+Changes:
+- HeroScene.tsx: ToonSprig component and both corner-branch containers removed — the hero background is now purely atmospheric (warm light halo, ultra-faint 学 watermark, two tiny drifting leaves, soft green ground wash + hairline). Unused imports (Berries, LEAF, SAGE_FILL, RUST) cleaned.
+- HomePage hero typography scaled up for desktop only: H1 text-4xl → sm:text-5xl → md:text-6xl → lg:text-7xl (72px at large desktop); subtitle text-lg → md:text-xl → lg:text-2xl with wider max-w-2xl; brush underline slightly taller at lg. Mobile sizes unchanged (text-4xl).
+
+Verification: tsc (0 errors), eslint (clean), next build (compiled successfully). Visual check via in-app browser: desktop 1440x900 — bigger centered headline/subtitle, no branches, clean composition; mobile 390x844 — unchanged compact layout, no overflow.
