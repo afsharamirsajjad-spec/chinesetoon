@@ -7,6 +7,7 @@ import { CalendarDays, ArrowRight, Clock3, Eye } from 'lucide-react'
 import { siteContent } from '@/content/site-content'
 import { resilientJsonFetch } from '@/lib/client-fetch'
 import { appNavigate } from '@/lib/nav'
+import { parseInline, parseTable, isInternalLink } from '@/lib/blog-format'
 
 // ---------------------------------------------------------------------
 //  بخش‌های مشترک وبلاگ: هوک دریافت مقاله‌ها + کاور + کارت + رندر متن
@@ -171,8 +172,10 @@ export function fmtPostDate(iso: string): string {
   }
 }
 
-// رندر متن مقاله: پاراگراف‌ها با خط خالی جدا می‌شوند؛ **متن** بولد
-// و خط‌هایی که با ## شروع شوند زیرعنوان می‌شوند
+// رندر متن مقاله: پاراگراف‌ها با خط خالی جدا می‌شوند؛ **متن** بولد،
+// [متن](آدرس) لینک (داخلی با next/link، خارجی با target=_blank)،
+// خط‌هایی که با ## شروع شوند زیرعنوان و با ### زیر-زیرعنوان می‌شوند و
+// بلوک‌های جدولِ markdown (| ... |) به جدول واکنش‌گرا رندر می‌شوند.
 // • fontSize = اندازهٔ فونت بدنه (کنترل A−/A/A+ در صفحهٔ مقاله)
 // • sectionIds = شناسهٔ لنگر برای تیترهای ## (فهرست «در این صفحه»)
 export function PostContent({
@@ -207,26 +210,94 @@ export function PostContent({
             </h3>
           )
         }
+        if (block.startsWith('### ')) {
+          return (
+            <h4 key={i} className="text-[15px] font-bold text-brown pt-1">
+              {block.slice(4)}
+            </h4>
+          )
+        }
+        const table = parseTable(block)
+        if (table) {
+          return (
+            <div key={i} className="overflow-x-auto rounded-2xl border border-sage-light/30 bg-white shadow-sm">
+              <table className="w-full min-w-[480px] text-sm border-collapse">
+                <thead>
+                  <tr>
+                    {table.header.map((h, j) => (
+                      <th
+                        key={j}
+                        scope="col"
+                        className="text-left font-semibold text-brown-dark bg-cream/70 px-3.5 py-2.5 border-b border-sage-light/40 whitespace-nowrap"
+                      >
+                        {renderInline(h, i, `h${j}-`)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {table.rows.map((row, r) => (
+                    <tr key={r} className={r % 2 === 1 ? 'bg-cream/30' : ''}>
+                      {row.map((cell, c) => (
+                        <td key={c} className="px-3.5 py-2.5 align-top text-brown-light leading-relaxed border-b border-sage-light/15 last:border-b-0">
+                          {renderInline(cell, i, `r${r}c${c}-`)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        }
         return (
           <p
             key={i}
             className="ct-article-paragraph text-[15px] leading-relaxed text-brown-light"
             style={fontSize ? { fontSize } : undefined}
           >
-            {block.split(/(\*\*[^*]+\*\*)/g).map((chunk, j) =>
-              chunk.startsWith('**') && chunk.endsWith('**') ? (
-                <strong key={j} className="text-brown-dark font-semibold">
-                  {chunk.slice(2, -2)}
-                </strong>
-              ) : (
-                <span key={j}>{chunk}</span>
-              )
-            )}
+            {renderInline(block, i)}
           </p>
         )
       })}
     </div>
   )
+}
+
+/** رندر توکن‌های inline یک خط — متن ساده + **بولد** + لینک (داخلی/خارجی) */
+function renderInline(text: string, blockKey: number, prefix = ''): React.ReactNode[] {
+  return parseInline(text).map((token, j) => {
+    const key = `${blockKey}-${prefix}${j}`
+    if (token.type === 'bold') {
+      return (
+        <strong key={key} className="text-brown-dark font-semibold">
+          {token.text}
+        </strong>
+      )
+    }
+    if (token.type === 'link' && token.href) {
+      // لینک داخلی با next/link (ناوبری SPA)؛ لینک خارجی در تب جدید امن
+      if (isInternalLink(token.href)) {
+        return (
+          <Link key={key} href={token.href} className="text-sage-dark font-semibold hover:underline">
+            {token.text}
+          </Link>
+        )
+      }
+      return (
+        <a
+          key={key}
+          href={token.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sage-dark font-semibold hover:underline"
+        >
+          {token.text}
+        </a>
+      )
+    }
+    return <span key={key}>{token.text}</span>
+  })
 }
 
 interface PostCardProps {
