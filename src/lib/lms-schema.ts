@@ -70,6 +70,19 @@ async function runEnsure(): Promise<void> {
   await ddl(`ALTER TABLE "HomeworkSubmission" ADD COLUMN IF NOT EXISTS "releasedAt" TIMESTAMP(3)`, 'HomeworkSubmission.releasedAt')
 
   // ---- جدول‌های جدید ----
+  // 🧭 Practice Hub — رویدادهای فعالیت تمرین (فقط افزایشی/ایدمپوتنت)
+  await ddl(
+    `CREATE TABLE IF NOT EXISTS "PracticeEvent" (
+      "id" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "activityKey" TEXT NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "PracticeEvent_pkey" PRIMARY KEY ("id")
+    )`,
+    'CREATE PracticeEvent'
+  )
+  await ddl(`CREATE INDEX IF NOT EXISTS "PracticeEvent_userId_createdAt_idx" ON "PracticeEvent"("userId", "createdAt")`, 'idx PracticeEvent.userId')
+  await ddl(`CREATE INDEX IF NOT EXISTS "PracticeEvent_activityKey_createdAt_idx" ON "PracticeEvent"("activityKey", "createdAt")`, 'idx PracticeEvent.activityKey')
   await ddl(
     `CREATE TABLE IF NOT EXISTS "ClassEnrollment" (
       "id" TEXT NOT NULL,

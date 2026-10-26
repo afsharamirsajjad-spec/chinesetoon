@@ -244,3 +244,32 @@ Changes:
 - HomePage hero typography scaled up for desktop only: H1 text-4xl → sm:text-5xl → md:text-6xl → lg:text-7xl (72px at large desktop); subtitle text-lg → md:text-xl → lg:text-2xl with wider max-w-2xl; brush underline slightly taller at lg. Mobile sizes unchanged (text-4xl).
 
 Verification: tsc (0 errors), eslint (clean), next build (compiled successfully). Visual check via in-app browser: desktop 1440x900 — bigger centered headline/subtitle, no branches, clean composition; mobile 390x844 — unchanged compact layout, no overflow.
+
+---
+Task ID: PRACTICE-HUB-1
+Task: Unified Practice Hub at /practice — central entry point for all existing learning activities, with optional signed-in progress tracking.
+
+Audit findings (all real features, reused — nothing rebuilt):
+- Tone Trainer game (src/components/site/ToneTrainer.tsx) — embedded in /learn; TTS audio (/api/tts + browser fallback), tone ladder, streak (client-only).
+- Vocabulary Flashcards (Flashcards.tsx) — embedded in /learn; cards from /api/learn/cards (DB) with static fallback.
+- Chinese Level Quiz (LevelQuiz.tsx) — embedded in /classes; questions from DB (QuizQuestion), server-graded submit → QuizAttempt.
+- Daily Chinese Word (WordOfDay.tsx) — home-page section; day-of-year rotation over static word list, TTS.
+- Interactive lessons (/lesson/[slug]) — per-word pronunciation audio.
+- No existing per-user practice progress (QuizAttempt is anonymous/email-lead only) → minimal new tracking justified.
+
+New:
+- src/lib/practice/registry.ts — single source of truth: 6 activities (daily-word, flashcards, lessons, tone-trainer, level-quiz, lesson-listen) with real hrefs/anchors, category, level, minutes; isKnownActivity() for server validation; DAILY_GOAL=3 in API.
+- src/app/api/practice/progress/route.ts — POST (auth required, zod + registry validation, rate-limit 60/h, same-origin guard) records PracticeEvent; GET returns {authenticated, user firstName, goal, todayCount, streak (UTC-day consecutive rule, counts from yesterday if today empty), doneToday, recent≤5 deduped, totals 30d} — all queries scoped to session user.
+- src/lib/practice/record.ts — fire-and-forget client helper (401/network silently ignored; 60s dedupe per activity).
+- src/app/practice/page.tsx — server page with SEO metadata (title/description/canonical/OG).
+- src/components/site/practice/PracticeHub.tsx — client hub: dashboard (personalized greeting, today/goal, streak, done-today chips, Continue→last real activity), search + category filters + recommended/recently-used sort on real metadata, responsive accessible cards with "done today" badge and last-practiced date, loading/failed/empty states, guest banner (sign-in only for saving progress).
+- prisma: model PracticeEvent {userId, activityKey, createdAt, @@index([userId,createdAt]), @@index([activityKey,createdAt])} + migration 20261026000000_practice_progress + additive DDL in lms-schema.ts self-heal. Schema.prisma BOM stripped (broke prisma validate after a PowerShell edit).
+- tests/practice-registry.test.ts — 5 tests: unique keys, hrefs point to real routes/anchors, categories valid, metadata complete, isKnownActivity rejects fakes.
+
+Modified:
+- site-content.ts: PageKey + 'practice'; navigation array + Practice item (desktop header, mobile menu and footer pick it up automatically).
+- site-shell.tsx: pageFromPathname knows 'practice' (active menu highlight).
+- LearnPage: anchor ids #tone-trainer/#flashcards + contextual "Practice Hub" link; ClassesPage: #level-quiz anchor wrapper; HomePage: #word-of-day anchor wrapper.
+- sitemap.ts: /practice added (weekly, 0.7).
+
+Verification: prisma validate OK (after BOM fix) + client regenerated; tsc 0 errors; eslint clean; bun test 35/35 pass; next build OK (routes /practice + /api/practice/progress in output). Runtime checks (local prod server): GET guest → {authenticated:false,goal:3}; POST guest → 401; browser: desktop dashboard/filters/cards render, quiz card → /classes#level-quiz scrolls to real quiz, search "tone" filters to 1 card, mobile 390px layout clean, mobile menu shows Practice highlighted.

@@ -3029,6 +3029,7 @@ export const siteContent = {
     { key: "home", label: "Home" },
     { key: "classes", label: "Classes" },
     { key: "learn", label: "Learn" },
+    { key: "practice", label: "Practice" }, // 🧭 هاب تمرین — /practice
     { key: "about", label: "About" },
     { key: "blog", label: "Blog" }, // 🆕 وبلاگ
     { key: "reviews", label: "Reviews" }, // 🆕 صفحهٔ نظرات
@@ -3181,6 +3182,7 @@ export type PageKey =
   | "home"
   | "classes"
   | "learn"
+  | "practice"
   | "about"
   | "blog"
   | "reviews"

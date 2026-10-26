@@ -612,8 +612,11 @@ export function ClassesPage({ onNavigate, initialSlug }: ClassesPageProps) {
           )}
 
           {/* 🧩 آزمون تعیین سطح سریع — از تب Learn به این‌جا منتقل شد (تسک ۴۷):
-              «مطمئن نیستی کدام کلاس مناسب توست؟» → همین‌جا قبل از جعبهٔ راهنما */}
-          <LevelQuiz key="classes-level-quiz" onNavigate={onNavigate} />
+              «مطمئن نیستی کدام کلاس مناسب توست؟» → همین‌جا قبل از جعبهٔ راهنما
+              (لنگر #level-quiz — مقصد کارت آزمون در هاب تمرین /practice) */}
+          <div id="level-quiz" className="scroll-mt-32">
+            <LevelQuiz key="classes-level-quiz" onNavigate={onNavigate} />
+          </div>
 
           <div className="text-center mt-16 bg-white rounded-3xl p-10 shadow-sm border border-sage-light/20">
             <h3 className="text-xl font-bold text-brown-dark mb-3">{c.helpBox.title}</h3>

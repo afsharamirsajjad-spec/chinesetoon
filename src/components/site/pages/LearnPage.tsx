@@ -210,14 +210,24 @@ export function LearnPage() {
             })}
           </div>
 
-          {/* 👂 بازی تمرین تُن‌ها — گوش بده و تُن را حدس بزن */}
-          <ToneTrainer />
+          {/* 👂 بازی تمرین تُن‌ها — گوش بده و تُن را حدس بزن (لنگر هاب تمرین) */}
+          <div id="tone-trainer" className="scroll-mt-32">
+            <ToneTrainer />
+          </div>
 
-          {/* 🃏 فلش‌کارت واژگان — زیر بازی، قبل از بخش فوتر صفحه */}
-          <Flashcards key={`cards-${cards?.length ?? 0}`} cards={cards ?? undefined} />
+          {/* 🃏 فلش‌کارت واژگان — زیر بازی، قبل از بخش فوتر صفحه (لنگر هاب تمرین) */}
+          <div id="flashcards" className="scroll-mt-32">
+            <Flashcards key={`cards-${cards?.length ?? 0}`} cards={cards ?? undefined} />
+          </div>
 
           <div className="text-center mt-14">
-            <p className="text-sm text-brown-light mb-5">{c.moreNote}</p>
+            {/* 🧭 پیوند متنی به هاب تمرین — همهٔ فعالیت‌ها در یک صفحه */}
+            <p className="text-sm text-brown-light mb-5">
+              {c.moreNote} ·{' '}
+              <a href="/practice" className="font-semibold text-sage-dark hover:underline cursor-pointer">
+                Practice Hub
+              </a>
+            </p>
             <div className="flex justify-center gap-4">
               <a
                 href={siteContent.contact.socials.instagram}

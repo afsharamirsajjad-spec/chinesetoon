@@ -63,6 +63,7 @@ function pageFromPathname(pathname: string): PageKey {
     'home',
     'classes',
     'learn',
+    'practice',
     'about',
     'blog',
     'reviews',
