@@ -243,19 +243,15 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <p className="text-lg md:text-xl lg:text-2xl text-brown-light leading-relaxed mb-8 max-w-xl lg:max-w-2xl mx-auto">
               {hero.subtitle}
             </p>
+            {/* 🎯 یک جریان واحد: Join a Class → صفحهٔ کلاس‌ها برای دیدن و انتخاب
+                کلاس؛ انتخاب از همان‌جا همراه ثبت‌نام تا پرداخت حمل می‌شود */}
             <div className="flex flex-wrap gap-4 justify-center">
               <button
-                onClick={() => onNavigate('register')}
+                onClick={() => onNavigate('classes')}
                 className="btn-lift bg-sage text-brown-dark px-8 py-4 rounded-full text-base font-semibold flex items-center gap-2 hover:bg-sage-dark hover:shadow-[0_8px_24px_rgba(141,181,133,0.45)] active:scale-[0.98] transition-all cursor-pointer"
               >
                 {c.hero.primaryButton}
                 <ArrowRight className="w-[18px] h-[18px]" aria-hidden="true" />
-              </button>
-              <button
-                onClick={() => onNavigate('classes')}
-                className="btn-lift bg-white border-2 border-sage/40 text-brown-dark px-8 py-4 rounded-full text-base font-medium hover:border-sage hover:bg-sage/5 active:scale-[0.98] transition-all cursor-pointer"
-              >
-                {c.hero.secondaryButton}
               </button>
             </div>
           </div>

@@ -119,6 +119,13 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
 
   const activePage = useMemo(() => pageFromPathname(pathname || '/'), [pathname])
 
+  // 🧭 درخواست مالک — با هر تعویض صفحه به بالای صفحه برگرد (ناوبری نرم گاهی
+  // موقعیت اسکرول را نگه می‌داشت). scrollRestoration مرورگر برای back/forward
+  // دست‌نخورده می‌ماند؛ این فقط برای پرش به صفحهٔ جدید است.
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+
   // انیمیشن‌های اسکرول با هر تغییر مسیر دوباره فعال شوند
   useReveal(pathname)
 

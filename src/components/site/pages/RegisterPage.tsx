@@ -321,8 +321,8 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
     breakdown: CodePreview | null
   } | null>(null)
   // 👤 نام/ایمیل/تلفن از حساب کاربری خوانده می‌شود — این فرم فقط جزئیات کلاس می‌گیرد
+  // (فیلد «Current Chinese Level» حذف شده — سطح از کلاس انتخابی مشتق می‌شود)
   const [form, setForm] = useState({
-    level: '',
     classType: 'group',
     goal: '',
     message: '',
@@ -456,29 +456,13 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
       }
       return { kind: 'class-unavailable' }
     }
-    if (!form.level) return { kind: 'idle' }
-    if (!catalog) return { kind: 'loading' }
-    const combo = catalog.combos.find(
-      (x) => x.classType === form.classType && x.level === form.level
-    )
-    if (!combo) return { kind: 'unavailable' }
-    // «Either» — نوع مشخص نشده؛ کاربر باید گروهی یا خصوصی را انتخاب کند (نه خطا)
-    if (combo.reason === 'CHOOSE_TYPE') return { kind: 'choose-type' }
-    if (!combo.available || !combo.productId || !combo.amountDisplay) {
-      return { kind: 'unavailable' }
-    }
-    return {
-      kind: 'ok',
-      productId: combo.productId,
-      productLabel: combo.productLabel ?? combo.classTitle ?? '',
-      classTitle: combo.classTitle ?? '',
-      amountDisplay: combo.amountDisplay,
-      currency: catalog.currency,
-    }
+    // بدون کلاسِ انتخاب‌شده هیچ قیمت و هیچ سفارشی نیست — ثبت‌نام ساده انجام
+    // می‌شود (جریان رسمی اکنون کلاس‌محور است: کلاس‌ها → انتخاب کلاس → ثبت‌نام)
+    return { kind: 'idle' }
   })()
 
-  // جعبهٔ قیمت فقط وقتی معنا دارد که کاربر چیزی انتخاب کرده باشد
-  const showPriceBox = !!lockedClass || !!form.level
+  // جعبهٔ قیمت فقط با کلاسِ انتخاب‌شده معنا دارد
+  const showPriceBox = !!lockedClass
   // 🪙 محصولِ قطعیِ قابل پرداخت برای این انتخاب — خالی = هیچ پرداخت خودکاری
   const resolvedProductId = priceResolution.kind === 'ok' ? priceResolution.productId : ''
 
@@ -566,11 +550,9 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
     // 👤 نام/ایمیل/تلفن سمت سرور از پروفایل حساب تأییدشده خوانده می‌شود — نه از مرورگر
     const payload = {
       ...form,
-      // 🎓 با کلاسِ انتخاب‌شده، سطح از خودِ کلاس می‌آید (فیلد سطح مخفی است)؛
-      // fallback آخر = عنوان کلاس تا اعتبارسنجی min(1) سرور هرگز شکست نخورد
-      level: lockedClass
-        ? catalogLock?.level || fileLock?.level || form.level || selectedClass
-        : form.level,
+      // 🎓 سطح از خودِ کلاس انتخابی مشتق می‌شود (فیلد سطح در فرم نیست)؛
+      // بدون کلاس = 'Unspecified' — سرور می‌پذیرد و ادمین پیگیری می‌کند
+      level: catalogLock?.level || fileLock?.level || 'Unspecified',
       classTitle: selectedClass ?? '',
       // 🗓️ ترجیحات برنامه — سرور همه را دوباره اعتبارسنجی می‌کند
       timezone: sched.timezone,
@@ -625,7 +607,6 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
 
   const reset = () => {
     setForm({
-      level: '',
       classType: lockedClass ? classTypeKeyFor(lockedClass.type) : 'group',
       goal: '',
       message: '',
@@ -702,6 +683,23 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
                   </div>
                 )}
 
+                {/* 🎯 جریان کلاس‌محور — بدون کلاس انتخابی، کاربر اول به صفحهٔ کلاس‌ها هدایت می‌شود */}
+                {!selectedClass && (
+                  <div className="animate-ct-fadeInUp mb-7 flex flex-wrap items-center justify-between gap-3 bg-butter/25 border border-butter/60 rounded-2xl px-4 py-3">
+                    <p className="text-xs text-brown leading-relaxed flex-1 min-w-48">
+                      No class selected yet — pick a class from the list and your choice carries
+                      straight into this registration.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => appNavigate('/classes')}
+                      className="bg-white border border-sage/50 text-brown-dark px-4 py-2 rounded-full text-xs font-bold hover:border-sage transition-colors cursor-pointer min-h-[36px] flex-shrink-0 inline-flex items-center gap-1.5"
+                    >
+                      <BookOpen className="w-3.5 h-3.5 text-sage-dark" aria-hidden="true" /> Browse classes
+                    </button>
+                  </div>
+                )}
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* 👤 کارت هویت کاربر واردشده — جای فیلدهای نام/ایمیل/تلفن (فاز ۳۱) */}
                   {user && (
@@ -715,44 +713,12 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
                           {accountName} <span className="font-normal text-brown-light">· {user.email}</span>
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          appNavigate('/account')
-                        }}
-                        className="text-xs font-semibold text-sage-dark hover:underline cursor-pointer flex-shrink-0"
-                      >
-                        Edit profile
-                      </button>
                     </div>
                   )}
 
-                  {/* 🎓 سطح فقط وقتی پرسیده می‌شود که هنوز کلاسی انتخاب نشده —
-                      کلاسِ انتخاب‌شده سطح خودش را تعیین می‌کند (مثلاً HSK 1) و
-                      دوباره پرسیدنِ سطح تکراری و گیج‌کننده است */}
-                  {!lockedClass && (
-                  <div>
-                    <label htmlFor="reg-level" className={labelCls}>
-                      {c.level}
-                    </label>
-                    <select
-                      id="reg-level"
-                      required
-                      value={form.level}
-                      onChange={set('level')}
-                      className={`${inputCls} appearance-none ${form.level ? '' : 'text-brown-light/60'}`}
-                    >
-                      <option value="" disabled>
-                        {c.levelPlaceholder}
-                      </option>
-                      {c.levels.map((l) => (
-                        <option key={l.key} value={l.key}>
-                          {l.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  )}
+                  {/* 🎓 فیلد «Current Chinese Level» به درخواست مالک حذف شد — سطح از
+                      خودِ کلاس انتخابی سرور-سمت مشتق می‌شود؛ فرم فقط اطلاعاتی را
+                      می‌پرسد که برای ثبت‌نام واقعاً لازم است */}
 
                   {/* 🔒 نوع کلاس — وقتی کلاس مشخصی انتخاب شده، از تنظیمات همان کلاس خوانده
                       می‌شود و کاربر نمی‌تواند آن را عوض کند؛ بدون کلاس انتخابی، ترجیح آزاد است */}

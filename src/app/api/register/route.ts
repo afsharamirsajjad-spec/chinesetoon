@@ -16,7 +16,14 @@ import { sanitizeDays, sanitizeTimes, MAX_PREFERRED_DAYS, MAX_PREFERRED_TIMES, W
 //     حداکثر ۲ بازهٔ ساعتی + روز در هفته + تأیید صریح «ترجیح است، نه برنامهٔ نهایی».
 //     سرور همهٔ این‌ها را دوباره اعتبارسنجی می‌کند — بدون scheduleAck ثبت رد می‌شود.
 const registrationSchema = z.object({
-  level: z.string().trim().min(1).max(60),
+  // 🎓 سطح دیگر از فرم پرسیده نمی‌شود — با کلاسِ انتخاب‌شده از خود کلاس می‌آید؛
+  // بدون کلاس = 'Unspecified' (اعتبار سمت سرور حفظ شده، حداقل/حداکثر همان)
+  level: z
+    .string()
+    .trim()
+    .max(60)
+    .transform((v) => v || 'Unspecified')
+    .default('Unspecified'),
   classType: z.string().trim().min(1).max(60).default('group'),
   // عنوان کلاس انتخاب‌شده (وقتی کاربر از دکمهٔ Register صفحهٔ کلاس‌ها/آزمون می‌آید)
   classTitle: z.string().trim().max(120).optional().or(z.literal('')),
