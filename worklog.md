@@ -273,3 +273,24 @@ Modified:
 - sitemap.ts: /practice added (weekly, 0.7).
 
 Verification: prisma validate OK (after BOM fix) + client regenerated; tsc 0 errors; eslint clean; bun test 35/35 pass; next build OK (routes /practice + /api/practice/progress in output). Runtime checks (local prod server): GET guest → {authenticated:false,goal:3}; POST guest → 401; browser: desktop dashboard/filters/cards render, quiz card → /classes#level-quiz scrolls to real quiz, search "tone" filters to 1 card, mobile 390px layout clean, mobile menu shows Practice highlighted.
+
+---
+Task ID: EMAIL-VERIFICATION-1
+Task: Email verification for the existing auth system — users must verify their email before signing in; unverified login attempts get a clear message + resend option. Server-side enforced.
+
+Flow: register → account created with emailVerified=null (NO auto-login session anymore) → single-use 24h hashed token emailed as a link → clicking it marks token used (atomic guard) and sets emailVerified → user signs in. Login of an unverified post-rollout user → 403 EMAIL_NOT_VERIFIED with clear message + client resend banner. Grandfathering: users created before EMAIL_VERIFICATION_ROLLOUT_MS (2026-10-26) are exempt via createdAt check in code — zero lockout risk for existing accounts; Google signups get emailVerified immediately (Google-verified emails).
+
+Changes:
+- prisma/schema.prisma: User.emailVerified DateTime? + EmailVerifyToken model (tokenHash unique, userId cascade, expiresAt, usedAt) + migration 20261026000001_email_verification (no backfill — grandfathering is in code so new unverified registrations are never "fixed" by a re-run).
+- Self-heal DDLs: lms-schema.ts (Postgres: ADD COLUMN IF NOT EXISTS User.emailVerified + CREATE TABLE EmailVerifyToken + indexes) and ensure-schema.ts (SQLite mirror: column in User CREATE + ALTER list, EmailVerifyToken table/indexes) so deployments work with or without migrate deploy.
+- user-auth.ts: isEmailVerificationRequired(), createEmailVerifyToken() (deletes previous tokens = only latest link valid; raw token returned, sha256 stored), EMAIL_VERIFY_TTL_MS=24h, purgeExpiredAuthRecords also cleans expired verify tokens, toSafeUser now exposes emailVerified as boolean only.
+- mail.ts: sendEmailVerification() — branded HTML/text with button link + copy fallback, expiry and one-time wording; same Resend/console-only policy as reset codes (never leaks delivery result to API responses).
+- register route: no session cookie on register; creates verify token and emails link via after() (non-blocking); responds 201 {ok, verificationRequired, user}.
+- login route: after password verifies, unverified post-rollout user → 403 {code: EMAIL_NOT_VERIFIED} (checked only after correct password, so no account enumeration; no session created).
+- NEW /api/auth/resend-verification POST: always-generic 200 (no enumeration), rate limits IP 10/h + email 3/30min, regenerates token, sends via after().
+- NEW /api/auth/verify-email GET: token regex-gated, atomic updateMany consumption (usedAt null + not expired), sets User.emailVerified, redirects to /account?verified=1|0; rate limit 30/h/IP.
+- google/callback: created users get emailVerified=now() (Google-verified emails).
+- AccountPage.tsx: after register → "Check your inbox" panel with resend button + register-again link (pay-redirect intentionally preserved in sessionStorage for post-verify login); login → EMAIL_NOT_VERIFIED shows inline banner with resend; ?verified=1|0 → success/expired banner (URL cleaned via history.replaceState).
+- tests/email-verification.test.ts: grandfathering rule matrix (verified/legacy/new/rollout-boundary), TTL constant, console-provider mail path logs the link and returns sent:false.
+
+Verification: prisma validate + generate OK; tsc 0 errors; eslint clean; bun test 42/42 pass; next build OK (routes /api/auth/verify-email + /api/auth/resend-verification in output). LIMITATION: true end-to-end DB flow could not run locally — .env DATABASE_URL is a stale non-reachable path (pre-existing env issue) and no local Postgres/Docker exists; DB-dependent runtime steps (actual email send with RESEND_API_KEY, link consumption, login of unverified user) are verified by build+unit coverage of the pure logic and must be smoke-tested on staging/production after deploy.
