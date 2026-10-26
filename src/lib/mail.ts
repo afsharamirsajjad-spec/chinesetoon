@@ -8,7 +8,7 @@
 // پیکربندی (تمام اختیاری — در .env):
 //   RESEND_API_KEY  — کلید API سرویس Resend (resend.com)؛ برای ارسال واقعی
 //   MAIL_FROM       — فرستنده، مثل «Chinese Toon <noreply@chinesetoon.com>»
-//                     (پیش‌فرض: onboarding@resend.dev تا قبل از دامنهٔ تأییدشده کار کند)
+//                     (پیش‌فرض همین آدرس دامنهٔ تأییدشده در Resend است)
 //
 // اصول امنیتی:
 //   • کد تأیید هرگز در پاسخ API تولیدی نمی‌آید (به‌جز حالت توسعهٔ بدون ارائه‌دهنده
@@ -143,10 +143,8 @@ function verifyText(firstName: string, code: string, minutes: number): string {
  * با RESEND_API_KEY واقعاً ارسال می‌شود؛ بدون آن فقط در کنسول سرور لاگ
  * می‌شود (توسعه). نتیجه هرگز در پاسخ API افشا نمی‌شود (ضد نشت وجود حساب).
  *
- * ⚠️ نکتهٔ ارائه‌دهنده (رفع 403 در لاگ Resend): دامنهٔ تستی resend.dev فقط
- * به ایمیلِ خودِ صاحب اکانت اجازهٔ ارسال می‌دهد. برای ارسال به همه، دامنهٔ
- * chinesetoon.com را در پنل Resend (Domains) verify کنید و سپس متغیر
- * MAIL_FROM را روی «Chinese Toon <noreply@chinesetoon.com>» بگذارید.
+ * ⚠️ نکتهٔ ارائه‌دهنده: دامنهٔ chinesetoon.com در پنل Resend (Domains) تأیید
+ * شده است؛ ارسال از «Chinese Toon <noreply@chinesetoon.com>» انجام می‌شود.
  */
 export async function sendEmailVerificationCode(
   to: string,
@@ -155,7 +153,7 @@ export async function sendEmailVerificationCode(
   minutes: number
 ): Promise<MailResult> {
   const apiKey = (process.env.RESEND_API_KEY ?? '').trim()
-  const from = (process.env.MAIL_FROM ?? '').trim() || 'Chinese Toon <onboarding@resend.dev>'
+  const from = (process.env.MAIL_FROM ?? '').trim() || 'Chinese Toon <noreply@chinesetoon.com>'
 
   if (!apiKey) {
     console.log(
@@ -213,7 +211,7 @@ export async function sendPasswordResetCode(
   minutes: number
 ): Promise<MailResult> {
   const apiKey = (process.env.RESEND_API_KEY ?? '').trim()
-  const from = (process.env.MAIL_FROM ?? '').trim() || 'Chinese Toon <onboarding@resend.dev>'
+  const from = (process.env.MAIL_FROM ?? '').trim() || 'Chinese Toon <noreply@chinesetoon.com>'
 
   if (!apiKey) {
     // بدون ارائه‌دهنده — فقط لاگ سروری (سندباکس/توسعه). کد خام فقط اینجاست.
