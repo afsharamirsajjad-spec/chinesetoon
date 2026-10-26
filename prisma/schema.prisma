@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// 🗄️ Prisma schema — PostgreSQL (Neon) for production on Vercel.
+// ðŸ—„ï¸ Prisma schema â€” PostgreSQL (Neon) for production on Vercel.
 // Provider switched from `sqlite` to `postgresql` for the Vercel + Neon
 // deployment. All model types below are PostgreSQL-compatible (cuid() ids,
 // DateTime, Boolean, String for JSON-as-text). Schema management is handled
@@ -16,7 +16,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// پیام‌های فرم پشتیبانی (صفحهٔ Support)
+// Ù¾ÛŒØ§Ù…â€ŒÙ‡Ø§ÛŒ ÙØ±Ù… Ù¾Ø´ØªÛŒØ¨Ø§Ù†ÛŒ (ØµÙØ­Ù‡Ù” Support)
 model SupportMessage {
   id        String   @id @default(cuid())
   name      String
@@ -27,58 +27,58 @@ model SupportMessage {
   createdAt DateTime @default(now())
 }
 
-// درخواست‌های ثبت‌نام کلاس (صفحهٔ Register)
+// Ø¯Ø±Ø®ÙˆØ§Ø³Øªâ€ŒÙ‡Ø§ÛŒ Ø«Ø¨Øªâ€ŒÙ†Ø§Ù… Ú©Ù„Ø§Ø³ (ØµÙØ­Ù‡Ù” Register)
 model Registration {
   id        String   @id @default(cuid())
   name      String
   email     String
   phone     String?
-  // 🔗 فاز ۶۰ — پیوند پایدار به حساب کاربری (User ↔ Unique Code ↔ Registration
-  // ↔ Order ↔ Payment). رکوردهای قدیمیِ مهمان null دارند و هرگز به‌سرور بازسازی
-  // نمی‌شوند؛ کاربرِ واردشده همیشه به رکورد موجودش وصال می‌شود (ضد رکورد تکراری)
+  // ðŸ”— ÙØ§Ø² Û¶Û° â€” Ù¾ÛŒÙˆÙ†Ø¯ Ù¾Ø§ÛŒØ¯Ø§Ø± Ø¨Ù‡ Ø­Ø³Ø§Ø¨ Ú©Ø§Ø±Ø¨Ø±ÛŒ (User â†” Unique Code â†” Registration
+  // â†” Order â†” Payment). Ø±Ú©ÙˆØ±Ø¯Ù‡Ø§ÛŒ Ù‚Ø¯ÛŒÙ…ÛŒÙ Ù…Ù‡Ù…Ø§Ù† null Ø¯Ø§Ø±Ù†Ø¯ Ùˆ Ù‡Ø±Ú¯Ø² Ø¨Ù‡â€ŒØ³Ø±ÙˆØ± Ø¨Ø§Ø²Ø³Ø§Ø²ÛŒ
+  // Ù†Ù…ÛŒâ€ŒØ´ÙˆÙ†Ø¯Ø› Ú©Ø§Ø±Ø¨Ø±Ù ÙˆØ§Ø±Ø¯Ø´Ø¯Ù‡ Ù‡Ù…ÛŒØ´Ù‡ Ø¨Ù‡ Ø±Ú©ÙˆØ±Ø¯ Ù…ÙˆØ¬ÙˆØ¯Ø´ ÙˆØµØ§Ù„ Ù…ÛŒâ€ŒØ´ÙˆØ¯ (Ø¶Ø¯ Ø±Ú©ÙˆØ±Ø¯ ØªÚ©Ø±Ø§Ø±ÛŒ)
   userId    String?
   user      User?    @relation("RegistrationUser", fields: [userId], references: [id], onDelete: SetNull)
-  age       Int?     // منسوخ — تاریخ تولد حالا در پروفایل حساب کاربری (User) ذخیره می‌شود
+  age       Int?     // Ù…Ù†Ø³ÙˆØ® â€” ØªØ§Ø±ÛŒØ® ØªÙˆÙ„Ø¯ Ø­Ø§Ù„Ø§ Ø¯Ø± Ù¾Ø±ÙˆÙØ§ÛŒÙ„ Ø­Ø³Ø§Ø¨ Ú©Ø§Ø±Ø¨Ø±ÛŒ (User) Ø°Ø®ÛŒØ±Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯
   level     String
   classType String   @default("group")
-  // 🗄️ حذف نرم (فاز ۵۲) — رکورد هرگز سخت‌حذف نمی‌شود تا تاریخچهٔ پیگیری ادمین
-  // و پیوند ClassSchedule.registrationId سالم بماند؛ «حذف» یعنی بایگانی (deletedAt)
+  // ðŸ—„ï¸ Ø­Ø°Ù Ù†Ø±Ù… (ÙØ§Ø² ÛµÛ²) â€” Ø±Ú©ÙˆØ±Ø¯ Ù‡Ø±Ú¯Ø² Ø³Ø®Øªâ€ŒØ­Ø°Ù Ù†Ù…ÛŒâ€ŒØ´ÙˆØ¯ ØªØ§ ØªØ§Ø±ÛŒØ®Ú†Ù‡Ù” Ù¾ÛŒÚ¯ÛŒØ±ÛŒ Ø§Ø¯Ù…ÛŒÙ†
+  // Ùˆ Ù¾ÛŒÙˆÙ†Ø¯ ClassSchedule.registrationId Ø³Ø§Ù„Ù… Ø¨Ù…Ø§Ù†Ø¯Ø› Â«Ø­Ø°ÙÂ» ÛŒØ¹Ù†ÛŒ Ø¨Ø§ÛŒÚ¯Ø§Ù†ÛŒ (deletedAt)
   deletedAt DateTime?
-  classTitle String? // عنوان کلاس انتخاب‌شده (وقتی کاربر از صفحهٔ کلاس‌ها/آزمون می‌آید)
-  schedule  String?  // قدیمی — متن آزاد؛ رکوردهای قبل از فاز ۴۷
+  classTitle String? // Ø¹Ù†ÙˆØ§Ù† Ú©Ù„Ø§Ø³ Ø§Ù†ØªØ®Ø§Ø¨â€ŒØ´Ø¯Ù‡ (ÙˆÙ‚ØªÛŒ Ú©Ø§Ø±Ø¨Ø± Ø§Ø² ØµÙØ­Ù‡Ù” Ú©Ù„Ø§Ø³â€ŒÙ‡Ø§/Ø¢Ø²Ù…ÙˆÙ† Ù…ÛŒâ€ŒØ¢ÛŒØ¯)
+  schedule  String?  // Ù‚Ø¯ÛŒÙ…ÛŒ â€” Ù…ØªÙ† Ø¢Ø²Ø§Ø¯Ø› Ø±Ú©ÙˆØ±Ø¯Ù‡Ø§ÛŒ Ù‚Ø¨Ù„ Ø§Ø² ÙØ§Ø² Û´Û·
   goal      String?
   message   String?
   status    String   @default("new") // new | contacted | enrolled
-  // 🗓️ ترجیحات ساخت‌یافتهٔ برنامه (فاز ۴۷) — تنظیمات زمانی اصلی کاربر حفظ می‌شود
-  timezone       String  @default("") // IANA مثل Asia/Tehran — از فهرست مجاز سرور
-  preferredDays  String  @default("[]") // JSON ["mon","wed"] — حداکثر ۳
-  preferredTimes String  @default("[]") // JSON [{start:"18:00",end:"19:00"}] — حداکثر ۲
-  daysPerWeek    Int? // ۱ تا ۳ — باید ≤ تعداد روزهای انتخابی باشد
-  scheduleAck    Boolean @default(false) // تأیید صریح «این ترجیح است، نه برنامهٔ نهایی»
+  // ðŸ—“ï¸ ØªØ±Ø¬ÛŒØ­Ø§Øª Ø³Ø§Ø®Øªâ€ŒÛŒØ§ÙØªÙ‡Ù” Ø¨Ø±Ù†Ø§Ù…Ù‡ (ÙØ§Ø² Û´Û·) â€” ØªÙ†Ø¸ÛŒÙ…Ø§Øª Ø²Ù…Ø§Ù†ÛŒ Ø§ØµÙ„ÛŒ Ú©Ø§Ø±Ø¨Ø± Ø­ÙØ¸ Ù…ÛŒâ€ŒØ´ÙˆØ¯
+  timezone       String  @default("") // IANA Ù…Ø«Ù„ Asia/Tehran â€” Ø§Ø² ÙÙ‡Ø±Ø³Øª Ù…Ø¬Ø§Ø² Ø³Ø±ÙˆØ±
+  preferredDays  String  @default("[]") // JSON ["mon","wed"] â€” Ø­Ø¯Ø§Ú©Ø«Ø± Û³
+  preferredTimes String  @default("[]") // JSON [{start:"18:00",end:"19:00"}] â€” Ø­Ø¯Ø§Ú©Ø«Ø± Û²
+  daysPerWeek    Int? // Û± ØªØ§ Û³ â€” Ø¨Ø§ÛŒØ¯ â‰¤ ØªØ¹Ø¯Ø§Ø¯ Ø±ÙˆØ²Ù‡Ø§ÛŒ Ø§Ù†ØªØ®Ø§Ø¨ÛŒ Ø¨Ø§Ø´Ø¯
+  scheduleAck    Boolean @default(false) // ØªØ£ÛŒÛŒØ¯ ØµØ±ÛŒØ­ Â«Ø§ÛŒÙ† ØªØ±Ø¬ÛŒØ­ Ø§Ø³ØªØŒ Ù†Ù‡ Ø¨Ø±Ù†Ø§Ù…Ù‡Ù” Ù†Ù‡Ø§ÛŒÛŒÂ»
   createdAt DateTime @default(now())
 
-  schedules ClassSchedule[] // جلساتی که از این ثبت‌نام مشتق شده‌اند (فاز ۴۸)
+  schedules ClassSchedule[] // Ø¬Ù„Ø³Ø§ØªÛŒ Ú©Ù‡ Ø§Ø² Ø§ÛŒÙ† Ø«Ø¨Øªâ€ŒÙ†Ø§Ù… Ù…Ø´ØªÙ‚ Ø´Ø¯Ù‡â€ŒØ§Ù†Ø¯ (ÙØ§Ø² Û´Û¸)
 
   @@index([userId])
 }
 
-// مشترکان خبرنامه (فرم پایین فوتر)
+// Ù…Ø´ØªØ±Ú©Ø§Ù† Ø®Ø¨Ø±Ù†Ø§Ù…Ù‡ (ÙØ±Ù… Ù¾Ø§ÛŒÛŒÙ† ÙÙˆØªØ±)
 model NewsletterSubscriber {
   id        String   @id @default(cuid())
   email     String   @unique
   createdAt DateTime @default(now())
 }
 
-// مقالات وبلاگ/اخبار (صفحهٔ Blog — مدیریت از پنل ادمین)
+// Ù…Ù‚Ø§Ù„Ø§Øª ÙˆØ¨Ù„Ø§Ú¯/Ø§Ø®Ø¨Ø§Ø± (ØµÙØ­Ù‡Ù” Blog â€” Ù…Ø¯ÛŒØ±ÛŒØª Ø§Ø² Ù¾Ù†Ù„ Ø§Ø¯Ù…ÛŒÙ†)
 model Post {
   id        String   @id @default(cuid())
   title     String
   slug      String   @unique
   tag       String   @default("news") // news | culture | tips | hsk
-  emoji     String   @default("📝") // ایموجی روی کاور
+  emoji     String   @default("ðŸ“") // Ø§ÛŒÙ…ÙˆØ¬ÛŒ Ø±ÙˆÛŒ Ú©Ø§ÙˆØ±
   color     String   @default("sage") // sage | butter | peach
-  image     String?  // آدرس تصویر کاور (اختیاری — اگر خالی باشد گرادیان برند نمایش داده می‌شود)
-  views     Int      @default(0) // شمارندهٔ بازدید هر مقاله
+  image     String?  // Ø¢Ø¯Ø±Ø³ ØªØµÙˆÛŒØ± Ú©Ø§ÙˆØ± (Ø§Ø®ØªÛŒØ§Ø±ÛŒ â€” Ø§Ú¯Ø± Ø®Ø§Ù„ÛŒ Ø¨Ø§Ø´Ø¯ Ú¯Ø±Ø§Ø¯ÛŒØ§Ù† Ø¨Ø±Ù†Ø¯ Ù†Ù…Ø§ÛŒØ´ Ø¯Ø§Ø¯Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯)
+  views     Int      @default(0) // Ø´Ù…Ø§Ø±Ù†Ø¯Ù‡Ù” Ø¨Ø§Ø²Ø¯ÛŒØ¯ Ù‡Ø± Ù…Ù‚Ø§Ù„Ù‡
   excerpt   String
   content   String
   published Boolean  @default(true)
@@ -86,20 +86,20 @@ model Post {
   updatedAt DateTime @updatedAt
 }
 
-// نظرات ثبت‌شدهٔ کاربران (فرم «تجربهٔ خود را بنویسید» در صفحهٔ نظرات)
-// نظر جدید اول «pending» است و فقط بعد از تأیید ادمین در سایت نمایش داده می‌شود
-// featured = نظر منتخب مالک (نظرات ثابت کاروسل خانه/صفحهٔ نظرات) — از پنل قابل ویرایش است
+// Ù†Ø¸Ø±Ø§Øª Ø«Ø¨Øªâ€ŒØ´Ø¯Ù‡Ù” Ú©Ø§Ø±Ø¨Ø±Ø§Ù† (ÙØ±Ù… Â«ØªØ¬Ø±Ø¨Ù‡Ù” Ø®ÙˆØ¯ Ø±Ø§ Ø¨Ù†ÙˆÛŒØ³ÛŒØ¯Â» Ø¯Ø± ØµÙØ­Ù‡Ù” Ù†Ø¸Ø±Ø§Øª)
+// Ù†Ø¸Ø± Ø¬Ø¯ÛŒØ¯ Ø§ÙˆÙ„ Â«pendingÂ» Ø§Ø³Øª Ùˆ ÙÙ‚Ø· Ø¨Ø¹Ø¯ Ø§Ø² ØªØ£ÛŒÛŒØ¯ Ø§Ø¯Ù…ÛŒÙ† Ø¯Ø± Ø³Ø§ÛŒØª Ù†Ù…Ø§ÛŒØ´ Ø¯Ø§Ø¯Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯
+// featured = Ù†Ø¸Ø± Ù…Ù†ØªØ®Ø¨ Ù…Ø§Ù„Ú© (Ù†Ø¸Ø±Ø§Øª Ø«Ø§Ø¨Øª Ú©Ø§Ø±ÙˆØ³Ù„ Ø®Ø§Ù†Ù‡/ØµÙØ­Ù‡Ù” Ù†Ø¸Ø±Ø§Øª) â€” Ø§Ø² Ù¾Ù†Ù„ Ù‚Ø§Ø¨Ù„ ÙˆÛŒØ±Ø§ÛŒØ´ Ø§Ø³Øª
 model Testimonial {
   id        String    @id @default(cuid())
   name      String
-  role      String?   // مثلاً «HSK 2 Student» — اختیاری
-  rating    Int       @default(5) // ۱ تا ۵ ستاره
+  role      String?   // Ù…Ø«Ù„Ø§Ù‹ Â«HSK 2 StudentÂ» â€” Ø§Ø®ØªÛŒØ§Ø±ÛŒ
+  rating    Int       @default(5) // Û± ØªØ§ Ûµ Ø³ØªØ§Ø±Ù‡
   text      String
   status    String    @default("pending") // pending | approved | rejected
-  featured  Boolean   @default(false) // ⭐ نظر منتخب — در کاروسل خانه و بخش «Testimonials» صفحهٔ نظرات
-  likeCount Int       @default(0) // ❤️ تعداد لایک — تنها منبع حقیقت؛ سمت سرور در تراکنش به‌روز می‌شود
+  featured  Boolean   @default(false) // â­ Ù†Ø¸Ø± Ù…Ù†ØªØ®Ø¨ â€” Ø¯Ø± Ú©Ø§Ø±ÙˆØ³Ù„ Ø®Ø§Ù†Ù‡ Ùˆ Ø¨Ø®Ø´ Â«TestimonialsÂ» ØµÙØ­Ù‡Ù” Ù†Ø¸Ø±Ø§Øª
+  likeCount Int       @default(0) // â¤ï¸ ØªØ¹Ø¯Ø§Ø¯ Ù„Ø§ÛŒÚ© â€” ØªÙ†Ù‡Ø§ Ù…Ù†Ø¨Ø¹ Ø­Ù‚ÛŒÙ‚ØªØ› Ø³Ù…Øª Ø³Ø±ÙˆØ± Ø¯Ø± ØªØ±Ø§Ú©Ù†Ø´ Ø¨Ù‡â€ŒØ±ÙˆØ² Ù…ÛŒâ€ŒØ´ÙˆØ¯
   createdAt DateTime  @default(now())
-  // 🗄️ حذف نرم (فاز ۵۵) — «حذف» یعنی بایگانی؛ رکورد و شمارندهٔ لایک‌هایش هرگز پاک نمی‌شود
+  // ðŸ—„ï¸ Ø­Ø°Ù Ù†Ø±Ù… (ÙØ§Ø² ÛµÛµ) â€” Â«Ø­Ø°ÙÂ» ÛŒØ¹Ù†ÛŒ Ø¨Ø§ÛŒÚ¯Ø§Ù†ÛŒØ› Ø±Ú©ÙˆØ±Ø¯ Ùˆ Ø´Ù…Ø§Ø±Ù†Ø¯Ù‡Ù” Ù„Ø§ÛŒÚ©â€ŒÙ‡Ø§ÛŒØ´ Ù‡Ø±Ú¯Ø² Ù¾Ø§Ú© Ù†Ù…ÛŒâ€ŒØ´ÙˆØ¯
   deletedAt DateTime?
 
   likes ReviewLike[]
@@ -107,8 +107,8 @@ model Testimonial {
   @@index([status, featured])
 }
 
-// ❤️ لایک نظر — هر بازدیدکنندهٔ یکتا فقط یک لایک به هر نظر (تاگل لایک/حذف لایک)
-// visitorId = هش sha256(IP|UA) سمت سرور — خودِ IP هرگز ذخیره نمی‌شود
+// â¤ï¸ Ù„Ø§ÛŒÚ© Ù†Ø¸Ø± â€” Ù‡Ø± Ø¨Ø§Ø²Ø¯ÛŒØ¯Ú©Ù†Ù†Ø¯Ù‡Ù” ÛŒÚ©ØªØ§ ÙÙ‚Ø· ÛŒÚ© Ù„Ø§ÛŒÚ© Ø¨Ù‡ Ù‡Ø± Ù†Ø¸Ø± (ØªØ§Ú¯Ù„ Ù„Ø§ÛŒÚ©/Ø­Ø°Ù Ù„Ø§ÛŒÚ©)
+// visitorId = Ù‡Ø´ sha256(IP|UA) Ø³Ù…Øª Ø³Ø±ÙˆØ± â€” Ø®ÙˆØ¯Ù IP Ù‡Ø±Ú¯Ø² Ø°Ø®ÛŒØ±Ù‡ Ù†Ù…ÛŒâ€ŒØ´ÙˆØ¯
 model ReviewLike {
   id            String      @id @default(cuid())
   testimonialId String
@@ -116,27 +116,27 @@ model ReviewLike {
   visitorId     String
   createdAt     DateTime    @default(now())
 
-  @@unique([testimonialId, visitorId]) // ضد لایک تکراری در سطح دیتابیس
+  @@unique([testimonialId, visitorId]) // Ø¶Ø¯ Ù„Ø§ÛŒÚ© ØªÚ©Ø±Ø§Ø±ÛŒ Ø¯Ø± Ø³Ø·Ø­ Ø¯ÛŒØªØ§Ø¨ÛŒØ³
   @@index([visitorId])
 }
 
-// ❓ سؤالات متداول — تنها منبع حقیقت FAQ (فاز ۴۶)
-// صفحهٔ عمومی Support و تب ادمین هر دو از همین جدول می‌خوانند؛
-// آیتم‌های فایل محتوا فقط تا لحظهٔ رسیدن پاسخ سرور نمایش داده می‌شوند (fallback).
+// â“ Ø³Ø¤Ø§Ù„Ø§Øª Ù…ØªØ¯Ø§ÙˆÙ„ â€” ØªÙ†Ù‡Ø§ Ù…Ù†Ø¨Ø¹ Ø­Ù‚ÛŒÙ‚Øª FAQ (ÙØ§Ø² Û´Û¶)
+// ØµÙØ­Ù‡Ù” Ø¹Ù…ÙˆÙ…ÛŒ Support Ùˆ ØªØ¨ Ø§Ø¯Ù…ÛŒÙ† Ù‡Ø± Ø¯Ùˆ Ø§Ø² Ù‡Ù…ÛŒÙ† Ø¬Ø¯ÙˆÙ„ Ù…ÛŒâ€ŒØ®ÙˆØ§Ù†Ù†Ø¯Ø›
+// Ø¢ÛŒØªÙ…â€ŒÙ‡Ø§ÛŒ ÙØ§ÛŒÙ„ Ù…Ø­ØªÙˆØ§ ÙÙ‚Ø· ØªØ§ Ù„Ø­Ø¸Ù‡Ù” Ø±Ø³ÛŒØ¯Ù† Ù¾Ø§Ø³Ø® Ø³Ø±ÙˆØ± Ù†Ù…Ø§ÛŒØ´ Ø¯Ø§Ø¯Ù‡ Ù…ÛŒâ€ŒØ´ÙˆÙ†Ø¯ (fallback).
 model FaqItem {
   id         String    @id @default(cuid())
-  category   String    @default("general") // کلید فیلتر — general | classes | payment | technical
+  category   String    @default("general") // Ú©Ù„ÛŒØ¯ ÙÛŒÙ„ØªØ± â€” general | classes | payment | technical
   question   String
   answer     String
-  sortOrder  Int       @default(0) // ترتیب نمایش (کمتر = بالاتر)
-  published  Boolean   @default(true) // خاموش = از سایت عمومی پنهان (پیش‌نویس)
+  sortOrder  Int       @default(0) // ØªØ±ØªÛŒØ¨ Ù†Ù…Ø§ÛŒØ´ (Ú©Ù…ØªØ± = Ø¨Ø§Ù„Ø§ØªØ±)
+  published  Boolean   @default(true) // Ø®Ø§Ù…ÙˆØ´ = Ø§Ø² Ø³Ø§ÛŒØª Ø¹Ù…ÙˆÙ…ÛŒ Ù¾Ù†Ù‡Ø§Ù† (Ù¾ÛŒØ´â€ŒÙ†ÙˆÛŒØ³)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
-  // 🗄️ حذف نرم (فاز ۵۵) — بایگانی با امکان بازگردانی؛ هیچ سؤالی پاک‌شدهٔ همیشگی نیست
+  // ðŸ—„ï¸ Ø­Ø°Ù Ù†Ø±Ù… (ÙØ§Ø² ÛµÛµ) â€” Ø¨Ø§ÛŒÚ¯Ø§Ù†ÛŒ Ø¨Ø§ Ø§Ù…Ú©Ø§Ù† Ø¨Ø§Ø²Ú¯Ø±Ø¯Ø§Ù†ÛŒØ› Ù‡ÛŒÚ† Ø³Ø¤Ø§Ù„ÛŒ Ù¾Ø§Ú©â€ŒØ´Ø¯Ù‡Ù” Ù‡Ù…ÛŒØ´Ú¯ÛŒ Ù†ÛŒØ³Øª
   deletedAt  DateTime?
-  // 👍👎 فاز ۶۴ — شمارنده‌های رأی مفیدبودن بازگردانده شدند (کد /api/faq/vote
-  // به آن‌ها تکیه دارد؛ حذف ناقص فاز ۵۸ باعث ۵۰۰ شدن هر رأی می‌شد). منبع حقیقت
-  // شمارنده فقط تراکنشِ رأی‌گیری است و پاسخ سرور همیشه از دیتابیس می‌آید.
+  // ðŸ‘ðŸ‘Ž ÙØ§Ø² Û¶Û´ â€” Ø´Ù…Ø§Ø±Ù†Ø¯Ù‡â€ŒÙ‡Ø§ÛŒ Ø±Ø£ÛŒ Ù…ÙÛŒØ¯Ø¨ÙˆØ¯Ù† Ø¨Ø§Ø²Ú¯Ø±Ø¯Ø§Ù†Ø¯Ù‡ Ø´Ø¯Ù†Ø¯ (Ú©Ø¯ /api/faq/vote
+  // Ø¨Ù‡ Ø¢Ù†â€ŒÙ‡Ø§ ØªÚ©ÛŒÙ‡ Ø¯Ø§Ø±Ø¯Ø› Ø­Ø°Ù Ù†Ø§Ù‚Øµ ÙØ§Ø² ÛµÛ¸ Ø¨Ø§Ø¹Ø« ÛµÛ°Û° Ø´Ø¯Ù† Ù‡Ø± Ø±Ø£ÛŒ Ù…ÛŒâ€ŒØ´Ø¯). Ù…Ù†Ø¨Ø¹ Ø­Ù‚ÛŒÙ‚Øª
+  // Ø´Ù…Ø§Ø±Ù†Ø¯Ù‡ ÙÙ‚Ø· ØªØ±Ø§Ú©Ù†Ø´Ù Ø±Ø£ÛŒâ€ŒÚ¯ÛŒØ±ÛŒ Ø§Ø³Øª Ùˆ Ù¾Ø§Ø³Ø® Ø³Ø±ÙˆØ± Ù‡Ù…ÛŒØ´Ù‡ Ø§Ø² Ø¯ÛŒØªØ§Ø¨ÛŒØ³ Ù…ÛŒâ€ŒØ¢ÛŒØ¯.
   helpfulYes Int       @default(0)
   helpfulNo  Int       @default(0)
   votes      FaqVote[]
@@ -144,9 +144,9 @@ model FaqItem {
   @@index([published, sortOrder])
 }
 
-// 👍👎 رأی «آیا این پاسخ مفید بود؟» (فاز ۵۵ — بازگردانی در فاز ۶۴)
-// هر بازدیدکننده (هش sha256(IP|UA)) حداکثر یک رأی به هر سؤال — یکتایی در
-// سطح دیتابیس ضد رأی تکراری است. فقط 'up' | 'down' ذخیره می‌شود.
+// ðŸ‘ðŸ‘Ž Ø±Ø£ÛŒ Â«Ø¢ÛŒØ§ Ø§ÛŒÙ† Ù¾Ø§Ø³Ø® Ù…ÙÛŒØ¯ Ø¨ÙˆØ¯ØŸÂ» (ÙØ§Ø² ÛµÛµ â€” Ø¨Ø§Ø²Ú¯Ø±Ø¯Ø§Ù†ÛŒ Ø¯Ø± ÙØ§Ø² Û¶Û´)
+// Ù‡Ø± Ø¨Ø§Ø²Ø¯ÛŒØ¯Ú©Ù†Ù†Ø¯Ù‡ (Ù‡Ø´ sha256(IP|UA)) Ø­Ø¯Ø§Ú©Ø«Ø± ÛŒÚ© Ø±Ø£ÛŒ Ø¨Ù‡ Ù‡Ø± Ø³Ø¤Ø§Ù„ â€” ÛŒÚ©ØªØ§ÛŒÛŒ Ø¯Ø±
+// Ø³Ø·Ø­ Ø¯ÛŒØªØ§Ø¨ÛŒØ³ Ø¶Ø¯ Ø±Ø£ÛŒ ØªÚ©Ø±Ø§Ø±ÛŒ Ø§Ø³Øª. ÙÙ‚Ø· 'up' | 'down' Ø°Ø®ÛŒØ±Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯.
 model FaqVote {
   id        String   @id @default(cuid())
   faqId     String
@@ -160,39 +160,39 @@ model FaqVote {
   @@index([faqId])
 }
 
-// واژه‌های فلش‌کارت صفحهٔ Learn — از پنل ادمین اضافه/ویرایش/حذف می‌شود
-// اگر جدول خالی باشد، واژه‌های پیش‌فرض از فایل محتوا نمایش داده می‌شوند
+// ÙˆØ§Ú˜Ù‡â€ŒÙ‡Ø§ÛŒ ÙÙ„Ø´â€ŒÚ©Ø§Ø±Øª ØµÙØ­Ù‡Ù” Learn â€” Ø§Ø² Ù¾Ù†Ù„ Ø§Ø¯Ù…ÛŒÙ† Ø§Ø¶Ø§ÙÙ‡/ÙˆÛŒØ±Ø§ÛŒØ´/Ø­Ø°Ù Ù…ÛŒâ€ŒØ´ÙˆØ¯
+// Ø§Ú¯Ø± Ø¬Ø¯ÙˆÙ„ Ø®Ø§Ù„ÛŒ Ø¨Ø§Ø´Ø¯ØŒ ÙˆØ§Ú˜Ù‡â€ŒÙ‡Ø§ÛŒ Ù¾ÛŒØ´â€ŒÙØ±Ø¶ Ø§Ø² ÙØ§ÛŒÙ„ Ù…Ø­ØªÙˆØ§ Ù†Ù…Ø§ÛŒØ´ Ø¯Ø§Ø¯Ù‡ Ù…ÛŒâ€ŒØ´ÙˆÙ†Ø¯
 model LearnCard {
   id        String   @id @default(cuid())
-  chinese   String // کاراکتر چینی
-  pinyin    String // تلفظ پین‌یین با علامت تُن
-  meaning   String // معنی انگلیسی
-  example   String? // جملهٔ نمونه (اختیاری)
-  sortOrder Int      @default(0) // ترتیب نمایش
+  chinese   String // Ú©Ø§Ø±Ø§Ú©ØªØ± Ú†ÛŒÙ†ÛŒ
+  pinyin    String // ØªÙ„ÙØ¸ Ù¾ÛŒÙ†â€ŒÛŒÛŒÙ† Ø¨Ø§ Ø¹Ù„Ø§Ù…Øª ØªÙÙ†
+  meaning   String // Ù…Ø¹Ù†ÛŒ Ø§Ù†Ú¯Ù„ÛŒØ³ÛŒ
+  example   String? // Ø¬Ù…Ù„Ù‡Ù” Ù†Ù…ÙˆÙ†Ù‡ (Ø§Ø®ØªÛŒØ§Ø±ÛŒ)
+  sortOrder Int      @default(0) // ØªØ±ØªÛŒØ¨ Ù†Ù…Ø§ÛŒØ´
   published Boolean  @default(true)
   createdAt DateTime @default(now())
 }
 
-// سؤالات آزمون تعیین سطح صفحهٔ Learn — از پنل ادمین مدیریت می‌شود
-// گزینه‌ها به‌صورت JSON ذخیره می‌شوند: [{"text":"...","score":1}, …]
-// اگر جدول خالی باشد، سؤالات پیش‌فرض از فایل محتوا نمایش داده می‌شوند
+// Ø³Ø¤Ø§Ù„Ø§Øª Ø¢Ø²Ù…ÙˆÙ† ØªØ¹ÛŒÛŒÙ† Ø³Ø·Ø­ ØµÙØ­Ù‡Ù” Learn â€” Ø§Ø² Ù¾Ù†Ù„ Ø§Ø¯Ù…ÛŒÙ† Ù…Ø¯ÛŒØ±ÛŒØª Ù…ÛŒâ€ŒØ´ÙˆØ¯
+// Ú¯Ø²ÛŒÙ†Ù‡â€ŒÙ‡Ø§ Ø¨Ù‡â€ŒØµÙˆØ±Øª JSON Ø°Ø®ÛŒØ±Ù‡ Ù…ÛŒâ€ŒØ´ÙˆÙ†Ø¯: [{"text":"...","score":1}, â€¦]
+// Ø§Ú¯Ø± Ø¬Ø¯ÙˆÙ„ Ø®Ø§Ù„ÛŒ Ø¨Ø§Ø´Ø¯ØŒ Ø³Ø¤Ø§Ù„Ø§Øª Ù¾ÛŒØ´â€ŒÙØ±Ø¶ Ø§Ø² ÙØ§ÛŒÙ„ Ù…Ø­ØªÙˆØ§ Ù†Ù…Ø§ÛŒØ´ Ø¯Ø§Ø¯Ù‡ Ù…ÛŒâ€ŒØ´ÙˆÙ†Ø¯
 model QuizQuestion {
   id        String   @id @default(cuid())
   question  String
-  options   String // JSON آرایهٔ گزینه‌ها
+  options   String // JSON Ø¢Ø±Ø§ÛŒÙ‡Ù” Ú¯Ø²ÛŒÙ†Ù‡â€ŒÙ‡Ø§
   sortOrder Int      @default(0)
   published Boolean  @default(true)
   createdAt DateTime @default(now())
 }
 
-// 🧪 تسک ۸۲ — تلاش‌های آزمون تعیین سطح + کپچر ایمیل (سرنخ فروش)
-// نمره و باند همیشه سمت سرور محاسبه می‌شود؛ کلاینت فقط شناسهٔ سؤال و ایندکس گزینه را می‌فرستد
+// ðŸ§ª ØªØ³Ú© Û¸Û² â€” ØªÙ„Ø§Ø´â€ŒÙ‡Ø§ÛŒ Ø¢Ø²Ù…ÙˆÙ† ØªØ¹ÛŒÛŒÙ† Ø³Ø·Ø­ + Ú©Ù¾Ú†Ø± Ø§ÛŒÙ…ÛŒÙ„ (Ø³Ø±Ù†Ø® ÙØ±ÙˆØ´)
+// Ù†Ù…Ø±Ù‡ Ùˆ Ø¨Ø§Ù†Ø¯ Ù‡Ù…ÛŒØ´Ù‡ Ø³Ù…Øª Ø³Ø±ÙˆØ± Ù…Ø­Ø§Ø³Ø¨Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯Ø› Ú©Ù„Ø§ÛŒÙ†Øª ÙÙ‚Ø· Ø´Ù†Ø§Ø³Ù‡Ù” Ø³Ø¤Ø§Ù„ Ùˆ Ø§ÛŒÙ†Ø¯Ú©Ø³ Ú¯Ø²ÛŒÙ†Ù‡ Ø±Ø§ Ù…ÛŒâ€ŒÙØ±Ø³ØªØ¯
 model QuizAttempt {
   id        String   @id @default(cuid())
-  score     Int // جمع امتیاز واقعی از گزینه‌های انتخابی
-  maxScore  Int // حداکثر امتیاز ممکن از همین سؤالات
+  score     Int // Ø¬Ù…Ø¹ Ø§Ù…ØªÛŒØ§Ø² ÙˆØ§Ù‚Ø¹ÛŒ Ø§Ø² Ú¯Ø²ÛŒÙ†Ù‡â€ŒÙ‡Ø§ÛŒ Ø§Ù†ØªØ®Ø§Ø¨ÛŒ
+  maxScore  Int // Ø­Ø¯Ø§Ú©Ø«Ø± Ø§Ù…ØªÛŒØ§Ø² Ù…Ù…Ú©Ù† Ø§Ø² Ù‡Ù…ÛŒÙ† Ø³Ø¤Ø§Ù„Ø§Øª
   band      String // beginner | elementary | intermediate
-  email     String? // سرنخ اختیاری — اگر کاربر ایمیلش را گذاشت
+  email     String? // Ø³Ø±Ù†Ø® Ø§Ø®ØªÛŒØ§Ø±ÛŒ â€” Ø§Ú¯Ø± Ú©Ø§Ø±Ø¨Ø± Ø§ÛŒÙ…ÛŒÙ„Ø´ Ø±Ø§ Ú¯Ø°Ø§Ø´Øª
   answers   String // JSON: [{questionId, optionIndex, score}]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -200,52 +200,67 @@ model QuizAttempt {
   @@index([createdAt])
 }
 
-// معلم‌های صفحهٔ About — از پنل ادمین (تب Teachers) مدیریت می‌شوند
-// اگر جدول خالی باشد، تیم پیش‌فرض از فایل محتوا نمایش داده می‌شود
+// Ù…Ø¹Ù„Ù…â€ŒÙ‡Ø§ÛŒ ØµÙØ­Ù‡Ù” About â€” Ø§Ø² Ù¾Ù†Ù„ Ø§Ø¯Ù…ÛŒÙ† (ØªØ¨ Teachers) Ù…Ø¯ÛŒØ±ÛŒØª Ù…ÛŒâ€ŒØ´ÙˆÙ†Ø¯
+// Ø§Ú¯Ø± Ø¬Ø¯ÙˆÙ„ Ø®Ø§Ù„ÛŒ Ø¨Ø§Ø´Ø¯ØŒ ØªÛŒÙ… Ù¾ÛŒØ´â€ŒÙØ±Ø¶ Ø§Ø² ÙØ§ÛŒÙ„ Ù…Ø­ØªÙˆØ§ Ù†Ù…Ø§ÛŒØ´ Ø¯Ø§Ø¯Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯
+// Practice Hub — a signed-in user starting a practice activity
+// (stats source for /practice: sessions today / streak / recent;
+// activity keys are validated server-side against src/lib/practice/registry.ts)
+model PracticeEvent {
+  id          String   @id @default(cuid())
+  userId      String
+  activityKey String
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([activityKey, createdAt])
+}
+
 model Teacher {
   id        String   @id @default(cuid())
-  name      String // نام کامل
-  role      String // عنوان شغلی (مثلاً Beginner Teacher)
-  bio       String   @default("") // بیو کوتاه
-  tag       String   @default("") // برچسب تخصص (مثلاً Beginners)
-  langs     String   @default("Chinese, English") // زبان‌های تدریس، جدا با کاما
-  image     String?  // عکس (اختیاری — خالی = گرادیان برند)
-  // 🆕 رزومه و نمونهٔ تدریس (مودال «Resume & Teaching Samples» صفحهٔ About)
-  resume          String @default("") // متن کامل رزومه — چند پاراگراف، جدا با خط جدید
-  experienceYears Int    @default(0) // سال‌های سابقهٔ تدریس
-  studentsTaught  Int    @default(0) // تعداد دانش‌پذیران
-  certificates    String @default("") // گواهینامه‌ها — هر مورد در یک خط
-  samples         String @default("[]") // JSON آرایهٔ نمونهٔ تدریس: [{kind:"video|audio|text|dialog",title,url,desc}]
+  name      String // Ù†Ø§Ù… Ú©Ø§Ù…Ù„
+  role      String // Ø¹Ù†ÙˆØ§Ù† Ø´ØºÙ„ÛŒ (Ù…Ø«Ù„Ø§Ù‹ Beginner Teacher)
+  bio       String   @default("") // Ø¨ÛŒÙˆ Ú©ÙˆØªØ§Ù‡
+  tag       String   @default("") // Ø¨Ø±Ú†Ø³Ø¨ ØªØ®ØµØµ (Ù…Ø«Ù„Ø§Ù‹ Beginners)
+  langs     String   @default("Chinese, English") // Ø²Ø¨Ø§Ù†â€ŒÙ‡Ø§ÛŒ ØªØ¯Ø±ÛŒØ³ØŒ Ø¬Ø¯Ø§ Ø¨Ø§ Ú©Ø§Ù…Ø§
+  image     String?  // Ø¹Ú©Ø³ (Ø§Ø®ØªÛŒØ§Ø±ÛŒ â€” Ø®Ø§Ù„ÛŒ = Ú¯Ø±Ø§Ø¯ÛŒØ§Ù† Ø¨Ø±Ù†Ø¯)
+  // ðŸ†• Ø±Ø²ÙˆÙ…Ù‡ Ùˆ Ù†Ù…ÙˆÙ†Ù‡Ù” ØªØ¯Ø±ÛŒØ³ (Ù…ÙˆØ¯Ø§Ù„ Â«Resume & Teaching SamplesÂ» ØµÙØ­Ù‡Ù” About)
+  resume          String @default("") // Ù…ØªÙ† Ú©Ø§Ù…Ù„ Ø±Ø²ÙˆÙ…Ù‡ â€” Ú†Ù†Ø¯ Ù¾Ø§Ø±Ø§Ú¯Ø±Ø§ÙØŒ Ø¬Ø¯Ø§ Ø¨Ø§ Ø®Ø· Ø¬Ø¯ÛŒØ¯
+  experienceYears Int    @default(0) // Ø³Ø§Ù„â€ŒÙ‡Ø§ÛŒ Ø³Ø§Ø¨Ù‚Ù‡Ù” ØªØ¯Ø±ÛŒØ³
+  studentsTaught  Int    @default(0) // ØªØ¹Ø¯Ø§Ø¯ Ø¯Ø§Ù†Ø´â€ŒÙ¾Ø°ÛŒØ±Ø§Ù†
+  certificates    String @default("") // Ú¯ÙˆØ§Ù‡ÛŒÙ†Ø§Ù…Ù‡â€ŒÙ‡Ø§ â€” Ù‡Ø± Ù…ÙˆØ±Ø¯ Ø¯Ø± ÛŒÚ© Ø®Ø·
+  samples         String @default("[]") // JSON Ø¢Ø±Ø§ÛŒÙ‡Ù” Ù†Ù…ÙˆÙ†Ù‡Ù” ØªØ¯Ø±ÛŒØ³: [{kind:"video|audio|text|dialog",title,url,desc}]
   sortOrder Int      @default(0)
   published Boolean  @default(true)
   createdAt DateTime @default(now())
 }
 
-// درس‌های بخش Learn — کارت + محتوای درس (واژه‌ها) همه از پنل ادمین (تب Lessons)
-// words به‌صورت JSON ذخیره می‌شود: [{"chinese":"你好","pinyin":"nǐ hǎo","meaning":"Hello","example":"..."}]
-// اگر جدول خالی باشد، کارت‌ها و درس‌های پیش‌فرض فایل محتوا نمایش داده می‌شوند
+// Ø¯Ø±Ø³â€ŒÙ‡Ø§ÛŒ Ø¨Ø®Ø´ Learn â€” Ú©Ø§Ø±Øª + Ù…Ø­ØªÙˆØ§ÛŒ Ø¯Ø±Ø³ (ÙˆØ§Ú˜Ù‡â€ŒÙ‡Ø§) Ù‡Ù…Ù‡ Ø§Ø² Ù¾Ù†Ù„ Ø§Ø¯Ù…ÛŒÙ† (ØªØ¨ Lessons)
+// words Ø¨Ù‡â€ŒØµÙˆØ±Øª JSON Ø°Ø®ÛŒØ±Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯: [{"chinese":"ä½ å¥½","pinyin":"nÇ hÇŽo","meaning":"Hello","example":"..."}]
+// Ø§Ú¯Ø± Ø¬Ø¯ÙˆÙ„ Ø®Ø§Ù„ÛŒ Ø¨Ø§Ø´Ø¯ØŒ Ú©Ø§Ø±Øªâ€ŒÙ‡Ø§ Ùˆ Ø¯Ø±Ø³â€ŒÙ‡Ø§ÛŒ Ù¾ÛŒØ´â€ŒÙØ±Ø¶ ÙØ§ÛŒÙ„ Ù…Ø­ØªÙˆØ§ Ù†Ù…Ø§ÛŒØ´ Ø¯Ø§Ø¯Ù‡ Ù…ÛŒâ€ŒØ´ÙˆÙ†Ø¯
 model Lesson {
   id        String   @id @default(cuid())
-  slug      String   @unique // کلید دیپ‌لینک (?lesson=slug) — مثلاً greetings
-  title     String // عنوان کارت و مودال
-  text      String   @default("") // توضیح روی کارت
-  subtitle  String   @default("") // توضیح بالای مودال درس
-  big       String   @default("") // کاراکتر بزرگ روی کارت (مثلاً 你好 یا 🧧)
-  small     String   @default("") // زیرنویس کوچک کارت (پین‌یین)
-  tag       String   @default("") // برچسب کارت (Vocabulary / Culture …)
-  category  String   @default("vocabulary") // دستهٔ فیلتر Learn (مثل vocabulary everyday)
+  slug      String   @unique // Ú©Ù„ÛŒØ¯ Ø¯ÛŒÙ¾â€ŒÙ„ÛŒÙ†Ú© (?lesson=slug) â€” Ù…Ø«Ù„Ø§Ù‹ greetings
+  title     String // Ø¹Ù†ÙˆØ§Ù† Ú©Ø§Ø±Øª Ùˆ Ù…ÙˆØ¯Ø§Ù„
+  text      String   @default("") // ØªÙˆØ¶ÛŒØ­ Ø±ÙˆÛŒ Ú©Ø§Ø±Øª
+  subtitle  String   @default("") // ØªÙˆØ¶ÛŒØ­ Ø¨Ø§Ù„Ø§ÛŒ Ù…ÙˆØ¯Ø§Ù„ Ø¯Ø±Ø³
+  big       String   @default("") // Ú©Ø§Ø±Ø§Ú©ØªØ± Ø¨Ø²Ø±Ú¯ Ø±ÙˆÛŒ Ú©Ø§Ø±Øª (Ù…Ø«Ù„Ø§Ù‹ ä½ å¥½ ÛŒØ§ ðŸ§§)
+  small     String   @default("") // Ø²ÛŒØ±Ù†ÙˆÛŒØ³ Ú©ÙˆÚ†Ú© Ú©Ø§Ø±Øª (Ù¾ÛŒÙ†â€ŒÛŒÛŒÙ†)
+  tag       String   @default("") // Ø¨Ø±Ú†Ø³Ø¨ Ú©Ø§Ø±Øª (Vocabulary / Culture â€¦)
+  category  String   @default("vocabulary") // Ø¯Ø³ØªÙ‡Ù” ÙÛŒÙ„ØªØ± Learn (Ù…Ø«Ù„ vocabulary everyday)
   color     String   @default("sage") // sage | butter | peach | cream
-  action    String   @default("Learn") // متن دکمهٔ کارت (Learn / Watch)
-  isVideo   Boolean  @default(false) // نشان Video روی کارت
-  words     String   @default("[]") // JSON آرایهٔ واژه‌های درس
+  action    String   @default("Learn") // Ù…ØªÙ† Ø¯Ú©Ù…Ù‡Ù” Ú©Ø§Ø±Øª (Learn / Watch)
+  isVideo   Boolean  @default(false) // Ù†Ø´Ø§Ù† Video Ø±ÙˆÛŒ Ú©Ø§Ø±Øª
+  words     String   @default("[]") // JSON Ø¢Ø±Ø§ÛŒÙ‡Ù” ÙˆØ§Ú˜Ù‡â€ŒÙ‡Ø§ÛŒ Ø¯Ø±Ø³
   sortOrder Int      @default(0)
   published Boolean  @default(true)
   createdAt DateTime @default(now())
 }
 
-// تنظیمات سایت (کلید-مقدار JSON) — آنچه مالک از پنل (تب Settings) عوض می‌کند:
-//   «announcement» = نوار اعلان بالای سایت | «homeStats» = آمار داشبورد صفحهٔ اول
-// اگر کلیدی در دیتابیس نباشد، مقدار پیش‌فرض فایل محتوا استفاده می‌شود
+// ØªÙ†Ø¸ÛŒÙ…Ø§Øª Ø³Ø§ÛŒØª (Ú©Ù„ÛŒØ¯-Ù…Ù‚Ø¯Ø§Ø± JSON) â€” Ø¢Ù†Ú†Ù‡ Ù…Ø§Ù„Ú© Ø§Ø² Ù¾Ù†Ù„ (ØªØ¨ Settings) Ø¹ÙˆØ¶ Ù…ÛŒâ€ŒÚ©Ù†Ø¯:
+//   Â«announcementÂ» = Ù†ÙˆØ§Ø± Ø§Ø¹Ù„Ø§Ù† Ø¨Ø§Ù„Ø§ÛŒ Ø³Ø§ÛŒØª | Â«homeStatsÂ» = Ø¢Ù…Ø§Ø± Ø¯Ø§Ø´Ø¨ÙˆØ±Ø¯ ØµÙØ­Ù‡Ù” Ø§ÙˆÙ„
+// Ø§Ú¯Ø± Ú©Ù„ÛŒØ¯ÛŒ Ø¯Ø± Ø¯ÛŒØªØ§Ø¨ÛŒØ³ Ù†Ø¨Ø§Ø´Ø¯ØŒ Ù…Ù‚Ø¯Ø§Ø± Ù¾ÛŒØ´â€ŒÙØ±Ø¶ ÙØ§ÛŒÙ„ Ù…Ø­ØªÙˆØ§ Ø§Ø³ØªÙØ§Ø¯Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯
 model SiteSetting {
   key       String   @id
   value     String // JSON
@@ -253,30 +268,30 @@ model SiteSetting {
 }
 
 // ---------------------------------------------------------------------------
-// 👤 حساب‌های کاربری واقعی سایت (ثبت‌نام/ورود مشتریان) — فاز ۳۰
-// امنیت: رمز با scrypt هش می‌شود (salt:hash) — رمز خام و هش هرگز به کلاینت
-// نمی‌رود و در هیچ API ادمین هم select نمی‌شود.
-// telegramUsername نرمال‌شده و بدون @ ذخیره می‌شود؛ telegramId (عددی) فعلاً
-// null می‌ماند و برای اتوماسیون‌های آیندهٔ تلگرام در نظر گرفته شده است.
+// ðŸ‘¤ Ø­Ø³Ø§Ø¨â€ŒÙ‡Ø§ÛŒ Ú©Ø§Ø±Ø¨Ø±ÛŒ ÙˆØ§Ù‚Ø¹ÛŒ Ø³Ø§ÛŒØª (Ø«Ø¨Øªâ€ŒÙ†Ø§Ù…/ÙˆØ±ÙˆØ¯ Ù…Ø´ØªØ±ÛŒØ§Ù†) â€” ÙØ§Ø² Û³Û°
+// Ø§Ù…Ù†ÛŒØª: Ø±Ù…Ø² Ø¨Ø§ scrypt Ù‡Ø´ Ù…ÛŒâ€ŒØ´ÙˆØ¯ (salt:hash) â€” Ø±Ù…Ø² Ø®Ø§Ù… Ùˆ Ù‡Ø´ Ù‡Ø±Ú¯Ø² Ø¨Ù‡ Ú©Ù„Ø§ÛŒÙ†Øª
+// Ù†Ù…ÛŒâ€ŒØ±ÙˆØ¯ Ùˆ Ø¯Ø± Ù‡ÛŒÚ† API Ø§Ø¯Ù…ÛŒÙ† Ù‡Ù… select Ù†Ù…ÛŒâ€ŒØ´ÙˆØ¯.
+// telegramUsername Ù†Ø±Ù…Ø§Ù„â€ŒØ´Ø¯Ù‡ Ùˆ Ø¨Ø¯ÙˆÙ† @ Ø°Ø®ÛŒØ±Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯Ø› telegramId (Ø¹Ø¯Ø¯ÛŒ) ÙØ¹Ù„Ø§Ù‹
+// null Ù…ÛŒâ€ŒÙ…Ø§Ù†Ø¯ Ùˆ Ø¨Ø±Ø§ÛŒ Ø§ØªÙˆÙ…Ø§Ø³ÛŒÙˆÙ†â€ŒÙ‡Ø§ÛŒ Ø¢ÛŒÙ†Ø¯Ù‡Ù” ØªÙ„Ú¯Ø±Ø§Ù… Ø¯Ø± Ù†Ø¸Ø± Ú¯Ø±ÙØªÙ‡ Ø´Ø¯Ù‡ Ø§Ø³Øª.
 // ---------------------------------------------------------------------------
 model User {
   id               String    @id @default(cuid())
   email            String    @unique
-  passwordHash     String // scrypt — فرمت «salt:hash»
+  passwordHash     String // scrypt â€” ÙØ±Ù…Øª Â«salt:hashÂ»
   firstName        String
   lastName         String
-  dateOfBirth      DateTime? // 🎂 تاریخ تولد — در ثبت‌نام حساب اجباری است (کاربران قدیمی null)
-  country          String    @default("") // نام کامل کشور از سلکتور ISO
-  countryCode      String    @default("") // کد ISO 3166-1 alpha-2 (مثل DE)
-  phone            String? // شمارهٔ تماس — اختیاری
-  telegramUsername String? // نرمال‌شده، بدون @ — اختیاری و بدون یکتایی سراسری
-  telegramId       String? // شناسهٔ عددی تلگرام — هنوز در دسترس نیست؛ برای آینده
-  // 🆔 فاز ۶۰ — کد یکتای پایدار دانش‌پذیر (CT-XXXXXX): یک‌بار هنگام ساخت حساب
-  // ساخته و برای همیشه ذخیره می‌شود — هرگز با restart/redeploy/login دوباره
-  // تولید نمی‌شود. DB تنها منبع حقیقت است (بند ۱۰ تسک پایداری)
+  dateOfBirth      DateTime? // ðŸŽ‚ ØªØ§Ø±ÛŒØ® ØªÙˆÙ„Ø¯ â€” Ø¯Ø± Ø«Ø¨Øªâ€ŒÙ†Ø§Ù… Ø­Ø³Ø§Ø¨ Ø§Ø¬Ø¨Ø§Ø±ÛŒ Ø§Ø³Øª (Ú©Ø§Ø±Ø¨Ø±Ø§Ù† Ù‚Ø¯ÛŒÙ…ÛŒ null)
+  country          String    @default("") // Ù†Ø§Ù… Ú©Ø§Ù…Ù„ Ú©Ø´ÙˆØ± Ø§Ø² Ø³Ù„Ú©ØªÙˆØ± ISO
+  countryCode      String    @default("") // Ú©Ø¯ ISO 3166-1 alpha-2 (Ù…Ø«Ù„ DE)
+  phone            String? // Ø´Ù…Ø§Ø±Ù‡Ù” ØªÙ…Ø§Ø³ â€” Ø§Ø®ØªÛŒØ§Ø±ÛŒ
+  telegramUsername String? // Ù†Ø±Ù…Ø§Ù„â€ŒØ´Ø¯Ù‡ØŒ Ø¨Ø¯ÙˆÙ† @ â€” Ø§Ø®ØªÛŒØ§Ø±ÛŒ Ùˆ Ø¨Ø¯ÙˆÙ† ÛŒÚ©ØªØ§ÛŒÛŒ Ø³Ø±Ø§Ø³Ø±ÛŒ
+  telegramId       String? // Ø´Ù†Ø§Ø³Ù‡Ù” Ø¹Ø¯Ø¯ÛŒ ØªÙ„Ú¯Ø±Ø§Ù… â€” Ù‡Ù†ÙˆØ² Ø¯Ø± Ø¯Ø³ØªØ±Ø³ Ù†ÛŒØ³ØªØ› Ø¨Ø±Ø§ÛŒ Ø¢ÛŒÙ†Ø¯Ù‡
+  // ðŸ†” ÙØ§Ø² Û¶Û° â€” Ú©Ø¯ ÛŒÚ©ØªØ§ÛŒ Ù¾Ø§ÛŒØ¯Ø§Ø± Ø¯Ø§Ù†Ø´â€ŒÙ¾Ø°ÛŒØ± (CT-XXXXXX): ÛŒÚ©â€ŒØ¨Ø§Ø± Ù‡Ù†Ú¯Ø§Ù… Ø³Ø§Ø®Øª Ø­Ø³Ø§Ø¨
+  // Ø³Ø§Ø®ØªÙ‡ Ùˆ Ø¨Ø±Ø§ÛŒ Ù‡Ù…ÛŒØ´Ù‡ Ø°Ø®ÛŒØ±Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯ â€” Ù‡Ø±Ú¯Ø² Ø¨Ø§ restart/redeploy/login Ø¯ÙˆØ¨Ø§Ø±Ù‡
+  // ØªÙˆÙ„ÛŒØ¯ Ù†Ù…ÛŒâ€ŒØ´ÙˆØ¯. DB ØªÙ†Ù‡Ø§ Ù…Ù†Ø¨Ø¹ Ø­Ù‚ÛŒÙ‚Øª Ø§Ø³Øª (Ø¨Ù†Ø¯ Û±Û° ØªØ³Ú© Ù¾Ø§ÛŒØ¯Ø§Ø±ÛŒ)
   uniqueCode       String?   @unique
-  // 🎓 نقش LMS — student (پیش‌فرض) | teacher — فقط ادمین تغییرش می‌دهد؛
-  // ادمین خودش سیستم سشن جداگانه دارد و در این فیلد نمی‌آید
+  // ðŸŽ“ Ù†Ù‚Ø´ LMS â€” student (Ù¾ÛŒØ´â€ŒÙØ±Ø¶) | teacher â€” ÙÙ‚Ø· Ø§Ø¯Ù…ÛŒÙ† ØªØºÛŒÛŒØ±Ø´ Ù…ÛŒâ€ŒØ¯Ù‡Ø¯Ø›
+  // Ø§Ø¯Ù…ÛŒÙ† Ø®ÙˆØ¯Ø´ Ø³ÛŒØ³ØªÙ… Ø³Ø´Ù† Ø¬Ø¯Ø§Ú¯Ø§Ù†Ù‡ Ø¯Ø§Ø±Ø¯ Ùˆ Ø¯Ø± Ø§ÛŒÙ† ÙÛŒÙ„Ø¯ Ù†Ù…ÛŒâ€ŒØ¢ÛŒØ¯
   role             String    @default("student")
   lastLoginAt      DateTime?
   createdAt        DateTime  @default(now())
@@ -284,12 +299,13 @@ model User {
 
   orders   UsdtOrder[]
   sessions UserSession[]
+  practiceEvents PracticeEvent[]
   resetTokens PasswordResetToken[]
   registrations Registration[] @relation("RegistrationUser")
   schedules        ClassSchedule[] @relation("ScheduleUser")
   scheduleAlerts   ScheduleNotification[]
   homeworkSubmissions HomeworkSubmission[]
-  // 🎓 LMS
+  // ðŸŽ“ LMS
   taughtClasses CourseClass[] @relation("ClassTeacher")
   enrollments   ClassEnrollment[]
   lmsSessionsCreated OnlineSession[] @relation("LmsSessionCreator")
@@ -299,8 +315,8 @@ model User {
   @@index([createdAt])
 }
 
-// 🔑 نشست‌های ورود کاربر — توکن تصادفی ۳۲بایتی در کوکی httpOnly؛
-// فقط sha256 توکن در دیتابیس ذخیره می‌شود (خود توکن هرگز).
+// ðŸ”‘ Ù†Ø´Ø³Øªâ€ŒÙ‡Ø§ÛŒ ÙˆØ±ÙˆØ¯ Ú©Ø§Ø±Ø¨Ø± â€” ØªÙˆÚ©Ù† ØªØµØ§Ø¯ÙÛŒ Û³Û²Ø¨Ø§ÛŒØªÛŒ Ø¯Ø± Ú©ÙˆÚ©ÛŒ httpOnlyØ›
+// ÙÙ‚Ø· sha256 ØªÙˆÚ©Ù† Ø¯Ø± Ø¯ÛŒØªØ§Ø¨ÛŒØ³ Ø°Ø®ÛŒØ±Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯ (Ø®ÙˆØ¯ ØªÙˆÚ©Ù† Ù‡Ø±Ú¯Ø²).
 model UserSession {
   id        String   @id @default(cuid())
   tokenHash String  @unique // sha256(token)
@@ -314,42 +330,42 @@ model UserSession {
 }
 
 // ---------------------------------------------------------------------------
-// 🔐 توکن‌های بازیابی رمز عبور (فاز ۴۰)
-// امنیت: توکن تصادفی ۳۲بایتی فقط به‌صورت sha256 ذخیره می‌شود (توکن خام هرگز
-// به دیتابیس/لاگ/پاسخ نمی‌رود)؛ یک‌بارمصرف (usedAt) و زمان‌محدود (۶۰ دقیقه).
-// بعد از تغییر موفق رمز، همهٔ توکن‌های بازِ کاربر و همهٔ نشست‌های فعالش باطل
-// می‌شوند (خارج‌شدن اجباری از همهٔ دستگاه‌ها).
+// ðŸ” ØªÙˆÚ©Ù†â€ŒÙ‡Ø§ÛŒ Ø¨Ø§Ø²ÛŒØ§Ø¨ÛŒ Ø±Ù…Ø² Ø¹Ø¨ÙˆØ± (ÙØ§Ø² Û´Û°)
+// Ø§Ù…Ù†ÛŒØª: ØªÙˆÚ©Ù† ØªØµØ§Ø¯ÙÛŒ Û³Û²Ø¨Ø§ÛŒØªÛŒ ÙÙ‚Ø· Ø¨Ù‡â€ŒØµÙˆØ±Øª sha256 Ø°Ø®ÛŒØ±Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯ (ØªÙˆÚ©Ù† Ø®Ø§Ù… Ù‡Ø±Ú¯Ø²
+// Ø¨Ù‡ Ø¯ÛŒØªØ§Ø¨ÛŒØ³/Ù„Ø§Ú¯/Ù¾Ø§Ø³Ø® Ù†Ù…ÛŒâ€ŒØ±ÙˆØ¯)Ø› ÛŒÚ©â€ŒØ¨Ø§Ø±Ù…ØµØ±Ù (usedAt) Ùˆ Ø²Ù…Ø§Ù†â€ŒÙ…Ø­Ø¯ÙˆØ¯ (Û¶Û° Ø¯Ù‚ÛŒÙ‚Ù‡).
+// Ø¨Ø¹Ø¯ Ø§Ø² ØªØºÛŒÛŒØ± Ù…ÙˆÙÙ‚ Ø±Ù…Ø²ØŒ Ù‡Ù…Ù‡Ù” ØªÙˆÚ©Ù†â€ŒÙ‡Ø§ÛŒ Ø¨Ø§Ø²Ù Ú©Ø§Ø±Ø¨Ø± Ùˆ Ù‡Ù…Ù‡Ù” Ù†Ø´Ø³Øªâ€ŒÙ‡Ø§ÛŒ ÙØ¹Ø§Ù„Ø´ Ø¨Ø§Ø·Ù„
+// Ù…ÛŒâ€ŒØ´ÙˆÙ†Ø¯ (Ø®Ø§Ø±Ø¬â€ŒØ´Ø¯Ù† Ø§Ø¬Ø¨Ø§Ø±ÛŒ Ø§Ø² Ù‡Ù…Ù‡Ù” Ø¯Ø³ØªÚ¯Ø§Ù‡â€ŒÙ‡Ø§).
 // ---------------------------------------------------------------------------
 model PasswordResetToken {
   id        String    @id @default(cuid())
   tokenHash String    @unique // sha256(token)
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime // حداکثر ۶۰ دقیقه پس از ساخت
-  usedAt    DateTime? // ست‌شدن یعنی مصرف‌شده — هرگز دوباره قابل استفاده نیست
+  expiresAt DateTime // Ø­Ø¯Ø§Ú©Ø«Ø± Û¶Û° Ø¯Ù‚ÛŒÙ‚Ù‡ Ù¾Ø³ Ø§Ø² Ø³Ø§Ø®Øª
+  usedAt    DateTime? // Ø³Øªâ€ŒØ´Ø¯Ù† ÛŒØ¹Ù†ÛŒ Ù…ØµØ±Ùâ€ŒØ´Ø¯Ù‡ â€” Ù‡Ø±Ú¯Ø² Ø¯ÙˆØ¨Ø§Ø±Ù‡ Ù‚Ø§Ø¨Ù„ Ø§Ø³ØªÙØ§Ø¯Ù‡ Ù†ÛŒØ³Øª
   createdAt DateTime  @default(now())
 
   @@index([userId])
 }
 
 // ---------------------------------------------------------------------------
-// 📚 تکالیف (Homework) — استاد (ادمین) تکلیف می‌سازد و فایل پیوست می‌گذارد؛
-// دانش‌پذیرِ واردشده تکلیف و پیوست‌هایش را دانلود می‌کند و پاسخ خود (فایل‌ها +
-// یادداشت) را آپلود می‌کند؛ استاد پاسخ‌ها را می‌بیند/دانلود می‌کند و بازخورد
-// متنی می‌دهد. هر دانش‌پذیر برای هر تکلیف فقط «یک» رکورد پاسخ دارد
-// (@@unique) — ارسال دوباره همان رکورد را به‌روز می‌کند.
-// فایل‌ها هرگز در public/ نیستند: شناسهٔ ۴۸hex غیرقابل‌حدس + مسیر دانلودِ
-// احرازشده (Vercel Blob وقتی BLOB_READ_WRITE_TOKEN تنظیم باشد، وگرنه FS محلی).
+// ðŸ“š ØªÚ©Ø§Ù„ÛŒÙ (Homework) â€” Ø§Ø³ØªØ§Ø¯ (Ø§Ø¯Ù…ÛŒÙ†) ØªÚ©Ù„ÛŒÙ Ù…ÛŒâ€ŒØ³Ø§Ø²Ø¯ Ùˆ ÙØ§ÛŒÙ„ Ù¾ÛŒÙˆØ³Øª Ù…ÛŒâ€ŒÚ¯Ø°Ø§Ø±Ø¯Ø›
+// Ø¯Ø§Ù†Ø´â€ŒÙ¾Ø°ÛŒØ±Ù ÙˆØ§Ø±Ø¯Ø´Ø¯Ù‡ ØªÚ©Ù„ÛŒÙ Ùˆ Ù¾ÛŒÙˆØ³Øªâ€ŒÙ‡Ø§ÛŒØ´ Ø±Ø§ Ø¯Ø§Ù†Ù„ÙˆØ¯ Ù…ÛŒâ€ŒÚ©Ù†Ø¯ Ùˆ Ù¾Ø§Ø³Ø® Ø®ÙˆØ¯ (ÙØ§ÛŒÙ„â€ŒÙ‡Ø§ +
+// ÛŒØ§Ø¯Ø¯Ø§Ø´Øª) Ø±Ø§ Ø¢Ù¾Ù„ÙˆØ¯ Ù…ÛŒâ€ŒÚ©Ù†Ø¯Ø› Ø§Ø³ØªØ§Ø¯ Ù¾Ø§Ø³Ø®â€ŒÙ‡Ø§ Ø±Ø§ Ù…ÛŒâ€ŒØ¨ÛŒÙ†Ø¯/Ø¯Ø§Ù†Ù„ÙˆØ¯ Ù…ÛŒâ€ŒÚ©Ù†Ø¯ Ùˆ Ø¨Ø§Ø²Ø®ÙˆØ±Ø¯
+// Ù…ØªÙ†ÛŒ Ù…ÛŒâ€ŒØ¯Ù‡Ø¯. Ù‡Ø± Ø¯Ø§Ù†Ø´â€ŒÙ¾Ø°ÛŒØ± Ø¨Ø±Ø§ÛŒ Ù‡Ø± ØªÚ©Ù„ÛŒÙ ÙÙ‚Ø· Â«ÛŒÚ©Â» Ø±Ú©ÙˆØ±Ø¯ Ù¾Ø§Ø³Ø® Ø¯Ø§Ø±Ø¯
+// (@@unique) â€” Ø§Ø±Ø³Ø§Ù„ Ø¯ÙˆØ¨Ø§Ø±Ù‡ Ù‡Ù…Ø§Ù† Ø±Ú©ÙˆØ±Ø¯ Ø±Ø§ Ø¨Ù‡â€ŒØ±ÙˆØ² Ù…ÛŒâ€ŒÚ©Ù†Ø¯.
+// ÙØ§ÛŒÙ„â€ŒÙ‡Ø§ Ù‡Ø±Ú¯Ø² Ø¯Ø± public/ Ù†ÛŒØ³ØªÙ†Ø¯: Ø´Ù†Ø§Ø³Ù‡Ù” Û´Û¸hex ØºÛŒØ±Ù‚Ø§Ø¨Ù„â€ŒØ­Ø¯Ø³ + Ù…Ø³ÛŒØ± Ø¯Ø§Ù†Ù„ÙˆØ¯Ù
+// Ø§Ø­Ø±Ø§Ø²Ø´Ø¯Ù‡ (Vercel Blob ÙˆÙ‚ØªÛŒ BLOB_READ_WRITE_TOKEN ØªÙ†Ø¸ÛŒÙ… Ø¨Ø§Ø´Ø¯ØŒ ÙˆÚ¯Ø±Ù†Ù‡ FS Ù…Ø­Ù„ÛŒ).
 // ---------------------------------------------------------------------------
 model Homework {
   id          String    @id @default(cuid())
   title       String
   description String    @default("")
-  className   String    @default("") // برچسب اختیاری کلاس — فقط نمایشی
-  dueAt       DateTime? // مهلت (نمایشی — سخت‌گیری سمت سرور نیست)
-  archived    Boolean   @default(false) // آرشیو = از پنل دانش‌پذیر پنهان می‌شود
-  // 🎓 LMS — اتصال اختیاری به کلاس + سقف نمره (وقتی classId هست، دانش‌پذیرهای
-  // ثبت‌نام‌شدهٔ همان کلاس می‌بینند؛ null = برای همهٔ کاربران واردشده)
+  className   String    @default("") // Ø¨Ø±Ú†Ø³Ø¨ Ø§Ø®ØªÛŒØ§Ø±ÛŒ Ú©Ù„Ø§Ø³ â€” ÙÙ‚Ø· Ù†Ù…Ø§ÛŒØ´ÛŒ
+  dueAt       DateTime? // Ù…Ù‡Ù„Øª (Ù†Ù…Ø§ÛŒØ´ÛŒ â€” Ø³Ø®Øªâ€ŒÚ¯ÛŒØ±ÛŒ Ø³Ù…Øª Ø³Ø±ÙˆØ± Ù†ÛŒØ³Øª)
+  archived    Boolean   @default(false) // Ø¢Ø±Ø´ÛŒÙˆ = Ø§Ø² Ù¾Ù†Ù„ Ø¯Ø§Ù†Ø´â€ŒÙ¾Ø°ÛŒØ± Ù¾Ù†Ù‡Ø§Ù† Ù…ÛŒâ€ŒØ´ÙˆØ¯
+  // ðŸŽ“ LMS â€” Ø§ØªØµØ§Ù„ Ø§Ø®ØªÛŒØ§Ø±ÛŒ Ø¨Ù‡ Ú©Ù„Ø§Ø³ + Ø³Ù‚Ù Ù†Ù…Ø±Ù‡ (ÙˆÙ‚ØªÛŒ classId Ù‡Ø³ØªØŒ Ø¯Ø§Ù†Ø´â€ŒÙ¾Ø°ÛŒØ±Ù‡Ø§ÛŒ
+  // Ø«Ø¨Øªâ€ŒÙ†Ø§Ù…â€ŒØ´Ø¯Ù‡Ù” Ù‡Ù…Ø§Ù† Ú©Ù„Ø§Ø³ Ù…ÛŒâ€ŒØ¨ÛŒÙ†Ù†Ø¯Ø› null = Ø¨Ø±Ø§ÛŒ Ù‡Ù…Ù‡Ù” Ú©Ø§Ø±Ø¨Ø±Ø§Ù† ÙˆØ§Ø±Ø¯Ø´Ø¯Ù‡)
   classId     String?
   class       CourseClass? @relation(fields: [classId], references: [id], onDelete: SetNull)
   maxScore    Int       @default(100)
@@ -369,13 +385,13 @@ model HomeworkSubmission {
   homework   Homework  @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
   userId     String
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  note       String    @default("") // یادداشت دانش‌پذیر همراه پاسخ
-  feedback   String? // بازخورد متنی استاد — null = هنوز بررسی نشده
+  note       String    @default("") // ÛŒØ§Ø¯Ø¯Ø§Ø´Øª Ø¯Ø§Ù†Ø´â€ŒÙ¾Ø°ÛŒØ± Ù‡Ù…Ø±Ø§Ù‡ Ù¾Ø§Ø³Ø®
+  feedback   String? // Ø¨Ø§Ø²Ø®ÙˆØ±Ø¯ Ù…ØªÙ†ÛŒ Ø§Ø³ØªØ§Ø¯ â€” null = Ù‡Ù†ÙˆØ² Ø¨Ø±Ø±Ø³ÛŒ Ù†Ø´Ø¯Ù‡
   feedbackAt DateTime?
-  // 🎓 LMS نمره‌دهی — status: SUBMITTED | GRADED | RETURNED (برای اصلاح)
+  // ðŸŽ“ LMS Ù†Ù…Ø±Ù‡â€ŒØ¯Ù‡ÛŒ â€” status: SUBMITTED | GRADED | RETURNED (Ø¨Ø±Ø§ÛŒ Ø§ØµÙ„Ø§Ø­)
   score      Int?
   status     String    @default("SUBMITTED")
-  releasedAt DateTime? // نمره/بازخورد فقط بعد از release برای دانش‌پذیر پیدا است
+  releasedAt DateTime? // Ù†Ù…Ø±Ù‡/Ø¨Ø§Ø²Ø®ÙˆØ±Ø¯ ÙÙ‚Ø· Ø¨Ø¹Ø¯ Ø§Ø² release Ø¨Ø±Ø§ÛŒ Ø¯Ø§Ù†Ø´â€ŒÙ¾Ø°ÛŒØ± Ù¾ÛŒØ¯Ø§ Ø§Ø³Øª
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
@@ -387,16 +403,16 @@ model HomeworkSubmission {
 }
 
 model HomeworkFile {
-  id           String   @id // ۴۸ hex تصادفی — غیرقابل‌حدس (کلید دانلود)
-  kind         String // ASSIGNMENT (پیوست تکلیف) | SUBMISSION (فایل پاسخ دانش‌پذیر)
+  id           String   @id // Û´Û¸ hex ØªØµØ§Ø¯ÙÛŒ â€” ØºÛŒØ±Ù‚Ø§Ø¨Ù„â€ŒØ­Ø¯Ø³ (Ú©Ù„ÛŒØ¯ Ø¯Ø§Ù†Ù„ÙˆØ¯)
+  kind         String // ASSIGNMENT (Ù¾ÛŒÙˆØ³Øª ØªÚ©Ù„ÛŒÙ) | SUBMISSION (ÙØ§ÛŒÙ„ Ù¾Ø§Ø³Ø® Ø¯Ø§Ù†Ø´â€ŒÙ¾Ø°ÛŒØ±)
   homeworkId   String
   homework     Homework @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
   submissionId String?
   submission   HomeworkSubmission? @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  name         String // نام نمایشی پاک‌سازی‌شدهٔ فایل اصلی
-  mime         String // Content-Type از روی پسوند مجاز
+  name         String // Ù†Ø§Ù… Ù†Ù…Ø§ÛŒØ´ÛŒ Ù¾Ø§Ú©â€ŒØ³Ø§Ø²ÛŒâ€ŒØ´Ø¯Ù‡Ù” ÙØ§ÛŒÙ„ Ø§ØµÙ„ÛŒ
+  mime         String // Content-Type Ø§Ø² Ø±ÙˆÛŒ Ù¾Ø³ÙˆÙ†Ø¯ Ù…Ø¬Ø§Ø²
   size         Int
-  url          String? // URL بلاک وقتی Blob فعال است — null = فایل روی FS محلی
+  url          String? // URL Ø¨Ù„Ø§Ú© ÙˆÙ‚ØªÛŒ Blob ÙØ¹Ø§Ù„ Ø§Ø³Øª â€” null = ÙØ§ÛŒÙ„ Ø±ÙˆÛŒ FS Ù…Ø­Ù„ÛŒ
   createdAt    DateTime @default(now())
 
   @@index([homeworkId])
@@ -404,10 +420,10 @@ model HomeworkFile {
 }
 
 // ---------------------------------------------------------------------------
-// 🎓 LMS — سیستم آموزش (فاز LMS-1)
-// کلاس = CourseClass موجود (کاتالوگ ادمین). ثبت‌نامِ آموزشیِ جدا از خرید:
-// ClassEnrollment توسط ادمین/استاد مدیریت می‌شود؛ خرید (PAID order) شرط دعوت
-// است اما منبع حقیقتِ دسترسی همین جدول است.
+// ðŸŽ“ LMS â€” Ø³ÛŒØ³ØªÙ… Ø¢Ù…ÙˆØ²Ø´ (ÙØ§Ø² LMS-1)
+// Ú©Ù„Ø§Ø³ = CourseClass Ù…ÙˆØ¬ÙˆØ¯ (Ú©Ø§ØªØ§Ù„ÙˆÚ¯ Ø§Ø¯Ù…ÛŒÙ†). Ø«Ø¨Øªâ€ŒÙ†Ø§Ù…Ù Ø¢Ù…ÙˆØ²Ø´ÛŒÙ Ø¬Ø¯Ø§ Ø§Ø² Ø®Ø±ÛŒØ¯:
+// ClassEnrollment ØªÙˆØ³Ø· Ø§Ø¯Ù…ÛŒÙ†/Ø§Ø³ØªØ§Ø¯ Ù…Ø¯ÛŒØ±ÛŒØª Ù…ÛŒâ€ŒØ´ÙˆØ¯Ø› Ø®Ø±ÛŒØ¯ (PAID order) Ø´Ø±Ø· Ø¯Ø¹ÙˆØª
+// Ø§Ø³Øª Ø§Ù…Ø§ Ù…Ù†Ø¨Ø¹ Ø­Ù‚ÛŒÙ‚ØªÙ Ø¯Ø³ØªØ±Ø³ÛŒ Ù‡Ù…ÛŒÙ† Ø¬Ø¯ÙˆÙ„ Ø§Ø³Øª.
 // ---------------------------------------------------------------------------
 model ClassEnrollment {
   id           String    @id @default(cuid())
@@ -415,7 +431,7 @@ model ClassEnrollment {
   class        CourseClass @relation(fields: [classId], references: [id], onDelete: Cascade)
   userId       String
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  enrolledById String? // کاربرِ واردشدهٔ انجام‌دهندهٔ ثبت‌نام (استاد) — ادمین سشن جدا دارد
+  enrolledById String? // Ú©Ø§Ø±Ø¨Ø±Ù ÙˆØ§Ø±Ø¯Ø´Ø¯Ù‡Ù” Ø§Ù†Ø¬Ø§Ù…â€ŒØ¯Ù‡Ù†Ø¯Ù‡Ù” Ø«Ø¨Øªâ€ŒÙ†Ø§Ù… (Ø§Ø³ØªØ§Ø¯) â€” Ø§Ø¯Ù…ÛŒÙ† Ø³Ø´Ù† Ø¬Ø¯Ø§ Ø¯Ø§Ø±Ø¯
   createdAt    DateTime  @default(now())
 
   @@unique([classId, userId])
@@ -428,10 +444,10 @@ model LearningMaterial {
   class        CourseClass @relation(fields: [classId], references: [id], onDelete: Cascade)
   title        String
   description  String    @default("")
-  moduleLabel  String    @default("") // برچسب ماژول/هفته (مثل Week 1)
-  sortOrder    Int       @default(0) // ترتیب درون کلاس (کمتر = بالاتر)
+  moduleLabel  String    @default("") // Ø¨Ø±Ú†Ø³Ø¨ Ù…Ø§Ú˜ÙˆÙ„/Ù‡ÙØªÙ‡ (Ù…Ø«Ù„ Week 1)
+  sortOrder    Int       @default(0) // ØªØ±ØªÛŒØ¨ Ø¯Ø±ÙˆÙ† Ú©Ù„Ø§Ø³ (Ú©Ù…ØªØ± = Ø¨Ø§Ù„Ø§ØªØ±)
   published    Boolean   @default(true)
-  visibleFrom  DateTime? // انتشار زمان‌بندی‌شده — null = از الان
+  visibleFrom  DateTime? // Ø§Ù†ØªØ´Ø§Ø± Ø²Ù…Ø§Ù†â€ŒØ¨Ù†Ø¯ÛŒâ€ŒØ´Ø¯Ù‡ â€” null = Ø§Ø² Ø§Ù„Ø§Ù†
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -441,13 +457,13 @@ model LearningMaterial {
 }
 
 model MaterialFile {
-  id         String   @id // ۴۸ hex تصادفی — غیرقابل‌حدس (کلید دانلود)
+  id         String   @id // Û´Û¸ hex ØªØµØ§Ø¯ÙÛŒ â€” ØºÛŒØ±Ù‚Ø§Ø¨Ù„â€ŒØ­Ø¯Ø³ (Ú©Ù„ÛŒØ¯ Ø¯Ø§Ù†Ù„ÙˆØ¯)
   materialId String
   material   LearningMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
   name       String
   mime       String
   size       Int
-  url        String? // URL بلاک وقتی Blob فعال است — null = فایل روی FS محلی
+  url        String? // URL Ø¨Ù„Ø§Ú© ÙˆÙ‚ØªÛŒ Blob ÙØ¹Ø§Ù„ Ø§Ø³Øª â€” null = ÙØ§ÛŒÙ„ Ø±ÙˆÛŒ FS Ù…Ø­Ù„ÛŒ
   createdAt  DateTime @default(now())
 
   @@index([materialId])
@@ -461,7 +477,7 @@ model OnlineSession {
   description String    @default("")
   startsAt    DateTime
   durationMin Int       @default(60)
-  // 🔗 جلسهٔ خارجی — لینک Zoom/Meet/Jitsi؛ ادغام API واقعی بعداً اضافه می‌شود
+  // ðŸ”— Ø¬Ù„Ø³Ù‡Ù” Ø®Ø§Ø±Ø¬ÛŒ â€” Ù„ÛŒÙ†Ú© Zoom/Meet/JitsiØ› Ø§Ø¯ØºØ§Ù… API ÙˆØ§Ù‚Ø¹ÛŒ Ø¨Ø¹Ø¯Ø§Ù‹ Ø§Ø¶Ø§ÙÙ‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯
   provider    String    @default("external") // external | zoom | google_meet | jitsi
   meetingUrl  String    @default("")
   status      String    @default("scheduled") // scheduled | live | completed | cancelled
@@ -502,66 +518,66 @@ model AnnouncementRead {
 }
 
 // ---------------------------------------------------------------------------
-// 🧾 سفارش‌های خرید کلاس
-// از فاز ۵۹ روش پرداختِ فعال «کارت بانکیِ دستی + رسید + تأیید ادمین» است
-// (paymentMethod = MANUAL_BANK_CARD)؛ ردیف‌های قدیمی با paymentMethod =
-// USDT_TRON (پرداخت آنلاین سابق) دست‌نخورده و حفظ شده‌اند.
-// مبلغ‌ها به «میکرو» ذخیره می‌شوند (۱ واحد = ۱٬۰۰۰٬۰۰۰) تا هیچ خطای اعشاری رخ ندهد.
-// وضعیت‌ها:
-//   جریانِ دستی: PENDING (پرداخت‌نشده) → RECEIPT_SUBMITTED (رسید در انتظار بررسی)
-//                → PAID (تأیید ادمین) | REJECTED (ردّ ادمین) → [ارسال دوبارهٔ رسید]
-//   CANCELLED (لغو ادمین) — جریانِ تاریخیِ USDT: DETECTED | UNDERPAID | EXPIRED
-// txHash یکتاست → هر تراکنش قدیمی روی blockchain فقط یک‌بار مصرف شده (ضد replay)
-// receiptId یکتا و غیرقابل‌حدس است — فایل رسید هرگز در پوشهٔ عمومی نیست و فقط
-// از مسیر احرازِ مالک/ادمین سرو می‌شود.
+// ðŸ§¾ Ø³ÙØ§Ø±Ø´â€ŒÙ‡Ø§ÛŒ Ø®Ø±ÛŒØ¯ Ú©Ù„Ø§Ø³
+// Ø§Ø² ÙØ§Ø² ÛµÛ¹ Ø±ÙˆØ´ Ù¾Ø±Ø¯Ø§Ø®ØªÙ ÙØ¹Ø§Ù„ Â«Ú©Ø§Ø±Øª Ø¨Ø§Ù†Ú©ÛŒÙ Ø¯Ø³ØªÛŒ + Ø±Ø³ÛŒØ¯ + ØªØ£ÛŒÛŒØ¯ Ø§Ø¯Ù…ÛŒÙ†Â» Ø§Ø³Øª
+// (paymentMethod = MANUAL_BANK_CARD)Ø› Ø±Ø¯ÛŒÙâ€ŒÙ‡Ø§ÛŒ Ù‚Ø¯ÛŒÙ…ÛŒ Ø¨Ø§ paymentMethod =
+// USDT_TRON (Ù¾Ø±Ø¯Ø§Ø®Øª Ø¢Ù†Ù„Ø§ÛŒÙ† Ø³Ø§Ø¨Ù‚) Ø¯Ø³Øªâ€ŒÙ†Ø®ÙˆØ±Ø¯Ù‡ Ùˆ Ø­ÙØ¸ Ø´Ø¯Ù‡â€ŒØ§Ù†Ø¯.
+// Ù…Ø¨Ù„Øºâ€ŒÙ‡Ø§ Ø¨Ù‡ Â«Ù…ÛŒÚ©Ø±ÙˆÂ» Ø°Ø®ÛŒØ±Ù‡ Ù…ÛŒâ€ŒØ´ÙˆÙ†Ø¯ (Û± ÙˆØ§Ø­Ø¯ = Û±Ù¬Û°Û°Û°Ù¬Û°Û°Û°) ØªØ§ Ù‡ÛŒÚ† Ø®Ø·Ø§ÛŒ Ø§Ø¹Ø´Ø§Ø±ÛŒ Ø±Ø® Ù†Ø¯Ù‡Ø¯.
+// ÙˆØ¶Ø¹ÛŒØªâ€ŒÙ‡Ø§:
+//   Ø¬Ø±ÛŒØ§Ù†Ù Ø¯Ø³ØªÛŒ: PENDING (Ù¾Ø±Ø¯Ø§Ø®Øªâ€ŒÙ†Ø´Ø¯Ù‡) â†’ RECEIPT_SUBMITTED (Ø±Ø³ÛŒØ¯ Ø¯Ø± Ø§Ù†ØªØ¸Ø§Ø± Ø¨Ø±Ø±Ø³ÛŒ)
+//                â†’ PAID (ØªØ£ÛŒÛŒØ¯ Ø§Ø¯Ù…ÛŒÙ†) | REJECTED (Ø±Ø¯Ù‘ Ø§Ø¯Ù…ÛŒÙ†) â†’ [Ø§Ø±Ø³Ø§Ù„ Ø¯ÙˆØ¨Ø§Ø±Ù‡Ù” Ø±Ø³ÛŒØ¯]
+//   CANCELLED (Ù„ØºÙˆ Ø§Ø¯Ù…ÛŒÙ†) â€” Ø¬Ø±ÛŒØ§Ù†Ù ØªØ§Ø±ÛŒØ®ÛŒÙ USDT: DETECTED | UNDERPAID | EXPIRED
+// txHash ÛŒÚ©ØªØ§Ø³Øª â†’ Ù‡Ø± ØªØ±Ø§Ú©Ù†Ø´ Ù‚Ø¯ÛŒÙ…ÛŒ Ø±ÙˆÛŒ blockchain ÙÙ‚Ø· ÛŒÚ©â€ŒØ¨Ø§Ø± Ù…ØµØ±Ù Ø´Ø¯Ù‡ (Ø¶Ø¯ replay)
+// receiptId ÛŒÚ©ØªØ§ Ùˆ ØºÛŒØ±Ù‚Ø§Ø¨Ù„â€ŒØ­Ø¯Ø³ Ø§Ø³Øª â€” ÙØ§ÛŒÙ„ Ø±Ø³ÛŒØ¯ Ù‡Ø±Ú¯Ø² Ø¯Ø± Ù¾ÙˆØ´Ù‡Ù” Ø¹Ù…ÙˆÙ…ÛŒ Ù†ÛŒØ³Øª Ùˆ ÙÙ‚Ø·
+// Ø§Ø² Ù…Ø³ÛŒØ± Ø§Ø­Ø±Ø§Ø²Ù Ù…Ø§Ù„Ú©/Ø§Ø¯Ù…ÛŒÙ† Ø³Ø±Ùˆ Ù…ÛŒâ€ŒØ´ÙˆØ¯.
 // ---------------------------------------------------------------------------
 model UsdtOrder {
   id             String    @id @default(cuid())
-  ref            String    @unique // شناسهٔ عمومی سفارش (CT-XXXXXXXX) — در URL صفحهٔ پرداخت
-  userId         String? // کاربرِ صاحب سفارش (سیستم حساب‌ها) — سفارش‌های مهمانِ قدیمی null می‌ماند
+  ref            String    @unique // Ø´Ù†Ø§Ø³Ù‡Ù” Ø¹Ù…ÙˆÙ…ÛŒ Ø³ÙØ§Ø±Ø´ (CT-XXXXXXXX) â€” Ø¯Ø± URL ØµÙØ­Ù‡Ù” Ù¾Ø±Ø¯Ø§Ø®Øª
+  userId         String? // Ú©Ø§Ø±Ø¨Ø±Ù ØµØ§Ø­Ø¨ Ø³ÙØ§Ø±Ø´ (Ø³ÛŒØ³ØªÙ… Ø­Ø³Ø§Ø¨â€ŒÙ‡Ø§) â€” Ø³ÙØ§Ø±Ø´â€ŒÙ‡Ø§ÛŒ Ù…Ù‡Ù…Ø§Ù†Ù Ù‚Ø¯ÛŒÙ…ÛŒ null Ù…ÛŒâ€ŒÙ…Ø§Ù†Ø¯
   user           User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  productId      String // شناسهٔ محصول در سکشن payments فایل محتوا (سمت سرور اعتبارسنجی می‌شود)
+  productId      String // Ø´Ù†Ø§Ø³Ù‡Ù” Ù…Ø­ØµÙˆÙ„ Ø¯Ø± Ø³Ú©Ø´Ù† payments ÙØ§ÛŒÙ„ Ù…Ø­ØªÙˆØ§ (Ø³Ù…Øª Ø³Ø±ÙˆØ± Ø§Ø¹ØªØ¨Ø§Ø±Ø³Ù†Ø¬ÛŒ Ù…ÛŒâ€ŒØ´ÙˆØ¯)
   productTitle   String
   contactName    String    @default("")
   contactEmail   String    @default("")
-  expectedMicro  Int // مبلغ مورد انتظار (میکرو-USDT) — سرور از روی محتوا تعیین می‌کند، نه مرورگر
+  expectedMicro  Int // Ù…Ø¨Ù„Øº Ù…ÙˆØ±Ø¯ Ø§Ù†ØªØ¸Ø§Ø± (Ù…ÛŒÚ©Ø±Ùˆ-USDT) â€” Ø³Ø±ÙˆØ± Ø§Ø² Ø±ÙˆÛŒ Ù…Ø­ØªÙˆØ§ ØªØ¹ÛŒÛŒÙ† Ù…ÛŒâ€ŒÚ©Ù†Ø¯ØŒ Ù†Ù‡ Ù…Ø±ÙˆØ±Ú¯Ø±
   currency       String    @default("USDT")
   network        String    @default("TRON")
-  paymentMode    String // "hd" (آدرس یکتای هر سفارش) یا "shared" (آدرس ثابت + مبلغ یکتا)
-  paymentAddress String // آدرس تحویل این سفارش
-  addressIndex   Int? // ایندکس مشتق‌شده در حالت HD (m/44'/195'/0'/0/i)
-  clientIp       String    @default("") // برای سقف سفارش بازِ هر IP (کنترل سوءاستفاده)
-  // 💰 اسنپ‌شات قیمت‌گذاری (فاز ۴۷) — سفارش‌های تاریخی حتی بعد از تغییر کلاس/تخفیف
-  // دست‌نخورده می‌مانند؛ ردیف‌های قدیمی null دارند و فقط به expectedMicro تکیه‌اند
+  paymentMode    String // "hd" (Ø¢Ø¯Ø±Ø³ ÛŒÚ©ØªØ§ÛŒ Ù‡Ø± Ø³ÙØ§Ø±Ø´) ÛŒØ§ "shared" (Ø¢Ø¯Ø±Ø³ Ø«Ø§Ø¨Øª + Ù…Ø¨Ù„Øº ÛŒÚ©ØªØ§)
+  paymentAddress String // Ø¢Ø¯Ø±Ø³ ØªØ­ÙˆÛŒÙ„ Ø§ÛŒÙ† Ø³ÙØ§Ø±Ø´
+  addressIndex   Int? // Ø§ÛŒÙ†Ø¯Ú©Ø³ Ù…Ø´ØªÙ‚â€ŒØ´Ø¯Ù‡ Ø¯Ø± Ø­Ø§Ù„Øª HD (m/44'/195'/0'/0/i)
+  clientIp       String    @default("") // Ø¨Ø±Ø§ÛŒ Ø³Ù‚Ù Ø³ÙØ§Ø±Ø´ Ø¨Ø§Ø²Ù Ù‡Ø± IP (Ú©Ù†ØªØ±Ù„ Ø³ÙˆØ¡Ø§Ø³ØªÙØ§Ø¯Ù‡)
+  // ðŸ’° Ø§Ø³Ù†Ù¾â€ŒØ´Ø§Øª Ù‚ÛŒÙ…Øªâ€ŒÚ¯Ø°Ø§Ø±ÛŒ (ÙØ§Ø² Û´Û·) â€” Ø³ÙØ§Ø±Ø´â€ŒÙ‡Ø§ÛŒ ØªØ§Ø±ÛŒØ®ÛŒ Ø­ØªÛŒ Ø¨Ø¹Ø¯ Ø§Ø² ØªØºÛŒÛŒØ± Ú©Ù„Ø§Ø³/ØªØ®ÙÛŒÙ
+  // Ø¯Ø³Øªâ€ŒÙ†Ø®ÙˆØ±Ø¯Ù‡ Ù…ÛŒâ€ŒÙ…Ø§Ù†Ù†Ø¯Ø› Ø±Ø¯ÛŒÙâ€ŒÙ‡Ø§ÛŒ Ù‚Ø¯ÛŒÙ…ÛŒ null Ø¯Ø§Ø±Ù†Ø¯ Ùˆ ÙÙ‚Ø· Ø¨Ù‡ expectedMicro ØªÚ©ÛŒÙ‡â€ŒØ§Ù†Ø¯
   pricePerSession Float?
   packageSessions Int?
-  baseAmount      Float? // pricePerSession × packageSessions
-  tierPercent     Float? // درصد تخفیف خودکارِ بسته (مبتنی بر تعداد جلسه)
+  baseAmount      Float? // pricePerSession Ã— packageSessions
+  tierPercent     Float? // Ø¯Ø±ØµØ¯ ØªØ®ÙÛŒÙ Ø®ÙˆØ¯Ú©Ø§Ø±Ù Ø¨Ø³ØªÙ‡ (Ù…Ø¨ØªÙ†ÛŒ Ø¨Ø± ØªØ¹Ø¯Ø§Ø¯ Ø¬Ù„Ø³Ù‡)
   discountCode    String?
   discountAmount  Float?
-  // 🎟️ فاز ۵۰ — نوع/مقدار اصلی کد در لحظهٔ سفارش (بند ۱۲): بعد از ویرایش یا
-  // غیرفعال‌سازی کد توسط ادمین، اسنپ‌شات تاریخی سفارش همچنان دقیق می‌ماند
+  // ðŸŽŸï¸ ÙØ§Ø² ÛµÛ° â€” Ù†ÙˆØ¹/Ù…Ù‚Ø¯Ø§Ø± Ø§ØµÙ„ÛŒ Ú©Ø¯ Ø¯Ø± Ù„Ø­Ø¸Ù‡Ù” Ø³ÙØ§Ø±Ø´ (Ø¨Ù†Ø¯ Û±Û²): Ø¨Ø¹Ø¯ Ø§Ø² ÙˆÛŒØ±Ø§ÛŒØ´ ÛŒØ§
+  // ØºÛŒØ±ÙØ¹Ø§Ù„â€ŒØ³Ø§Ø²ÛŒ Ú©Ø¯ ØªÙˆØ³Ø· Ø§Ø¯Ù…ÛŒÙ†ØŒ Ø§Ø³Ù†Ù¾â€ŒØ´Ø§Øª ØªØ§Ø±ÛŒØ®ÛŒ Ø³ÙØ§Ø±Ø´ Ù‡Ù…Ú†Ù†Ø§Ù† Ø¯Ù‚ÛŒÙ‚ Ù…ÛŒâ€ŒÙ…Ø§Ù†Ø¯
   discountType    String? // percent | fixed
-  discountValue   Float? // درصد یا مبلغ ثابت در لحظهٔ سفارش
-  // 💳 فاز ۵۹ — روش پرداخت؛ سفارش‌های جدید همیشه MANUAL_BANK_CARD هستند
-  paymentMethod  String    @default("USDT_TRON") // USDT_TRON (تاریخی) | MANUAL_BANK_CARD
-  // 🧾 فاز ۵۹ — رسیدِ پرداخت دستی؛ فایل بیرون از public/ با شناسهٔ غیرقابل‌حدس
-  receiptId          String? // شناسهٔ غیرقابل‌حدس فایل رسید (random 48-hex) — کلید واکشیِ امن
-  // ☁️ URL بلاب رسید وقتی Vercel Blob فعال است — null = فایل روی FS محلی
+  discountValue   Float? // Ø¯Ø±ØµØ¯ ÛŒØ§ Ù…Ø¨Ù„Øº Ø«Ø§Ø¨Øª Ø¯Ø± Ù„Ø­Ø¸Ù‡Ù” Ø³ÙØ§Ø±Ø´
+  // ðŸ’³ ÙØ§Ø² ÛµÛ¹ â€” Ø±ÙˆØ´ Ù¾Ø±Ø¯Ø§Ø®ØªØ› Ø³ÙØ§Ø±Ø´â€ŒÙ‡Ø§ÛŒ Ø¬Ø¯ÛŒØ¯ Ù‡Ù…ÛŒØ´Ù‡ MANUAL_BANK_CARD Ù‡Ø³ØªÙ†Ø¯
+  paymentMethod  String    @default("USDT_TRON") // USDT_TRON (ØªØ§Ø±ÛŒØ®ÛŒ) | MANUAL_BANK_CARD
+  // ðŸ§¾ ÙØ§Ø² ÛµÛ¹ â€” Ø±Ø³ÛŒØ¯Ù Ù¾Ø±Ø¯Ø§Ø®Øª Ø¯Ø³ØªÛŒØ› ÙØ§ÛŒÙ„ Ø¨ÛŒØ±ÙˆÙ† Ø§Ø² public/ Ø¨Ø§ Ø´Ù†Ø§Ø³Ù‡Ù” ØºÛŒØ±Ù‚Ø§Ø¨Ù„â€ŒØ­Ø¯Ø³
+  receiptId          String? // Ø´Ù†Ø§Ø³Ù‡Ù” ØºÛŒØ±Ù‚Ø§Ø¨Ù„â€ŒØ­Ø¯Ø³ ÙØ§ÛŒÙ„ Ø±Ø³ÛŒØ¯ (random 48-hex) â€” Ú©Ù„ÛŒØ¯ ÙˆØ§Ú©Ø´ÛŒÙ Ø§Ù…Ù†
+  // â˜ï¸ URL Ø¨Ù„Ø§Ø¨ Ø±Ø³ÛŒØ¯ ÙˆÙ‚ØªÛŒ Vercel Blob ÙØ¹Ø§Ù„ Ø§Ø³Øª â€” null = ÙØ§ÛŒÙ„ Ø±ÙˆÛŒ FS Ù…Ø­Ù„ÛŒ
   receiptUrl         String?
   receiptStatus      String? // null | PENDING_REVIEW | APPROVED | REJECTED
-  receiptMime        String? // mime واقعی (از magic bytes تشخیص داده می‌شود، نه ادعای مرورگر)
-  receiptSize        Int? // حجم بایت — سقف ۵MB
-  receiptFileName    String? // نام اصلیِ پاک‌سازی‌شده — فقط برای نمایش
+  receiptMime        String? // mime ÙˆØ§Ù‚Ø¹ÛŒ (Ø§Ø² magic bytes ØªØ´Ø®ÛŒØµ Ø¯Ø§Ø¯Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯ØŒ Ù†Ù‡ Ø§Ø¯Ø¹Ø§ÛŒ Ù…Ø±ÙˆØ±Ú¯Ø±)
+  receiptSize        Int? // Ø­Ø¬Ù… Ø¨Ø§ÛŒØª â€” Ø³Ù‚Ù ÛµMB
+  receiptFileName    String? // Ù†Ø§Ù… Ø§ØµÙ„ÛŒÙ Ù¾Ø§Ú©â€ŒØ³Ø§Ø²ÛŒâ€ŒØ´Ø¯Ù‡ â€” ÙÙ‚Ø· Ø¨Ø±Ø§ÛŒ Ù†Ù…Ø§ÛŒØ´
   receiptSubmittedAt DateTime?
-  receiptResubmits   Int       @default(0) // تعداد ارسال دوباره پس از رد
-  reviewedAt         DateTime? // زمان تأیید/ردّ ادمین
-  reviewedBy         String? // نام کاربری ادمین تأییدکننده/ردکننده (ممیزی)
-  rejectionReason    String? // دلیل ردّ — به مشتری نشان داده می‌شود
+  receiptResubmits   Int       @default(0) // ØªØ¹Ø¯Ø§Ø¯ Ø§Ø±Ø³Ø§Ù„ Ø¯ÙˆØ¨Ø§Ø±Ù‡ Ù¾Ø³ Ø§Ø² Ø±Ø¯
+  reviewedAt         DateTime? // Ø²Ù…Ø§Ù† ØªØ£ÛŒÛŒØ¯/Ø±Ø¯Ù‘ Ø§Ø¯Ù…ÛŒÙ†
+  reviewedBy         String? // Ù†Ø§Ù… Ú©Ø§Ø±Ø¨Ø±ÛŒ Ø§Ø¯Ù…ÛŒÙ† ØªØ£ÛŒÛŒØ¯Ú©Ù†Ù†Ø¯Ù‡/Ø±Ø¯Ú©Ù†Ù†Ø¯Ù‡ (Ù…Ù…ÛŒØ²ÛŒ)
+  rejectionReason    String? // Ø¯Ù„ÛŒÙ„ Ø±Ø¯Ù‘ â€” Ø¨Ù‡ Ù…Ø´ØªØ±ÛŒ Ù†Ø´Ø§Ù† Ø¯Ø§Ø¯Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯
   status         String    @default("PENDING")
-  txHash         String? // هش تراکنش تأییدشده — یکتا در کل جدول (ضد استفادهٔ دوباره)
-  txAmountMicro  Int? // مبلغ واقعی دریافت‌شده در تراکنش
-  txFrom         String? // فرستندهٔ تراکنش (برای ممیزی)
+  txHash         String? // Ù‡Ø´ ØªØ±Ø§Ú©Ù†Ø´ ØªØ£ÛŒÛŒØ¯Ø´Ø¯Ù‡ â€” ÛŒÚ©ØªØ§ Ø¯Ø± Ú©Ù„ Ø¬Ø¯ÙˆÙ„ (Ø¶Ø¯ Ø§Ø³ØªÙØ§Ø¯Ù‡Ù” Ø¯ÙˆØ¨Ø§Ø±Ù‡)
+  txAmountMicro  Int? // Ù…Ø¨Ù„Øº ÙˆØ§Ù‚Ø¹ÛŒ Ø¯Ø±ÛŒØ§ÙØªâ€ŒØ´Ø¯Ù‡ Ø¯Ø± ØªØ±Ø§Ú©Ù†Ø´
+  txFrom         String? // ÙØ±Ø³ØªÙ†Ø¯Ù‡Ù” ØªØ±Ø§Ú©Ù†Ø´ (Ø¨Ø±Ø§ÛŒ Ù…Ù…ÛŒØ²ÛŒ)
   paidAt         DateTime?
   expiresAt      DateTime
   createdAt      DateTime  @default(now())
@@ -570,74 +586,74 @@ model UsdtOrder {
   @@index([userId])
 
   @@unique([txHash])
-  @@unique([addressIndex]) // ⬅ ضد مسابقهٔ تخصیص ایندکس HD — SQLite مقادیر null را آزاد می‌گذارد (حالت مشترک سالم است)
-  @@unique([receiptId]) // کلید واکشیِ امنِ رسید — غیرقابل‌حدس
+  @@unique([addressIndex]) // â¬… Ø¶Ø¯ Ù…Ø³Ø§Ø¨Ù‚Ù‡Ù” ØªØ®ØµÛŒØµ Ø§ÛŒÙ†Ø¯Ú©Ø³ HD â€” SQLite Ù…Ù‚Ø§Ø¯ÛŒØ± null Ø±Ø§ Ø¢Ø²Ø§Ø¯ Ù…ÛŒâ€ŒÚ¯Ø°Ø§Ø±Ø¯ (Ø­Ø§Ù„Øª Ù…Ø´ØªØ±Ú© Ø³Ø§Ù„Ù… Ø§Ø³Øª)
+  @@unique([receiptId]) // Ú©Ù„ÛŒØ¯ ÙˆØ§Ú©Ø´ÛŒÙ Ø§Ù…Ù†Ù Ø±Ø³ÛŒØ¯ â€” ØºÛŒØ±Ù‚Ø§Ø¨Ù„â€ŒØ­Ø¯Ø³
   @@index([status, expiresAt])
   @@index([paymentAddress])
   @@index([paymentMethod, status])
 }
 
 // ---------------------------------------------------------------------------
-// 🎓 کلاس‌های آموزشی — تنها منبع حقیقت کلاس‌ها و قیمت‌ها (فاز ۴۲)
-// قبل از این مدل، کلاس‌ها فقط در فایل محتوا بودند؛ حالا ادمین از پنل، کلاس‌ها
-// را کامل مدیریت می‌کند و صفحهٔ عمومی/ثبت‌نام/چک‌اوت/سفارش همه از همین جدول
-// می‌خوانند (فایل محتوا فقط وقتی جدول خالی است به‌عنوان fallback می‌ماند).
-// قیمتِ مرجع سفارش = packagePrice (همان amountUsd قبلی) — مرورگر هرگز قیمت
-// نمی‌فرستد؛ فقط productId و مبلغ سمت سرور از این جدول خوانده می‌شود.
-// productId و slug یکتا و پایدارند: لینک‌های چک‌اوت و سفارش‌های قدیمی نمی‌شکنند.
-// وضعیت‌ها: active (قابل خرید) | inactive | draft | full (نمایش ولی غیرقابل خرید)
-//           | archived (بایگانی — به‌جای حذف وقتی سفارش/ثبت‌نام دارد)
+// ðŸŽ“ Ú©Ù„Ø§Ø³â€ŒÙ‡Ø§ÛŒ Ø¢Ù…ÙˆØ²Ø´ÛŒ â€” ØªÙ†Ù‡Ø§ Ù…Ù†Ø¨Ø¹ Ø­Ù‚ÛŒÙ‚Øª Ú©Ù„Ø§Ø³â€ŒÙ‡Ø§ Ùˆ Ù‚ÛŒÙ…Øªâ€ŒÙ‡Ø§ (ÙØ§Ø² Û´Û²)
+// Ù‚Ø¨Ù„ Ø§Ø² Ø§ÛŒÙ† Ù…Ø¯Ù„ØŒ Ú©Ù„Ø§Ø³â€ŒÙ‡Ø§ ÙÙ‚Ø· Ø¯Ø± ÙØ§ÛŒÙ„ Ù…Ø­ØªÙˆØ§ Ø¨ÙˆØ¯Ù†Ø¯Ø› Ø­Ø§Ù„Ø§ Ø§Ø¯Ù…ÛŒÙ† Ø§Ø² Ù¾Ù†Ù„ØŒ Ú©Ù„Ø§Ø³â€ŒÙ‡Ø§
+// Ø±Ø§ Ú©Ø§Ù…Ù„ Ù…Ø¯ÛŒØ±ÛŒØª Ù…ÛŒâ€ŒÚ©Ù†Ø¯ Ùˆ ØµÙØ­Ù‡Ù” Ø¹Ù…ÙˆÙ…ÛŒ/Ø«Ø¨Øªâ€ŒÙ†Ø§Ù…/Ú†Ú©â€ŒØ§ÙˆØª/Ø³ÙØ§Ø±Ø´ Ù‡Ù…Ù‡ Ø§Ø² Ù‡Ù…ÛŒÙ† Ø¬Ø¯ÙˆÙ„
+// Ù…ÛŒâ€ŒØ®ÙˆØ§Ù†Ù†Ø¯ (ÙØ§ÛŒÙ„ Ù…Ø­ØªÙˆØ§ ÙÙ‚Ø· ÙˆÙ‚ØªÛŒ Ø¬Ø¯ÙˆÙ„ Ø®Ø§Ù„ÛŒ Ø§Ø³Øª Ø¨Ù‡â€ŒØ¹Ù†ÙˆØ§Ù† fallback Ù…ÛŒâ€ŒÙ…Ø§Ù†Ø¯).
+// Ù‚ÛŒÙ…ØªÙ Ù…Ø±Ø¬Ø¹ Ø³ÙØ§Ø±Ø´ = packagePrice (Ù‡Ù…Ø§Ù† amountUsd Ù‚Ø¨Ù„ÛŒ) â€” Ù…Ø±ÙˆØ±Ú¯Ø± Ù‡Ø±Ú¯Ø² Ù‚ÛŒÙ…Øª
+// Ù†Ù…ÛŒâ€ŒÙØ±Ø³ØªØ¯Ø› ÙÙ‚Ø· productId Ùˆ Ù…Ø¨Ù„Øº Ø³Ù…Øª Ø³Ø±ÙˆØ± Ø§Ø² Ø§ÛŒÙ† Ø¬Ø¯ÙˆÙ„ Ø®ÙˆØ§Ù†Ø¯Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯.
+// productId Ùˆ slug ÛŒÚ©ØªØ§ Ùˆ Ù¾Ø§ÛŒØ¯Ø§Ø±Ù†Ø¯: Ù„ÛŒÙ†Ú©â€ŒÙ‡Ø§ÛŒ Ú†Ú©â€ŒØ§ÙˆØª Ùˆ Ø³ÙØ§Ø±Ø´â€ŒÙ‡Ø§ÛŒ Ù‚Ø¯ÛŒÙ…ÛŒ Ù†Ù…ÛŒâ€ŒØ´Ú©Ù†Ù†Ø¯.
+// ÙˆØ¶Ø¹ÛŒØªâ€ŒÙ‡Ø§: active (Ù‚Ø§Ø¨Ù„ Ø®Ø±ÛŒØ¯) | inactive | draft | full (Ù†Ù…Ø§ÛŒØ´ ÙˆÙ„ÛŒ ØºÛŒØ±Ù‚Ø§Ø¨Ù„ Ø®Ø±ÛŒØ¯)
+//           | archived (Ø¨Ø§ÛŒÚ¯Ø§Ù†ÛŒ â€” Ø¨Ù‡â€ŒØ¬Ø§ÛŒ Ø­Ø°Ù ÙˆÙ‚ØªÛŒ Ø³ÙØ§Ø±Ø´/Ø«Ø¨Øªâ€ŒÙ†Ø§Ù… Ø¯Ø§Ø±Ø¯)
 // ---------------------------------------------------------------------------
 model CourseClass {
   id               String    @id @default(cuid())
-  slug             String    @unique // URL عمومی: ‎#/classes/<slug> — حروف کوچک، عدد و خط تیره
-  productId        String    @unique // شناسهٔ پایدارِ پرداخت (همان id قدیمی مثل beginner-chinese-12)
-  title            String // نام کلاس — در ثبت‌نام‌ها (Registration.classTitle) هم ذخیره می‌شود
-  shortDescription String    @default("") // توضیح کوتاه کارت
-  fullDescription  String    @default("") // توضیح کامل جزئیات (اختیاری)
-  category         String    @default("beginner") // کلید فیلتر صفحهٔ کلاس‌ها (چند کلید با فاصله)
+  slug             String    @unique // URL Ø¹Ù…ÙˆÙ…ÛŒ: â€Ž#/classes/<slug> â€” Ø­Ø±ÙˆÙ Ú©ÙˆÚ†Ú©ØŒ Ø¹Ø¯Ø¯ Ùˆ Ø®Ø· ØªÛŒØ±Ù‡
+  productId        String    @unique // Ø´Ù†Ø§Ø³Ù‡Ù” Ù¾Ø§ÛŒØ¯Ø§Ø±Ù Ù¾Ø±Ø¯Ø§Ø®Øª (Ù‡Ù…Ø§Ù† id Ù‚Ø¯ÛŒÙ…ÛŒ Ù…Ø«Ù„ beginner-chinese-12)
+  title            String // Ù†Ø§Ù… Ú©Ù„Ø§Ø³ â€” Ø¯Ø± Ø«Ø¨Øªâ€ŒÙ†Ø§Ù…â€ŒÙ‡Ø§ (Registration.classTitle) Ù‡Ù… Ø°Ø®ÛŒØ±Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯
+  shortDescription String    @default("") // ØªÙˆØ¶ÛŒØ­ Ú©ÙˆØªØ§Ù‡ Ú©Ø§Ø±Øª
+  fullDescription  String    @default("") // ØªÙˆØ¶ÛŒØ­ Ú©Ø§Ù…Ù„ Ø¬Ø²Ø¦ÛŒØ§Øª (Ø§Ø®ØªÛŒØ§Ø±ÛŒ)
+  category         String    @default("beginner") // Ú©Ù„ÛŒØ¯ ÙÛŒÙ„ØªØ± ØµÙØ­Ù‡Ù” Ú©Ù„Ø§Ø³â€ŒÙ‡Ø§ (Ú†Ù†Ø¯ Ú©Ù„ÛŒØ¯ Ø¨Ø§ ÙØ§ØµÙ„Ù‡)
   status           String    @default("active") // active | inactive | draft | full | archived
-  featured         Boolean   @default(false) // ⭐ کلاس منتخب (بخش کلاس‌های صفحهٔ خانه)
+  featured         Boolean   @default(false) // â­ Ú©Ù„Ø§Ø³ Ù…Ù†ØªØ®Ø¨ (Ø¨Ø®Ø´ Ú©Ù„Ø§Ø³â€ŒÙ‡Ø§ÛŒ ØµÙØ­Ù‡Ù” Ø®Ø§Ù†Ù‡)
   color            String    @default("sage") // sage | butter | peach | cream
-  // 🧩 نوع و سطح ساخت‌یافته — پایهٔ ماتریس «نوع + سطح» ثبت‌نام (نه متن آزاد)
+  // ðŸ§© Ù†ÙˆØ¹ Ùˆ Ø³Ø·Ø­ Ø³Ø§Ø®Øªâ€ŒÛŒØ§ÙØªÙ‡ â€” Ù¾Ø§ÛŒÙ‡Ù” Ù…Ø§ØªØ±ÛŒØ³ Â«Ù†ÙˆØ¹ + Ø³Ø·Ø­Â» Ø«Ø¨Øªâ€ŒÙ†Ø§Ù… (Ù†Ù‡ Ù…ØªÙ† Ø¢Ø²Ø§Ø¯)
   classType        String    @default("group") // group | private | both
-  level            String    @default("All Levels") // برچسب نمایشی (مثل HSK 1)
-  registerLevels   String    @default("[]") // JSON آرایهٔ کلیدهای سطح فرم ثبت‌نام + "all"
-  // 💰 قیمت‌گذاری — packagePrice همان amountUsd منبعِ قبلی است (مبلغ نهایی سفارش)
-  currency         String    @default("USDT") // فقط USDT پشتیبانی می‌شود
-  pricePerSession  Float     @default(0) // قیمت نمایشی هر جلسه
-  packageSessions  Int       @default(1) // تعداد جلسات بسته
-  packagePrice     Float     @default(0) // ⭐ مبلغ مرجع سفارش (USD؛ حداکثر ۲۰۰۰)
-  priceNote        String    @default("") // متن نمایشی کنار قیمت
-  // 📅 اطلاعات کلاس
-  sessionDurationMin Int?    // مدت هر جلسه (دقیقه)
+  level            String    @default("All Levels") // Ø¨Ø±Ú†Ø³Ø¨ Ù†Ù…Ø§ÛŒØ´ÛŒ (Ù…Ø«Ù„ HSK 1)
+  registerLevels   String    @default("[]") // JSON Ø¢Ø±Ø§ÛŒÙ‡Ù” Ú©Ù„ÛŒØ¯Ù‡Ø§ÛŒ Ø³Ø·Ø­ ÙØ±Ù… Ø«Ø¨Øªâ€ŒÙ†Ø§Ù… + "all"
+  // ðŸ’° Ù‚ÛŒÙ…Øªâ€ŒÚ¯Ø°Ø§Ø±ÛŒ â€” packagePrice Ù‡Ù…Ø§Ù† amountUsd Ù…Ù†Ø¨Ø¹Ù Ù‚Ø¨Ù„ÛŒ Ø§Ø³Øª (Ù…Ø¨Ù„Øº Ù†Ù‡Ø§ÛŒÛŒ Ø³ÙØ§Ø±Ø´)
+  currency         String    @default("USDT") // ÙÙ‚Ø· USDT Ù¾Ø´ØªÛŒØ¨Ø§Ù†ÛŒ Ù…ÛŒâ€ŒØ´ÙˆØ¯
+  pricePerSession  Float     @default(0) // Ù‚ÛŒÙ…Øª Ù†Ù…Ø§ÛŒØ´ÛŒ Ù‡Ø± Ø¬Ù„Ø³Ù‡
+  packageSessions  Int       @default(1) // ØªØ¹Ø¯Ø§Ø¯ Ø¬Ù„Ø³Ø§Øª Ø¨Ø³ØªÙ‡
+  packagePrice     Float     @default(0) // â­ Ù…Ø¨Ù„Øº Ù…Ø±Ø¬Ø¹ Ø³ÙØ§Ø±Ø´ (USDØ› Ø­Ø¯Ø§Ú©Ø«Ø± Û²Û°Û°Û°)
+  priceNote        String    @default("") // Ù…ØªÙ† Ù†Ù…Ø§ÛŒØ´ÛŒ Ú©Ù†Ø§Ø± Ù‚ÛŒÙ…Øª
+  // ðŸ“… Ø§Ø·Ù„Ø§Ø¹Ø§Øª Ú©Ù„Ø§Ø³
+  sessionDurationMin Int?    // Ù…Ø¯Øª Ù‡Ø± Ø¬Ù„Ø³Ù‡ (Ø¯Ù‚ÛŒÙ‚Ù‡)
   format           String    @default("online") // online | offline | hybrid
-  maxStudents      Int?      // حداکثر ظرفیت
-  minStudents      Int?      // حداقل برای برگزاری
-  schedule         String    @default("") // متن نمایشی برنامه (مثل Schedule: TBC)
-  startDate        DateTime? // شروع دوره (اختیاری)
-  endDate          DateTime? // پایان دوره (اختیاری)
-  timezone         String    @default("") // منطقهٔ زمانی برنامه (اختیاری)
-  // 📚 محتوای آموزشی — همه JSON آرایهٔ رشته (نمایش فقط وقتی خالی نیستند)
-  meta             String    @default("[]") // JSON [{icon,text}] — آیتم‌های ریز کارت
-  highlights       String    @default("[]") // JSON رشته — «چه چیزهایی یاد می‌گیرید»
-  requirements     String    @default("[]") // JSON رشته — پیش‌نیازها
-  audience         String    @default("[]") // JSON رشته — مناسب چه کسانی
-  curriculum       String    @default("[]") // JSON رشته — سرفصل‌ها
-  materials        String    @default("[]") // JSON رشته — منابع/ابزار
-  notes            String    @default("") // یادداشت اضافی (اختیاری)
-  // 🖼️ رسانه
-  image            String    @default("") // کاور کارت/جزئیات (URL — معماری فعلی URL-محور است)
-  videoUrl         String    @default("") // ویدیوی معرفی (اختیاری)
-  // ⚙️ متادیتا
-  sortOrder        Int       @default(0) // ترتیب نمایش (کمتر = بالاتر)
-  // 🎓 LMS — استادِ مسئول این کلاس (ادمین تعیین می‌کند؛ null = بدون استاد)
+  maxStudents      Int?      // Ø­Ø¯Ø§Ú©Ø«Ø± Ø¸Ø±ÙÛŒØª
+  minStudents      Int?      // Ø­Ø¯Ø§Ù‚Ù„ Ø¨Ø±Ø§ÛŒ Ø¨Ø±Ú¯Ø²Ø§Ø±ÛŒ
+  schedule         String    @default("") // Ù…ØªÙ† Ù†Ù…Ø§ÛŒØ´ÛŒ Ø¨Ø±Ù†Ø§Ù…Ù‡ (Ù…Ø«Ù„ Schedule: TBC)
+  startDate        DateTime? // Ø´Ø±ÙˆØ¹ Ø¯ÙˆØ±Ù‡ (Ø§Ø®ØªÛŒØ§Ø±ÛŒ)
+  endDate          DateTime? // Ù¾Ø§ÛŒØ§Ù† Ø¯ÙˆØ±Ù‡ (Ø§Ø®ØªÛŒØ§Ø±ÛŒ)
+  timezone         String    @default("") // Ù…Ù†Ø·Ù‚Ù‡Ù” Ø²Ù…Ø§Ù†ÛŒ Ø¨Ø±Ù†Ø§Ù…Ù‡ (Ø§Ø®ØªÛŒØ§Ø±ÛŒ)
+  // ðŸ“š Ù…Ø­ØªÙˆØ§ÛŒ Ø¢Ù…ÙˆØ²Ø´ÛŒ â€” Ù‡Ù…Ù‡ JSON Ø¢Ø±Ø§ÛŒÙ‡Ù” Ø±Ø´ØªÙ‡ (Ù†Ù…Ø§ÛŒØ´ ÙÙ‚Ø· ÙˆÙ‚ØªÛŒ Ø®Ø§Ù„ÛŒ Ù†ÛŒØ³ØªÙ†Ø¯)
+  meta             String    @default("[]") // JSON [{icon,text}] â€” Ø¢ÛŒØªÙ…â€ŒÙ‡Ø§ÛŒ Ø±ÛŒØ² Ú©Ø§Ø±Øª
+  highlights       String    @default("[]") // JSON Ø±Ø´ØªÙ‡ â€” Â«Ú†Ù‡ Ú†ÛŒØ²Ù‡Ø§ÛŒÛŒ ÛŒØ§Ø¯ Ù…ÛŒâ€ŒÚ¯ÛŒØ±ÛŒØ¯Â»
+  requirements     String    @default("[]") // JSON Ø±Ø´ØªÙ‡ â€” Ù¾ÛŒØ´â€ŒÙ†ÛŒØ§Ø²Ù‡Ø§
+  audience         String    @default("[]") // JSON Ø±Ø´ØªÙ‡ â€” Ù…Ù†Ø§Ø³Ø¨ Ú†Ù‡ Ú©Ø³Ø§Ù†ÛŒ
+  curriculum       String    @default("[]") // JSON Ø±Ø´ØªÙ‡ â€” Ø³Ø±ÙØµÙ„â€ŒÙ‡Ø§
+  materials        String    @default("[]") // JSON Ø±Ø´ØªÙ‡ â€” Ù…Ù†Ø§Ø¨Ø¹/Ø§Ø¨Ø²Ø§Ø±
+  notes            String    @default("") // ÛŒØ§Ø¯Ø¯Ø§Ø´Øª Ø§Ø¶Ø§ÙÛŒ (Ø§Ø®ØªÛŒØ§Ø±ÛŒ)
+  // ðŸ–¼ï¸ Ø±Ø³Ø§Ù†Ù‡
+  image            String    @default("") // Ú©Ø§ÙˆØ± Ú©Ø§Ø±Øª/Ø¬Ø²Ø¦ÛŒØ§Øª (URL â€” Ù…Ø¹Ù…Ø§Ø±ÛŒ ÙØ¹Ù„ÛŒ URL-Ù…Ø­ÙˆØ± Ø§Ø³Øª)
+  videoUrl         String    @default("") // ÙˆÛŒØ¯ÛŒÙˆÛŒ Ù…Ø¹Ø±ÙÛŒ (Ø§Ø®ØªÛŒØ§Ø±ÛŒ)
+  // âš™ï¸ Ù…ØªØ§Ø¯ÛŒØªØ§
+  sortOrder        Int       @default(0) // ØªØ±ØªÛŒØ¨ Ù†Ù…Ø§ÛŒØ´ (Ú©Ù…ØªØ± = Ø¨Ø§Ù„Ø§ØªØ±)
+  // ðŸŽ“ LMS â€” Ø§Ø³ØªØ§Ø¯Ù Ù…Ø³Ø¦ÙˆÙ„ Ø§ÛŒÙ† Ú©Ù„Ø§Ø³ (Ø§Ø¯Ù…ÛŒÙ† ØªØ¹ÛŒÛŒÙ† Ù…ÛŒâ€ŒÚ©Ù†Ø¯Ø› null = Ø¨Ø¯ÙˆÙ† Ø§Ø³ØªØ§Ø¯)
   teacherId        String?
   teacher          User?     @relation("ClassTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  schedules ClassSchedule[] // جلسات برنامه‌ریزی‌شدهٔ این کلاس (فاز ۴۸)
+  schedules ClassSchedule[] // Ø¬Ù„Ø³Ø§Øª Ø¨Ø±Ù†Ø§Ù…Ù‡â€ŒØ±ÛŒØ²ÛŒâ€ŒØ´Ø¯Ù‡Ù” Ø§ÛŒÙ† Ú©Ù„Ø§Ø³ (ÙØ§Ø² Û´Û¸)
   enrollments ClassEnrollment[]
   lmsMaterials LearningMaterial[]
   lmsSessions OnlineSession[]
@@ -650,14 +666,14 @@ model CourseClass {
   @@index([sortOrder])
 }
 
-// 🧾 رویدادهای پرداخت — لاگ ممیزی امن (هرگز کلید یا راز داخلش نیست)
-// UNMATCHED = تراکنش واقعی روی زنجیره که به هیچ سفارش فعالی نخورد → بررسی دستی مالک
+// ðŸ§¾ Ø±ÙˆÛŒØ¯Ø§Ø¯Ù‡Ø§ÛŒ Ù¾Ø±Ø¯Ø§Ø®Øª â€” Ù„Ø§Ú¯ Ù…Ù…ÛŒØ²ÛŒ Ø§Ù…Ù† (Ù‡Ø±Ú¯Ø² Ú©Ù„ÛŒØ¯ ÛŒØ§ Ø±Ø§Ø² Ø¯Ø§Ø®Ù„Ø´ Ù†ÛŒØ³Øª)
+// UNMATCHED = ØªØ±Ø§Ú©Ù†Ø´ ÙˆØ§Ù‚Ø¹ÛŒ Ø±ÙˆÛŒ Ø²Ù†Ø¬ÛŒØ±Ù‡ Ú©Ù‡ Ø¨Ù‡ Ù‡ÛŒÚ† Ø³ÙØ§Ø±Ø´ ÙØ¹Ø§Ù„ÛŒ Ù†Ø®ÙˆØ±Ø¯ â†’ Ø¨Ø±Ø±Ø³ÛŒ Ø¯Ø³ØªÛŒ Ù…Ø§Ù„Ú©
 model PaymentEvent {
   id        String   @id @default(cuid())
   kind      String // CREATED | TX_SEEN | VERIFIED | PAID | UNDERPAID | UNMATCHED | DUPLICATE_IGNORED | API_ERROR | EXPIRED | CANCELLED | PAGING_LIMIT | LATE_PAYMENT
   orderRef  String?
   txHash    String?
-  detail    String   @default("") // JSON جزئیات (مبلغ، آدرس، پیام خطا) — بدون هیچ راز
+  detail    String   @default("") // JSON Ø¬Ø²Ø¦ÛŒØ§Øª (Ù…Ø¨Ù„ØºØŒ Ø¢Ø¯Ø±Ø³ØŒ Ù¾ÛŒØ§Ù… Ø®Ø·Ø§) â€” Ø¨Ø¯ÙˆÙ† Ù‡ÛŒÚ† Ø±Ø§Ø²
   createdAt DateTime @default(now())
 
   @@index([orderRef])
@@ -666,31 +682,31 @@ model PaymentEvent {
 }
 
 // ---------------------------------------------------------------------------
-// 🎟️ سیستم تخفیف (فاز ۴۷) — تنها منبع حقیقت کدهای تخفیف
-// دو نوع: percent (٪ روی مبلغ پایه) و fixed (مبلغ ثابت USDT).
-// محاسبه همیشه سمت سرور است؛ کلاینت فقط «کد» را می‌فرستد.
-// scope: classIds/classTypes/levels خالی = روی همه اعتبار دارد.
+// ðŸŽŸï¸ Ø³ÛŒØ³ØªÙ… ØªØ®ÙÛŒÙ (ÙØ§Ø² Û´Û·) â€” ØªÙ†Ù‡Ø§ Ù…Ù†Ø¨Ø¹ Ø­Ù‚ÛŒÙ‚Øª Ú©Ø¯Ù‡Ø§ÛŒ ØªØ®ÙÛŒÙ
+// Ø¯Ùˆ Ù†ÙˆØ¹: percent (Ùª Ø±ÙˆÛŒ Ù…Ø¨Ù„Øº Ù¾Ø§ÛŒÙ‡) Ùˆ fixed (Ù…Ø¨Ù„Øº Ø«Ø§Ø¨Øª USDT).
+// Ù…Ø­Ø§Ø³Ø¨Ù‡ Ù‡Ù…ÛŒØ´Ù‡ Ø³Ù…Øª Ø³Ø±ÙˆØ± Ø§Ø³ØªØ› Ú©Ù„Ø§ÛŒÙ†Øª ÙÙ‚Ø· Â«Ú©Ø¯Â» Ø±Ø§ Ù…ÛŒâ€ŒÙØ±Ø³ØªØ¯.
+// scope: classIds/classTypes/levels Ø®Ø§Ù„ÛŒ = Ø±ÙˆÛŒ Ù‡Ù…Ù‡ Ø§Ø¹ØªØ¨Ø§Ø± Ø¯Ø§Ø±Ø¯.
 // ---------------------------------------------------------------------------
 model Discount {
   id          String    @id @default(cuid())
-  code        String    @unique // حروف بزرگ A-Z0-9 (مثل CHINESE10)
+  code        String    @unique // Ø­Ø±ÙˆÙ Ø¨Ø²Ø±Ú¯ A-Z0-9 (Ù…Ø«Ù„ CHINESE10)
   type        String    @default("percent") // percent | fixed
-  value       Float // درصد (1–100) یا مبلغ ثابت USDT (>0)
+  value       Float // Ø¯Ø±ØµØ¯ (1â€“100) ÛŒØ§ Ù…Ø¨Ù„Øº Ø«Ø§Ø¨Øª USDT (>0)
   active      Boolean   @default(true)
-  startsAt    DateTime? // اختیاری — از این لحظه معتبر
-  endsAt      DateTime? // اختیاری — تا این لحظه معتبر (منقضی = رد)
-  classIds    String    @default("[]") // JSON آرایه id کلاس — خالی = همه
-  classTypes  String    @default("[]") // JSON ["group","private"] — خالی = همه
-  levels      String    @default("[]") // JSON کلیدهای سطح ثبت‌نام — خالی = همه
-  minSessions Int       @default(1) // حداقل جلسات بسته برای اعمال
-  maxUses     Int? // سقف کل استفاده — null = نامحدود
-  perCustomer Int       @default(1) // سقف استفاده هر مشتری (بر اساس ایمیل سفارش)
-  note        String    @default("") // یادداشت ادمین
+  startsAt    DateTime? // Ø§Ø®ØªÛŒØ§Ø±ÛŒ â€” Ø§Ø² Ø§ÛŒÙ† Ù„Ø­Ø¸Ù‡ Ù…Ø¹ØªØ¨Ø±
+  endsAt      DateTime? // Ø§Ø®ØªÛŒØ§Ø±ÛŒ â€” ØªØ§ Ø§ÛŒÙ† Ù„Ø­Ø¸Ù‡ Ù…Ø¹ØªØ¨Ø± (Ù…Ù†Ù‚Ø¶ÛŒ = Ø±Ø¯)
+  classIds    String    @default("[]") // JSON Ø¢Ø±Ø§ÛŒÙ‡ id Ú©Ù„Ø§Ø³ â€” Ø®Ø§Ù„ÛŒ = Ù‡Ù…Ù‡
+  classTypes  String    @default("[]") // JSON ["group","private"] â€” Ø®Ø§Ù„ÛŒ = Ù‡Ù…Ù‡
+  levels      String    @default("[]") // JSON Ú©Ù„ÛŒØ¯Ù‡Ø§ÛŒ Ø³Ø·Ø­ Ø«Ø¨Øªâ€ŒÙ†Ø§Ù… â€” Ø®Ø§Ù„ÛŒ = Ù‡Ù…Ù‡
+  minSessions Int       @default(1) // Ø­Ø¯Ø§Ù‚Ù„ Ø¬Ù„Ø³Ø§Øª Ø¨Ø³ØªÙ‡ Ø¨Ø±Ø§ÛŒ Ø§Ø¹Ù…Ø§Ù„
+  maxUses     Int? // Ø³Ù‚Ù Ú©Ù„ Ø§Ø³ØªÙØ§Ø¯Ù‡ â€” null = Ù†Ø§Ù…Ø­Ø¯ÙˆØ¯
+  perCustomer Int       @default(1) // Ø³Ù‚Ù Ø§Ø³ØªÙØ§Ø¯Ù‡ Ù‡Ø± Ù…Ø´ØªØ±ÛŒ (Ø¨Ø± Ø§Ø³Ø§Ø³ Ø§ÛŒÙ…ÛŒÙ„ Ø³ÙØ§Ø±Ø´)
+  note        String    @default("") // ÛŒØ§Ø¯Ø¯Ø§Ø´Øª Ø§Ø¯Ù…ÛŒÙ†
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  // 🗄️ حذف نرم (فاز ۵۲) — «حذف» کد یعنی بایگانی: deletedAt ست و active خاموش
-  // می‌شود؛ ردیف + Redemptionها هرگز پاک نمی‌شوند تا سفارش‌های تاریخی دقیق بمانند
+  // ðŸ—„ï¸ Ø­Ø°Ù Ù†Ø±Ù… (ÙØ§Ø² ÛµÛ²) â€” Â«Ø­Ø°ÙÂ» Ú©Ø¯ ÛŒØ¹Ù†ÛŒ Ø¨Ø§ÛŒÚ¯Ø§Ù†ÛŒ: deletedAt Ø³Øª Ùˆ active Ø®Ø§Ù…ÙˆØ´
+  // Ù…ÛŒâ€ŒØ´ÙˆØ¯Ø› Ø±Ø¯ÛŒÙ + RedemptionÙ‡Ø§ Ù‡Ø±Ú¯Ø² Ù¾Ø§Ú© Ù†Ù…ÛŒâ€ŒØ´ÙˆÙ†Ø¯ ØªØ§ Ø³ÙØ§Ø±Ø´â€ŒÙ‡Ø§ÛŒ ØªØ§Ø±ÛŒØ®ÛŒ Ø¯Ù‚ÛŒÙ‚ Ø¨Ù…Ø§Ù†Ù†Ø¯
   deletedAt   DateTime?
 
   redemptions DiscountRedemption[]
@@ -698,14 +714,14 @@ model Discount {
   @@index([active])
 }
 
-// 🧾 استفادهٔ هر کد — شمارندهٔ واقعی مصرف (سقف maxUses/perCustomer از همین جدول)
+// ðŸ§¾ Ø§Ø³ØªÙØ§Ø¯Ù‡Ù” Ù‡Ø± Ú©Ø¯ â€” Ø´Ù…Ø§Ø±Ù†Ø¯Ù‡Ù” ÙˆØ§Ù‚Ø¹ÛŒ Ù…ØµØ±Ù (Ø³Ù‚Ù maxUses/perCustomer Ø§Ø² Ù‡Ù…ÛŒÙ† Ø¬Ø¯ÙˆÙ„)
 model DiscountRedemption {
   id         String   @id @default(cuid())
   discountId String
   discount   Discount @relation(fields: [discountId], references: [id], onDelete: Cascade)
-  orderRef   String // CT-XXXXXXXX سفارشِ متناظر
-  userEmail  String // هویت مشتری از پروفایل تأییدشدهٔ کاربر
-  amount     Float // مبلغ تخفیف اعمال‌شده (USDT)
+  orderRef   String // CT-XXXXXXXX Ø³ÙØ§Ø±Ø´Ù Ù…ØªÙ†Ø§Ø¸Ø±
+  userEmail  String // Ù‡ÙˆÛŒØª Ù…Ø´ØªØ±ÛŒ Ø§Ø² Ù¾Ø±ÙˆÙØ§ÛŒÙ„ ØªØ£ÛŒÛŒØ¯Ø´Ø¯Ù‡Ù” Ú©Ø§Ø±Ø¨Ø±
+  amount     Float // Ù…Ø¨Ù„Øº ØªØ®ÙÛŒÙ Ø§Ø¹Ù…Ø§Ù„â€ŒØ´Ø¯Ù‡ (USDT)
   createdAt  DateTime @default(now())
 
   @@index([discountId])
@@ -714,44 +730,44 @@ model DiscountRedemption {
 }
 
 // ---------------------------------------------------------------------------
-// 🗓️ برنامهٔ واقعی جلسات کلاس (فاز ۴۸) — تنها منبع حقیقت برنامهٔ قطعی/پیشنهادی
+// ðŸ—“ï¸ Ø¨Ø±Ù†Ø§Ù…Ù‡Ù” ÙˆØ§Ù‚Ø¹ÛŒ Ø¬Ù„Ø³Ø§Øª Ú©Ù„Ø§Ø³ (ÙØ§Ø² Û´Û¸) â€” ØªÙ†Ù‡Ø§ Ù…Ù†Ø¨Ø¹ Ø­Ù‚ÛŒÙ‚Øª Ø¨Ø±Ù†Ø§Ù…Ù‡Ù” Ù‚Ø·Ø¹ÛŒ/Ù¾ÛŒØ´Ù†Ù‡Ø§Ø¯ÛŒ
 //
-// هر رکورد = یک جلسهٔ واقعی برای یک دانش‌پذیر: شروع و پایان به‌صورت «لحظهٔ
-// UTC» ذخیره می‌شود (بدون آفست هاردکد؛ DST با پایگاه IANA خود نود رعایت می‌شود).
-// نمایش ادمین همیشه به وقت تهران و نمایش مشتری به وقت خودش است — هر دو از
-// همان لحظهٔ UTC مشتق می‌شوند (تغییر روز در گذر نیمه‌شب خودکار درست است).
+// Ù‡Ø± Ø±Ú©ÙˆØ±Ø¯ = ÛŒÚ© Ø¬Ù„Ø³Ù‡Ù” ÙˆØ§Ù‚Ø¹ÛŒ Ø¨Ø±Ø§ÛŒ ÛŒÚ© Ø¯Ø§Ù†Ø´â€ŒÙ¾Ø°ÛŒØ±: Ø´Ø±ÙˆØ¹ Ùˆ Ù¾Ø§ÛŒØ§Ù† Ø¨Ù‡â€ŒØµÙˆØ±Øª Â«Ù„Ø­Ø¸Ù‡Ù”
+// UTCÂ» Ø°Ø®ÛŒØ±Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯ (Ø¨Ø¯ÙˆÙ† Ø¢ÙØ³Øª Ù‡Ø§Ø±Ø¯Ú©Ø¯Ø› DST Ø¨Ø§ Ù¾Ø§ÛŒÚ¯Ø§Ù‡ IANA Ø®ÙˆØ¯ Ù†ÙˆØ¯ Ø±Ø¹Ø§ÛŒØª Ù…ÛŒâ€ŒØ´ÙˆØ¯).
+// Ù†Ù…Ø§ÛŒØ´ Ø§Ø¯Ù…ÛŒÙ† Ù‡Ù…ÛŒØ´Ù‡ Ø¨Ù‡ ÙˆÙ‚Øª ØªÙ‡Ø±Ø§Ù† Ùˆ Ù†Ù…Ø§ÛŒØ´ Ù…Ø´ØªØ±ÛŒ Ø¨Ù‡ ÙˆÙ‚Øª Ø®ÙˆØ¯Ø´ Ø§Ø³Øª â€” Ù‡Ø± Ø¯Ùˆ Ø§Ø²
+// Ù‡Ù…Ø§Ù† Ù„Ø­Ø¸Ù‡Ù” UTC Ù…Ø´ØªÙ‚ Ù…ÛŒâ€ŒØ´ÙˆÙ†Ø¯ (ØªØºÛŒÛŒØ± Ø±ÙˆØ² Ø¯Ø± Ú¯Ø°Ø± Ù†ÛŒÙ…Ù‡â€ŒØ´Ø¨ Ø®ÙˆØ¯Ú©Ø§Ø± Ø¯Ø±Ø³Øª Ø§Ø³Øª).
 //
-// وضعیت‌ها: PROPOSED (پیشنهاد ادمین) | CONFIRMED (تأییدشده) | RESCHEDULED
-//           (جابه‌جاشده — رکورد قبلی زنجیره) | CANCELLED | COMPLETED
-// زنجیرهٔ جابه‌جایی: رکورد جدید supersededById را به رکورد قبلی وصل می‌کند و
-// رکورد قبلی RESCHEDULED می‌شود — تاریخچه هرگز بازنویسی/حذف نمی‌شود.
-// ضد مسابقه: یکتایی (userId, classId, startAt) در سطح دیتابیس + تراکنش تعاملی
-// برای بررسی ظرفیت — SQLite نویسندهٔ واحد دارد؛ دو تأیید همزمان هرگز ظرفیت را
-// رد نمی‌کند (یکی با خطای BUSY/بازبینی شمارنده رد می‌شود → 409).
+// ÙˆØ¶Ø¹ÛŒØªâ€ŒÙ‡Ø§: PROPOSED (Ù¾ÛŒØ´Ù†Ù‡Ø§Ø¯ Ø§Ø¯Ù…ÛŒÙ†) | CONFIRMED (ØªØ£ÛŒÛŒØ¯Ø´Ø¯Ù‡) | RESCHEDULED
+//           (Ø¬Ø§Ø¨Ù‡â€ŒØ¬Ø§Ø´Ø¯Ù‡ â€” Ø±Ú©ÙˆØ±Ø¯ Ù‚Ø¨Ù„ÛŒ Ø²Ù†Ø¬ÛŒØ±Ù‡) | CANCELLED | COMPLETED
+// Ø²Ù†Ø¬ÛŒØ±Ù‡Ù” Ø¬Ø§Ø¨Ù‡â€ŒØ¬Ø§ÛŒÛŒ: Ø±Ú©ÙˆØ±Ø¯ Ø¬Ø¯ÛŒØ¯ supersededById Ø±Ø§ Ø¨Ù‡ Ø±Ú©ÙˆØ±Ø¯ Ù‚Ø¨Ù„ÛŒ ÙˆØµÙ„ Ù…ÛŒâ€ŒÚ©Ù†Ø¯ Ùˆ
+// Ø±Ú©ÙˆØ±Ø¯ Ù‚Ø¨Ù„ÛŒ RESCHEDULED Ù…ÛŒâ€ŒØ´ÙˆØ¯ â€” ØªØ§Ø±ÛŒØ®Ú†Ù‡ Ù‡Ø±Ú¯Ø² Ø¨Ø§Ø²Ù†ÙˆÛŒØ³ÛŒ/Ø­Ø°Ù Ù†Ù…ÛŒâ€ŒØ´ÙˆØ¯.
+// Ø¶Ø¯ Ù…Ø³Ø§Ø¨Ù‚Ù‡: ÛŒÚ©ØªØ§ÛŒÛŒ (userId, classId, startAt) Ø¯Ø± Ø³Ø·Ø­ Ø¯ÛŒØªØ§Ø¨ÛŒØ³ + ØªØ±Ø§Ú©Ù†Ø´ ØªØ¹Ø§Ù…Ù„ÛŒ
+// Ø¨Ø±Ø§ÛŒ Ø¨Ø±Ø±Ø³ÛŒ Ø¸Ø±ÙÛŒØª â€” SQLite Ù†ÙˆÛŒØ³Ù†Ø¯Ù‡Ù” ÙˆØ§Ø­Ø¯ Ø¯Ø§Ø±Ø¯Ø› Ø¯Ùˆ ØªØ£ÛŒÛŒØ¯ Ù‡Ù…Ø²Ù…Ø§Ù† Ù‡Ø±Ú¯Ø² Ø¸Ø±ÙÛŒØª Ø±Ø§
+// Ø±Ø¯ Ù†Ù…ÛŒâ€ŒÚ©Ù†Ø¯ (ÛŒÚ©ÛŒ Ø¨Ø§ Ø®Ø·Ø§ÛŒ BUSY/Ø¨Ø§Ø²Ø¨ÛŒÙ†ÛŒ Ø´Ù…Ø§Ø±Ù†Ø¯Ù‡ Ø±Ø¯ Ù…ÛŒâ€ŒØ´ÙˆØ¯ â†’ 409).
 // ---------------------------------------------------------------------------
 model ClassSchedule {
   id          String      @id @default(cuid())
-  userId      String // دانش‌پذیر — از سشن سرور مشتق می‌شود، هرگز از بدنهٔ درخواست
+  userId      String // Ø¯Ø§Ù†Ø´â€ŒÙ¾Ø°ÛŒØ± â€” Ø§Ø² Ø³Ø´Ù† Ø³Ø±ÙˆØ± Ù…Ø´ØªÙ‚ Ù…ÛŒâ€ŒØ´ÙˆØ¯ØŒ Ù‡Ø±Ú¯Ø² Ø§Ø² Ø¨Ø¯Ù†Ù‡Ù” Ø¯Ø±Ø®ÙˆØ§Ø³Øª
   user        User        @relation("ScheduleUser", fields: [userId], references: [id], onDelete: Cascade)
   classId     String
   class       CourseClass @relation(fields: [classId], references: [id], onDelete: Cascade)
-  orderRef    String? // پیوند سفارش (CT-XXXXXXXX) — اختیاری؛ زنجیرهٔ پرداخت ← برنامه
-  registrationId String? // پیوند ثبت‌نام مبدأ (اختیاری — زنجیرهٔ ثبت‌نام ← برنامه)
+  orderRef    String? // Ù¾ÛŒÙˆÙ†Ø¯ Ø³ÙØ§Ø±Ø´ (CT-XXXXXXXX) â€” Ø§Ø®ØªÛŒØ§Ø±ÛŒØ› Ø²Ù†Ø¬ÛŒØ±Ù‡Ù” Ù¾Ø±Ø¯Ø§Ø®Øª â† Ø¨Ø±Ù†Ø§Ù…Ù‡
+  registrationId String? // Ù¾ÛŒÙˆÙ†Ø¯ Ø«Ø¨Øªâ€ŒÙ†Ø§Ù… Ù…Ø¨Ø¯Ø£ (Ø§Ø®ØªÛŒØ§Ø±ÛŒ â€” Ø²Ù†Ø¬ÛŒØ±Ù‡Ù” Ø«Ø¨Øªâ€ŒÙ†Ø§Ù… â† Ø¨Ø±Ù†Ø§Ù…Ù‡)
   registration Registration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
 
-  // پنجرهٔ واقعی جلسه — لحظهٔ UTC؛ endAt = startAt + durationMin (سرور محاسبه می‌کند)
+  // Ù¾Ù†Ø¬Ø±Ù‡Ù” ÙˆØ§Ù‚Ø¹ÛŒ Ø¬Ù„Ø³Ù‡ â€” Ù„Ø­Ø¸Ù‡Ù” UTCØ› endAt = startAt + durationMin (Ø³Ø±ÙˆØ± Ù…Ø­Ø§Ø³Ø¨Ù‡ Ù…ÛŒâ€ŒÚ©Ù†Ø¯)
   startAt     DateTime
   endAt       DateTime
-  durationMin Int // اسنپ‌شات مدت جلسه از تنظیمات کلاس در لحظهٔ ثبت
+  durationMin Int // Ø§Ø³Ù†Ù¾â€ŒØ´Ø§Øª Ù…Ø¯Øª Ø¬Ù„Ø³Ù‡ Ø§Ø² ØªÙ†Ø¸ÛŒÙ…Ø§Øª Ú©Ù„Ø§Ø³ Ø¯Ø± Ù„Ø­Ø¸Ù‡Ù” Ø«Ø¨Øª
 
-  // منشأ ورودی — منطقه/روز/ساعت اصلی که برنامه با آن ساخته شد (برای ممیزی)
-  timezone    String // IANA منطقهٔ ورودی (معمولاً منطقهٔ خود دانش‌پذیر)
-  inputDate   String? // «2025-01-20» تقویم منطقهٔ ورودی
-  inputTime   String? // «23:30» به وقت منطقهٔ ورودی
-  inputDay    String? // کلید روز در منطقهٔ ورودی (mon…sun) — ممکن است بعد از تبدیل عوض شود
-  note        String? // یادداشت ادمین
+  // Ù…Ù†Ø´Ø£ ÙˆØ±ÙˆØ¯ÛŒ â€” Ù…Ù†Ø·Ù‚Ù‡/Ø±ÙˆØ²/Ø³Ø§Ø¹Øª Ø§ØµÙ„ÛŒ Ú©Ù‡ Ø¨Ø±Ù†Ø§Ù…Ù‡ Ø¨Ø§ Ø¢Ù† Ø³Ø§Ø®ØªÙ‡ Ø´Ø¯ (Ø¨Ø±Ø§ÛŒ Ù…Ù…ÛŒØ²ÛŒ)
+  timezone    String // IANA Ù…Ù†Ø·Ù‚Ù‡Ù” ÙˆØ±ÙˆØ¯ÛŒ (Ù…Ø¹Ù…ÙˆÙ„Ø§Ù‹ Ù…Ù†Ø·Ù‚Ù‡Ù” Ø®ÙˆØ¯ Ø¯Ø§Ù†Ø´â€ŒÙ¾Ø°ÛŒØ±)
+  inputDate   String? // Â«2025-01-20Â» ØªÙ‚ÙˆÛŒÙ… Ù…Ù†Ø·Ù‚Ù‡Ù” ÙˆØ±ÙˆØ¯ÛŒ
+  inputTime   String? // Â«23:30Â» Ø¨Ù‡ ÙˆÙ‚Øª Ù…Ù†Ø·Ù‚Ù‡Ù” ÙˆØ±ÙˆØ¯ÛŒ
+  inputDay    String? // Ú©Ù„ÛŒØ¯ Ø±ÙˆØ² Ø¯Ø± Ù…Ù†Ø·Ù‚Ù‡Ù” ÙˆØ±ÙˆØ¯ÛŒ (monâ€¦sun) â€” Ù…Ù…Ú©Ù† Ø§Ø³Øª Ø¨Ø¹Ø¯ Ø§Ø² ØªØ¨Ø¯ÛŒÙ„ Ø¹ÙˆØ¶ Ø´ÙˆØ¯
+  note        String? // ÛŒØ§Ø¯Ø¯Ø§Ø´Øª Ø§Ø¯Ù…ÛŒÙ†
 
-  // وضعیت + مسئول تغییر
+  // ÙˆØ¶Ø¹ÛŒØª + Ù…Ø³Ø¦ÙˆÙ„ ØªØºÛŒÛŒØ±
   status      String      @default("PROPOSED") // PROPOSED | CONFIRMED | RESCHEDULED | CANCELLED | COMPLETED
   createdBy   String      @default("admin") // admin | customer
   confirmedAt DateTime?
@@ -760,7 +776,7 @@ model ClassSchedule {
   cancelledBy String? // admin | customer
   cancelReason String?
 
-  // زنجیرهٔ جابه‌جایی — رکورد جدید به قبلی اشاره می‌کند
+  // Ø²Ù†Ø¬ÛŒØ±Ù‡Ù” Ø¬Ø§Ø¨Ù‡â€ŒØ¬Ø§ÛŒÛŒ â€” Ø±Ú©ÙˆØ±Ø¯ Ø¬Ø¯ÛŒØ¯ Ø¨Ù‡ Ù‚Ø¨Ù„ÛŒ Ø§Ø´Ø§Ø±Ù‡ Ù…ÛŒâ€ŒÚ©Ù†Ø¯
   supersededById String?
   supersededBy   ClassSchedule?  @relation("RescheduleChain", fields: [supersededById], references: [id], onDelete: SetNull)
   successors     ClassSchedule[] @relation("RescheduleChain")
@@ -771,27 +787,27 @@ model ClassSchedule {
   audits       ScheduleAudit[]
   notifications ScheduleNotification[]
 
-  @@unique([userId, classId, startAt]) // ضد درج رکورد تکراری همان دانش‌پذیر/کلاس/زمان
+  @@unique([userId, classId, startAt]) // Ø¶Ø¯ Ø¯Ø±Ø¬ Ø±Ú©ÙˆØ±Ø¯ ØªÚ©Ø±Ø§Ø±ÛŒ Ù‡Ù…Ø§Ù† Ø¯Ø§Ù†Ø´â€ŒÙ¾Ø°ÛŒØ±/Ú©Ù„Ø§Ø³/Ø²Ù…Ø§Ù†
   @@index([status, startAt])
   @@index([userId, status])
   @@index([classId, status])
   @@index([orderRef])
 }
 
-// 🧾 تاریخچهٔ تغییرات برنامه — برای هر انتقال وضعیت یک ردیف؛ هرگز حذف نمی‌شود
+// ðŸ§¾ ØªØ§Ø±ÛŒØ®Ú†Ù‡Ù” ØªØºÛŒÛŒØ±Ø§Øª Ø¨Ø±Ù†Ø§Ù…Ù‡ â€” Ø¨Ø±Ø§ÛŒ Ù‡Ø± Ø§Ù†ØªÙ‚Ø§Ù„ ÙˆØ¶Ø¹ÛŒØª ÛŒÚ© Ø±Ø¯ÛŒÙØ› Ù‡Ø±Ú¯Ø² Ø­Ø°Ù Ù†Ù…ÛŒâ€ŒØ´ÙˆØ¯
 model ScheduleAudit {
   id         String   @id @default(cuid())
   scheduleId String
   schedule   ClassSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
   action     String // PROPOSED | CONFIRMED | RESCHEDULED | CANCELLED | COMPLETED
   actor      String // admin | customer:<email>
-  detail     String   @default("") // JSON اسنپ‌شات قبل/بعد (بدون هیچ راز)
+  detail     String   @default("") // JSON Ø§Ø³Ù†Ù¾â€ŒØ´Ø§Øª Ù‚Ø¨Ù„/Ø¨Ø¹Ø¯ (Ø¨Ø¯ÙˆÙ† Ù‡ÛŒÚ† Ø±Ø§Ø²)
   createdAt  DateTime @default(now())
 
   @@index([scheduleId, createdAt])
 }
 
-// 🔔 هشدار درون‌حسابی برنامه — پیشنهاد/تأیید/جابه‌جایی/لغو برای دانش‌پذیر
+// ðŸ”” Ù‡Ø´Ø¯Ø§Ø± Ø¯Ø±ÙˆÙ†â€ŒØ­Ø³Ø§Ø¨ÛŒ Ø¨Ø±Ù†Ø§Ù…Ù‡ â€” Ù¾ÛŒØ´Ù†Ù‡Ø§Ø¯/ØªØ£ÛŒÛŒØ¯/Ø¬Ø§Ø¨Ù‡â€ŒØ¬Ø§ÛŒÛŒ/Ù„ØºÙˆ Ø¨Ø±Ø§ÛŒ Ø¯Ø§Ù†Ø´â€ŒÙ¾Ø°ÛŒØ±
 model ScheduleNotification {
   id         String    @id @default(cuid())
   userId     String
@@ -799,10 +815,10 @@ model ScheduleNotification {
   scheduleId String?
   schedule   ClassSchedule? @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
   kind       String // PROPOSED | CONFIRMED | RESCHEDULED | CANCELLED | REGISTRATION | ORDER_CREATED | ORDER_EXPIRED | ORDER_CANCELLED | PAYMENT_DETECTED | PAYMENT_CONFIRMED | PAYMENT_UNDERPAID
-  // 🗂️ فاز ۵۲ — این مدل تنها «سیستم اعلان درون‌حسابی» سایت است؛ از فاز ۵۲ به بعد
-  // علاوه بر برنامهٔ جلسات، رویدادهای حساب/سفارش/پرداخت هم همین‌جا ذخیره می‌شوند.
+  // ðŸ—‚ï¸ ÙØ§Ø² ÛµÛ² â€” Ø§ÛŒÙ† Ù…Ø¯Ù„ ØªÙ†Ù‡Ø§ Â«Ø³ÛŒØ³ØªÙ… Ø§Ø¹Ù„Ø§Ù† Ø¯Ø±ÙˆÙ†â€ŒØ­Ø³Ø§Ø¨ÛŒÂ» Ø³Ø§ÛŒØª Ø§Ø³ØªØ› Ø§Ø² ÙØ§Ø² ÛµÛ² Ø¨Ù‡ Ø¨Ø¹Ø¯
+  // Ø¹Ù„Ø§ÙˆÙ‡ Ø¨Ø± Ø¨Ø±Ù†Ø§Ù…Ù‡Ù” Ø¬Ù„Ø³Ø§ØªØŒ Ø±ÙˆÛŒØ¯Ø§Ø¯Ù‡Ø§ÛŒ Ø­Ø³Ø§Ø¨/Ø³ÙØ§Ø±Ø´/Ù¾Ø±Ø¯Ø§Ø®Øª Ù‡Ù… Ù‡Ù…ÛŒÙ†â€ŒØ¬Ø§ Ø°Ø®ÛŒØ±Ù‡ Ù…ÛŒâ€ŒØ´ÙˆÙ†Ø¯.
   category  String   @default("schedule") // schedule | account | order | payment
-  orderRef  String? // CT-XXXXXXXX — پیوند سفارش مرتبط (برای اعلان‌های سفارش/پرداخت)
+  orderRef  String? // CT-XXXXXXXX â€” Ù¾ÛŒÙˆÙ†Ø¯ Ø³ÙØ§Ø±Ø´ Ù…Ø±ØªØ¨Ø· (Ø¨Ø±Ø§ÛŒ Ø§Ø¹Ù„Ø§Ù†â€ŒÙ‡Ø§ÛŒ Ø³ÙØ§Ø±Ø´/Ù¾Ø±Ø¯Ø§Ø®Øª)
   title      String
   body       String
   readAt     DateTime?
@@ -813,55 +829,55 @@ model ScheduleNotification {
 }
 
 // ---------------------------------------------------------------------------
-// 💾 لاگ پشتیبان‌گیری دیتابیس (فاز ۵۲) — هر عملیات Backup یک ردیف
-// status: STARTED (شروع شد) → SUCCESS | FAILED
-// trigger: SCHEDULED (زمان‌بند خودکار) | MANUAL (دکمهٔ ادمین) | PRE_RESTORE (پشتیبان ایمنی قبل از Restore)
-// هیچ رازی (کلید/رمز/seed) در این جدول یا لاگ‌ها نوشته نمی‌شود.
+// ðŸ’¾ Ù„Ø§Ú¯ Ù¾Ø´ØªÛŒØ¨Ø§Ù†â€ŒÚ¯ÛŒØ±ÛŒ Ø¯ÛŒØªØ§Ø¨ÛŒØ³ (ÙØ§Ø² ÛµÛ²) â€” Ù‡Ø± Ø¹Ù…Ù„ÛŒØ§Øª Backup ÛŒÚ© Ø±Ø¯ÛŒÙ
+// status: STARTED (Ø´Ø±ÙˆØ¹ Ø´Ø¯) â†’ SUCCESS | FAILED
+// trigger: SCHEDULED (Ø²Ù…Ø§Ù†â€ŒØ¨Ù†Ø¯ Ø®ÙˆØ¯Ú©Ø§Ø±) | MANUAL (Ø¯Ú©Ù…Ù‡Ù” Ø§Ø¯Ù…ÛŒÙ†) | PRE_RESTORE (Ù¾Ø´ØªÛŒØ¨Ø§Ù† Ø§ÛŒÙ…Ù†ÛŒ Ù‚Ø¨Ù„ Ø§Ø² Restore)
+// Ù‡ÛŒÚ† Ø±Ø§Ø²ÛŒ (Ú©Ù„ÛŒØ¯/Ø±Ù…Ø²/seed) Ø¯Ø± Ø§ÛŒÙ† Ø¬Ø¯ÙˆÙ„ ÛŒØ§ Ù„Ø§Ú¯â€ŒÙ‡Ø§ Ù†ÙˆØ´ØªÙ‡ Ù†Ù…ÛŒâ€ŒØ´ÙˆØ¯.
 // ---------------------------------------------------------------------------
 model BackupLog {
   id          String    @id @default(cuid())
-  filename    String // نام فایل پشتیبان (backup-<timestamp>-<trigger>.db)
-  filePath    String // مسیر مطلق روی سرور — هرگز URL عمومی نیست
-  sizeBytes   Int? // حجم فایل پس از اتمام موفق
+  filename    String // Ù†Ø§Ù… ÙØ§ÛŒÙ„ Ù¾Ø´ØªÛŒØ¨Ø§Ù† (backup-<timestamp>-<trigger>.db)
+  filePath    String // Ù…Ø³ÛŒØ± Ù…Ø·Ù„Ù‚ Ø±ÙˆÛŒ Ø³Ø±ÙˆØ± â€” Ù‡Ø±Ú¯Ø² URL Ø¹Ù…ÙˆÙ…ÛŒ Ù†ÛŒØ³Øª
+  sizeBytes   Int? // Ø­Ø¬Ù… ÙØ§ÛŒÙ„ Ù¾Ø³ Ø§Ø² Ø§ØªÙ…Ø§Ù… Ù…ÙˆÙÙ‚
   status      String    @default("STARTED") // STARTED | SUCCESS | FAILED
   trigger     String    @default("MANUAL") // SCHEDULED | MANUAL | PRE_RESTORE
   startedAt   DateTime  @default(now())
   completedAt DateTime?
-  durationMs  Int? // مدت اجرا — برای پایش سلامت
-  error       String? // پیام کوتاه خطا — بدون محتوای حساس دیتابیس
+  durationMs  Int? // Ù…Ø¯Øª Ø§Ø¬Ø±Ø§ â€” Ø¨Ø±Ø§ÛŒ Ù¾Ø§ÛŒØ´ Ø³Ù„Ø§Ù…Øª
+  error       String? // Ù¾ÛŒØ§Ù… Ú©ÙˆØªØ§Ù‡ Ø®Ø·Ø§ â€” Ø¨Ø¯ÙˆÙ† Ù…Ø­ØªÙˆØ§ÛŒ Ø­Ø³Ø§Ø³ Ø¯ÛŒØªØ§Ø¨ÛŒØ³
 
   @@index([status, startedAt])
   @@index([trigger, startedAt])
 }
 
 // ---------------------------------------------------------------------------
-// 🚨 لاگ خطای سمت سرور (فاز ۵۳ — بند ۱۲) — پایش خطاهای مهم اپلیکیشن
-// فقط «پیام امن» ذخیره می‌شود: هرگز رمز/توکن/کلید/stack کامل/محتوای حساس.
+// ðŸš¨ Ù„Ø§Ú¯ Ø®Ø·Ø§ÛŒ Ø³Ù…Øª Ø³Ø±ÙˆØ± (ÙØ§Ø² ÛµÛ³ â€” Ø¨Ù†Ø¯ Û±Û²) â€” Ù¾Ø§ÛŒØ´ Ø®Ø·Ø§Ù‡Ø§ÛŒ Ù…Ù‡Ù… Ø§Ù¾Ù„ÛŒÚ©ÛŒØ´Ù†
+// ÙÙ‚Ø· Â«Ù¾ÛŒØ§Ù… Ø§Ù…Ù†Â» Ø°Ø®ÛŒØ±Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯: Ù‡Ø±Ú¯Ø² Ø±Ù…Ø²/ØªÙˆÚ©Ù†/Ú©Ù„ÛŒØ¯/stack Ú©Ø§Ù…Ù„/Ù…Ø­ØªÙˆØ§ÛŒ Ø­Ø³Ø§Ø³.
 // category: API | DATABASE | PAYMENT | ORDER | AUTH | BACKUP | RESTORE | SERVER | VALIDATION
 // ---------------------------------------------------------------------------
 model ErrorLog {
   id         String   @id @default(cuid())
   category   String // API | DATABASE | PAYMENT | ORDER | AUTH | BACKUP | RESTORE | SERVER | VALIDATION
-  message    String // پیام کوتاه و امن — بدون راز و بدون stack کامل
-  context    String   @default("") // JSON: path، method، routeKind — بدون PII اضافه
-  statusCode Int? // کد وضعیت HTTP در صورت وجود
-  refId      String? // شناسهٔ رکورد مرتبط (orderRef، backupId و…)
+  message    String // Ù¾ÛŒØ§Ù… Ú©ÙˆØªØ§Ù‡ Ùˆ Ø§Ù…Ù† â€” Ø¨Ø¯ÙˆÙ† Ø±Ø§Ø² Ùˆ Ø¨Ø¯ÙˆÙ† stack Ú©Ø§Ù…Ù„
+  context    String   @default("") // JSON: pathØŒ methodØŒ routeKind â€” Ø¨Ø¯ÙˆÙ† PII Ø§Ø¶Ø§ÙÙ‡
+  statusCode Int? // Ú©Ø¯ ÙˆØ¶Ø¹ÛŒØª HTTP Ø¯Ø± ØµÙˆØ±Øª ÙˆØ¬ÙˆØ¯
+  refId      String? // Ø´Ù†Ø§Ø³Ù‡Ù” Ø±Ú©ÙˆØ±Ø¯ Ù…Ø±ØªØ¨Ø· (orderRefØŒ backupId Ùˆâ€¦)
   createdAt  DateTime @default(now())
 
   @@index([category, createdAt])
 }
 
 // ---------------------------------------------------------------------------
-// 🧾 گزارش فعالیت ادمین (فاز ۵۳ — بند ۱۴) — append-oriented؛ رکوردها هرگز
-// ویرایش/حذف نمی‌شوند. هرگز راز/کلید/رمز در meta ذخیره نمی‌شود.
+// ðŸ§¾ Ú¯Ø²Ø§Ø±Ø´ ÙØ¹Ø§Ù„ÛŒØª Ø§Ø¯Ù…ÛŒÙ† (ÙØ§Ø² ÛµÛ³ â€” Ø¨Ù†Ø¯ Û±Û´) â€” append-orientedØ› Ø±Ú©ÙˆØ±Ø¯Ù‡Ø§ Ù‡Ø±Ú¯Ø²
+// ÙˆÛŒØ±Ø§ÛŒØ´/Ø­Ø°Ù Ù†Ù…ÛŒâ€ŒØ´ÙˆÙ†Ø¯. Ù‡Ø±Ú¯Ø² Ø±Ø§Ø²/Ú©Ù„ÛŒØ¯/Ø±Ù…Ø² Ø¯Ø± meta Ø°Ø®ÛŒØ±Ù‡ Ù†Ù…ÛŒâ€ŒØ´ÙˆØ¯.
 // ---------------------------------------------------------------------------
 model AuditLog {
   id         String   @id @default(cuid())
-  actor      String // نام کاربر ادمین (مثل admin) — بدون توکن
+  actor      String // Ù†Ø§Ù… Ú©Ø§Ø±Ø¨Ø± Ø§Ø¯Ù…ÛŒÙ† (Ù…Ø«Ù„ admin) â€” Ø¨Ø¯ÙˆÙ† ØªÙˆÚ©Ù†
   action     String // discount.create | discount.update | discount.archive | discount.restore | class.create | class.update | class.status | class.delete | order.cancel | registration.status | schedule.propose | wallet.save | wallet.remove | credentials.update | settings.update | backup.create | backup.restore | backup.settings
   targetType String // discount | class | order | registration | schedule | wallet | settings | backup
-  targetId   String   @default("") // شناسه/کد/ref رکورد هدف
-  meta       String   @default("") // JSON متادیتای امن (قبل/بعد — بدون راز)
+  targetId   String   @default("") // Ø´Ù†Ø§Ø³Ù‡/Ú©Ø¯/ref Ø±Ú©ÙˆØ±Ø¯ Ù‡Ø¯Ù
+  meta       String   @default("") // JSON Ù…ØªØ§Ø¯ÛŒØªØ§ÛŒ Ø§Ù…Ù† (Ù‚Ø¨Ù„/Ø¨Ø¹Ø¯ â€” Ø¨Ø¯ÙˆÙ† Ø±Ø§Ø²)
   createdAt  DateTime @default(now())
 
   @@index([createdAt])
@@ -869,46 +885,46 @@ model AuditLog {
 }
 
 // ---------------------------------------------------------------------------
-// 🔐 نشست‌های ورود پنل مدیریت — DB-backed (فاز ۶۴)
-// نسخه‌های قبلی سشن ادمین را در حافظهٔ پروسه (Map روی globalThis) نگه می‌داشتند
-// که فقط در استقرار تک‌پروسه‌ای درست کار می‌کند؛ روی Serverless (Vercel) هر
-// درخواست ممکن است روی نمونهٔ دیگری اجرا شود و سشن «گم» می‌شد (الگوی ۴۰۱
-// تصادفی بعد از لاگین موفق). از این پس دیتابیس تنها منبع حقیقت است و سشن بین
-// همهٔ نمونه‌ها و در برابر ری‌استارت معتبر می‌ماند.
-// امنیت: فقط sha256 توکن ذخیره می‌شود (توکن خام هرگز)؛ انقضای لغزان ۲ساعتهٔ
-// بی‌کاری با lastSeenAt و سقف مطلق ۸ساعته با expiresAt اعمال می‌شود.
+// ðŸ” Ù†Ø´Ø³Øªâ€ŒÙ‡Ø§ÛŒ ÙˆØ±ÙˆØ¯ Ù¾Ù†Ù„ Ù…Ø¯ÛŒØ±ÛŒØª â€” DB-backed (ÙØ§Ø² Û¶Û´)
+// Ù†Ø³Ø®Ù‡â€ŒÙ‡Ø§ÛŒ Ù‚Ø¨Ù„ÛŒ Ø³Ø´Ù† Ø§Ø¯Ù…ÛŒÙ† Ø±Ø§ Ø¯Ø± Ø­Ø§ÙØ¸Ù‡Ù” Ù¾Ø±ÙˆØ³Ù‡ (Map Ø±ÙˆÛŒ globalThis) Ù†Ú¯Ù‡ Ù…ÛŒâ€ŒØ¯Ø§Ø´ØªÙ†Ø¯
+// Ú©Ù‡ ÙÙ‚Ø· Ø¯Ø± Ø§Ø³ØªÙ‚Ø±Ø§Ø± ØªÚ©â€ŒÙ¾Ø±ÙˆØ³Ù‡â€ŒØ§ÛŒ Ø¯Ø±Ø³Øª Ú©Ø§Ø± Ù…ÛŒâ€ŒÚ©Ù†Ø¯Ø› Ø±ÙˆÛŒ Serverless (Vercel) Ù‡Ø±
+// Ø¯Ø±Ø®ÙˆØ§Ø³Øª Ù…Ù…Ú©Ù† Ø§Ø³Øª Ø±ÙˆÛŒ Ù†Ù…ÙˆÙ†Ù‡Ù” Ø¯ÛŒÚ¯Ø±ÛŒ Ø§Ø¬Ø±Ø§ Ø´ÙˆØ¯ Ùˆ Ø³Ø´Ù† Â«Ú¯Ù…Â» Ù…ÛŒâ€ŒØ´Ø¯ (Ø§Ù„Ú¯ÙˆÛŒ Û´Û°Û±
+// ØªØµØ§Ø¯ÙÛŒ Ø¨Ø¹Ø¯ Ø§Ø² Ù„Ø§Ú¯ÛŒÙ† Ù…ÙˆÙÙ‚). Ø§Ø² Ø§ÛŒÙ† Ù¾Ø³ Ø¯ÛŒØªØ§Ø¨ÛŒØ³ ØªÙ†Ù‡Ø§ Ù…Ù†Ø¨Ø¹ Ø­Ù‚ÛŒÙ‚Øª Ø§Ø³Øª Ùˆ Ø³Ø´Ù† Ø¨ÛŒÙ†
+// Ù‡Ù…Ù‡Ù” Ù†Ù…ÙˆÙ†Ù‡â€ŒÙ‡Ø§ Ùˆ Ø¯Ø± Ø¨Ø±Ø§Ø¨Ø± Ø±ÛŒâ€ŒØ§Ø³ØªØ§Ø±Øª Ù…Ø¹ØªØ¨Ø± Ù…ÛŒâ€ŒÙ…Ø§Ù†Ø¯.
+// Ø§Ù…Ù†ÛŒØª: ÙÙ‚Ø· sha256 ØªÙˆÚ©Ù† Ø°Ø®ÛŒØ±Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯ (ØªÙˆÚ©Ù† Ø®Ø§Ù… Ù‡Ø±Ú¯Ø²)Ø› Ø§Ù†Ù‚Ø¶Ø§ÛŒ Ù„ØºØ²Ø§Ù† Û²Ø³Ø§Ø¹ØªÙ‡Ù”
+// Ø¨ÛŒâ€ŒÚ©Ø§Ø±ÛŒ Ø¨Ø§ lastSeenAt Ùˆ Ø³Ù‚Ù Ù…Ø·Ù„Ù‚ Û¸Ø³Ø§Ø¹ØªÙ‡ Ø¨Ø§ expiresAt Ø§Ø¹Ù…Ø§Ù„ Ù…ÛŒâ€ŒØ´ÙˆØ¯.
 // ---------------------------------------------------------------------------
 model AdminSession {
   id         String   @id @default(cuid())
-  tokenHash  String   @unique // sha256(token) — خود توکن هرگز ذخیره نمی‌شود
-  username   String // نام ادمینِ صاحب سشن برای Audit Log
+  tokenHash  String   @unique // sha256(token) â€” Ø®ÙˆØ¯ ØªÙˆÚ©Ù† Ù‡Ø±Ú¯Ø² Ø°Ø®ÛŒØ±Ù‡ Ù†Ù…ÛŒâ€ŒØ´ÙˆØ¯
+  username   String // Ù†Ø§Ù… Ø§Ø¯Ù…ÛŒÙ†Ù ØµØ§Ø­Ø¨ Ø³Ø´Ù† Ø¨Ø±Ø§ÛŒ Audit Log
   issuedAt   DateTime @default(now())
-  lastSeenAt DateTime @default(now()) // با هر درخواست مجاز تمدید می‌شود (لغزان)
-  expiresAt  DateTime // سقف مطلق ۸ ساعت پس از ورود
+  lastSeenAt DateTime @default(now()) // Ø¨Ø§ Ù‡Ø± Ø¯Ø±Ø®ÙˆØ§Ø³Øª Ù…Ø¬Ø§Ø² ØªÙ…Ø¯ÛŒØ¯ Ù…ÛŒâ€ŒØ´ÙˆØ¯ (Ù„ØºØ²Ø§Ù†)
+  expiresAt  DateTime // Ø³Ù‚Ù Ù…Ø·Ù„Ù‚ Û¸ Ø³Ø§Ø¹Øª Ù¾Ø³ Ø§Ø² ÙˆØ±ÙˆØ¯
 
   @@index([lastSeenAt])
   @@index([expiresAt])
 }
 
 // ---------------------------------------------------------------------------
-// 🚦 محدودساز نرخ درخواست — DB-backed (فاز ۶۴)
-// نسخهٔ قبلی شمارنده‌ها را در حافظهٔ هر نمونه نگه می‌داشت؛ روی Serverless هر
-// نمونه شمارش خودش را داشت و سقف تلاش عملاً دور زدنی می‌شد. با این جدول‌ها
-// شمارش بین همهٔ نمونه‌ها مشترک است.
-//   RateEvent → هر درخواستِ عبورکرده یک ردیف؛ سقف = تعداد ردیف در پنجرهٔ زمانی
-//   RateBlock → قفل کامل یک bucket تا زمان until (ضد brute-force ورود ادمین)
+// ðŸš¦ Ù…Ø­Ø¯ÙˆØ¯Ø³Ø§Ø² Ù†Ø±Ø® Ø¯Ø±Ø®ÙˆØ§Ø³Øª â€” DB-backed (ÙØ§Ø² Û¶Û´)
+// Ù†Ø³Ø®Ù‡Ù” Ù‚Ø¨Ù„ÛŒ Ø´Ù…Ø§Ø±Ù†Ø¯Ù‡â€ŒÙ‡Ø§ Ø±Ø§ Ø¯Ø± Ø­Ø§ÙØ¸Ù‡Ù” Ù‡Ø± Ù†Ù…ÙˆÙ†Ù‡ Ù†Ú¯Ù‡ Ù…ÛŒâ€ŒØ¯Ø§Ø´ØªØ› Ø±ÙˆÛŒ Serverless Ù‡Ø±
+// Ù†Ù…ÙˆÙ†Ù‡ Ø´Ù…Ø§Ø±Ø´ Ø®ÙˆØ¯Ø´ Ø±Ø§ Ø¯Ø§Ø´Øª Ùˆ Ø³Ù‚Ù ØªÙ„Ø§Ø´ Ø¹Ù…Ù„Ø§Ù‹ Ø¯ÙˆØ± Ø²Ø¯Ù†ÛŒ Ù…ÛŒâ€ŒØ´Ø¯. Ø¨Ø§ Ø§ÛŒÙ† Ø¬Ø¯ÙˆÙ„â€ŒÙ‡Ø§
+// Ø´Ù…Ø§Ø±Ø´ Ø¨ÛŒÙ† Ù‡Ù…Ù‡Ù” Ù†Ù…ÙˆÙ†Ù‡â€ŒÙ‡Ø§ Ù…Ø´ØªØ±Ú© Ø§Ø³Øª.
+//   RateEvent â†’ Ù‡Ø± Ø¯Ø±Ø®ÙˆØ§Ø³ØªÙ Ø¹Ø¨ÙˆØ±Ú©Ø±Ø¯Ù‡ ÛŒÚ© Ø±Ø¯ÛŒÙØ› Ø³Ù‚Ù = ØªØ¹Ø¯Ø§Ø¯ Ø±Ø¯ÛŒÙ Ø¯Ø± Ù¾Ù†Ø¬Ø±Ù‡Ù” Ø²Ù…Ø§Ù†ÛŒ
+//   RateBlock â†’ Ù‚ÙÙ„ Ú©Ø§Ù…Ù„ ÛŒÚ© bucket ØªØ§ Ø²Ù…Ø§Ù† until (Ø¶Ø¯ brute-force ÙˆØ±ÙˆØ¯ Ø§Ø¯Ù…ÛŒÙ†)
 // ---------------------------------------------------------------------------
 model RateEvent {
   id        String   @id @default(cuid())
-  bucketKey String // «name:ip» — اسکوپ محدودساز + IP کلاینت
+  bucketKey String // Â«name:ipÂ» â€” Ø§Ø³Ú©ÙˆÙ¾ Ù…Ø­Ø¯ÙˆØ¯Ø³Ø§Ø² + IP Ú©Ù„Ø§ÛŒÙ†Øª
   createdAt DateTime @default(now())
 
   @@index([bucketKey, createdAt])
 }
 
 model RateBlock {
-  bucketKey String   @id // «name:ip»
-  until     DateTime // پس از این زمان قفل برداشته می‌شود
+  bucketKey String   @id // Â«name:ipÂ»
+  until     DateTime // Ù¾Ø³ Ø§Ø² Ø§ÛŒÙ† Ø²Ù…Ø§Ù† Ù‚ÙÙ„ Ø¨Ø±Ø¯Ø§Ø´ØªÙ‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯
 
   @@index([until])
 }
