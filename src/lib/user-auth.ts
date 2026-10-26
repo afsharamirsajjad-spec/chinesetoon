@@ -1,4 +1,4 @@
-import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'crypto'
+import { createHash, randomBytes, randomInt, scryptSync, timingSafeEqual } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
@@ -69,11 +69,12 @@ export function purgeExpiredAuthRecords(): void {
 }
 
 // ---------------------------------------------------------------------------
-// ✉️ تأیید ایمیل — توکن لینک یک‌بارمصرف + قاعدهٔ عفوی کاربران قدیمی
+// ✉️ تأیید ایمیل — کد ۶ رقمی یک‌بارمصرف (همان الگوی کدمحورِ بازیابی رمز) +
+// قاعدهٔ عفوی کاربران قدیمی
 // ---------------------------------------------------------------------------
 
-/** عمر لینک تأیید ایمیل */
-export const EMAIL_VERIFY_TTL_MS = 24 * 60 * 60 * 1000 // ۲۴ ساعت
+/** عمر کد تأیید ایمیل — همان ۱۰ دقیقهٔ کد بازیابی رمز */
+export const EMAIL_VERIFY_TTL_MS = 10 * 60 * 1000
 /**
  * تاریخ اجرای الزام تأیید ایمیل — کاربرانی که «قبل از این لحظه» ثبت‌نام
  * کرده‌اند و emailVerified آن‌ها null است عفو می‌شوند (هیچ کاربر موجودی
@@ -95,21 +96,21 @@ export function isEmailVerificationRequired(user: {
 }
 
 /**
- * ساخت توکن تأیید ایمیل — خروجی «توکن خام» (فقط برای لینک ایمیل) و انقضا.
- * در دیتابیس فقط sha256 توکن ذخیره می‌شود؛ توکن‌های قبلی همان کاربر
- * باطل می‌شوند (حذف) تا همیشه فقط آخرین لینک معتبر باشد.
+ * ساخت کد تأیید ایمیل ۶ رقمی — خروجی «کد خام» (فقط برای ایمیل) و انقضا.
+ * در دیتابیس فقط sha256 کد ذخیره می‌شود؛ کدهای بازِ قبلی همان کاربر حذف
+ * می‌شوند تا همیشه فقط آخرین کد معتبر باشد (همان الگوی بازیابی رمز).
  */
-export async function createEmailVerifyToken(
+export async function createEmailVerifyCode(
   userId: string,
   ttlMs: number = EMAIL_VERIFY_TTL_MS
-): Promise<{ token: string; expiresAt: Date }> {
+): Promise<{ code: string; expiresAt: Date }> {
   await db.emailVerifyToken.deleteMany({ where: { userId } })
-  const token = randomBytes(32).toString('hex')
+  const code = randomInt(0, 1_000_000).toString().padStart(6, '0')
   const expiresAt = new Date(Date.now() + ttlMs)
   await db.emailVerifyToken.create({
-    data: { tokenHash: sha256(token), userId, expiresAt },
+    data: { tokenHash: sha256(code), userId, expiresAt },
   })
-  return { token, expiresAt }
+  return { code, expiresAt }
 }
 
 /** کاربرِ درخواست‌دهنده از روی کوکی سشن — null یعنی مهمان */

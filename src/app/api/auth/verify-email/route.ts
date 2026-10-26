@@ -1,61 +1,95 @@
 // ---------------------------------------------------------------------------
-// ✉️ GET /api/auth/verify-email?token=... — مصرف لینک تأیید ایمیل
+// ✉️ POST /api/auth/verify-email — تأیید ایمیل با کد ۶ رقمی (الگوی بازیابی رمز)
 //
-// کاربر روی لینک داخل ایمیل کلیک می‌کند و اینجا می‌رسد:
-//   • توکن باید دقیقاً یک‌بارمصرف باشد — مصرف اتمی با updateMany گارددار
-//     (usedAt: null و expiresAt در آینده)؛ مصرف دوم حتی در مسابقه شکست می‌خورد
-//   • در همان تراکنشِ منطقی، emailVerified کاربر set می‌شود
-//   • کاربر به /account هدایت می‌شود با ?verified=1 (موفق) یا ?verified=0
-//     (توکن نامعتبر/منقضی) — صفحهٔ حساب پیام مناسب نشان می‌دهد
-//   • نشست خودکار ساخته نمی‌شود — کاربر وارد می‌شود (الزام تسک) و چون
-//     verified است ورودش موفق خواهد بود
+// کاربر کد ایمیل‌شده را در صفحهٔ تأیید وارد می‌کند:
+//   • کد باید یک‌بارمصرف و نامنقضی باشد — مصرف اتمی با updateMany گارددار
+//     (usedAt: null + expiresAt در آینده)؛ مصرف دوم حتی در مسابقه شکست می‌خورد
+//   • در صورت موفقیت emailVerified ست و «نشست ورود» ساخته می‌شود — کاربر
+//     مالک حساب است (کد را از ایمیل خودش دارد)؛ مثل جریان reset که پس از
+//     تغییر رمز مستقیم وارد می‌شود. مقصد بازگشت به پرداخت حفظ می‌ماند.
+//   • پاسخ خطا عمومی است (کد نامعتبر/منقضی = 400 با پیام واحد) — وجود حساب
+//     از روی پاسخ قابل حدس نیست.
 // ---------------------------------------------------------------------------
 
 import { NextRequest, NextResponse } from 'next/server'
+import { createHash } from 'crypto'
+import { z } from 'zod'
 import { db } from '@/lib/db'
 import { rateLimit, tooManyRequests } from '@/lib/rate-limit'
+import { guardResponse } from '@/lib/http-guard'
+import {
+  createUserSession,
+  setSessionCookie,
+  toSafeUser,
+  SESSION_TTL_MS,
+} from '@/lib/user-auth'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: NextRequest) {
-  // لینک‌های ایمیل توسط همه‌جا باز می‌شوند — سقف دفاعی ساده روی IP
-  const rl = await rateLimit('auth-verify-email', req, 30, 3600, 3600)
-  if (!rl.ok) return tooManyRequests(rl)
+const verifySchema = z.object({
+  email: z.string().trim().toLowerCase().max(120),
+  code: z.string().trim().regex(/^\d{6}$/, 'Code must be 6 digits'),
+})
 
-  const origin = new URL(req.url).origin
-  const token = req.nextUrl.searchParams.get('token') ?? ''
-  // توکن خام ۶۴ نویسهٔ hex است — هر چیز دیگری بدون کوئری رد می‌شود
-  if (!/^[0-9a-f]{64}$/.test(token)) {
-    return NextResponse.redirect(`${origin}/account?verified=0`, 302)
+function sha256(value: string): string {
+  return createHash('sha256').update(value).digest('hex')
+}
+
+export async function POST(req: NextRequest) {
+  // تلاش محدود برای حدس کد: ۱۰ درخواست در ۱۰ دقیقه برای هر IP
+  const rl = await rateLimit('auth-verify-email', req, 10, 600, 600)
+  if (!rl.ok) return tooManyRequests(rl)
+  const guard = guardResponse(req)
+  if (guard) return guard
+
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
+  const parsed = verifySchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Please enter the 6-digit code from your email' },
+      { status: 400 }
+    )
+  }
+  const { email, code } = parsed.data
+
+  const genericError = NextResponse.json(
+    { error: 'This verification code is invalid, already used, or has expired. Request a fresh code — it only takes a moment.' },
+    { status: 400 }
+  )
 
   try {
-    const { createHash } = await import('crypto')
-    const tokenHash = createHash('sha256').update(token).digest('hex')
+    const user = await db.user.findUnique({ where: { email } })
+    if (!user) return genericError
 
-    // مصرف اتمی توکن — فقط اگر یک‌بارمصرف و سالم باشد count=1 می‌شود
+    // مصرف اتمی کد — فقط آخرین کدِ بازِ همین حساب، یک‌بارمصرف و نامنقضی
     const consumed = await db.emailVerifyToken.updateMany({
-      where: { tokenHash, usedAt: null, expiresAt: { gt: new Date() } },
+      where: {
+        userId: user.id,
+        tokenHash: sha256(code),
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
       data: { usedAt: new Date() },
     })
-    if (consumed.count !== 1) {
-      return NextResponse.redirect(`${origin}/account?verified=0`, 302)
-    }
+    if (consumed.count !== 1) return genericError
 
-    // ست‌کردن emailVerified — توکن همین الان مصرف شده، پس userId معتبر است
-    const record = await db.emailVerifyToken.findUnique({ where: { tokenHash }, select: { userId: true } })
-    if (!record) {
-      // عملاً دست‌یافتنی نیست (توکن همین حالا مصرف شد) — گارد دفاعی
-      return NextResponse.redirect(`${origin}/account?verified=0`, 302)
-    }
-    await db.user.update({
-      where: { id: record.userId },
-      data: { emailVerified: new Date() },
+    const updated = await db.user.update({
+      where: { id: user.id },
+      data: { emailVerified: new Date(), lastLoginAt: new Date() },
     })
 
-    return NextResponse.redirect(`${origin}/account?verified=1`, 302)
+    // ✅ تأیید موفق → ورود مستقیم (کد را دارندهٔ ایمیل وارد کرده است)
+    const { token, expiresAt } = await createUserSession(user.id, req.headers.get('user-agent') ?? '', SESSION_TTL_MS)
+    const res = NextResponse.json({ ok: true, user: toSafeUser(updated) })
+    setSessionCookie(res, token, expiresAt)
+    return res
   } catch (e) {
-    console.error('[GET /api/auth/verify-email] error:', e instanceof Error ? e.message : e)
-    return NextResponse.redirect(`${origin}/account?verified=0`, 302)
+    console.error('[POST /api/auth/verify-email] error:', e instanceof Error ? e.message : e)
+    return NextResponse.json({ error: 'Could not verify the code. Please try again.' }, { status: 500 })
   }
 }

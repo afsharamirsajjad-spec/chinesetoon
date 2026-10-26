@@ -83,10 +83,11 @@ function brandText(code: string, minutes: number): string {
 }
 
 // ---------------------------------------------------------------------------
-// ✉️ ایمیل «تأیید آدرس ایمیل» — لینک یک‌بارمصرف با انقضا (ثبت‌نام حساب)
+// ✉️ ایمیل «تأیید آدرس ایمیل» — کد ۶ رقمی یک‌بارمصرف (همان الگوی کدمحورِ
+// بازیابی رمز): کاربر کد را در همان صفحهٔ تأیید وارد می‌کند
 // ---------------------------------------------------------------------------
 
-function verifyHtml(firstName: string, verifyUrl: string, hours: number): string {
+function verifyHtml(firstName: string, code: string, minutes: number): string {
   return `<!doctype html>
 <html><body style="margin:0;padding:0;background:#f6f4ec;font-family:Arial,Helvetica,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f4ec;padding:32px 12px;">
@@ -94,26 +95,22 @@ function verifyHtml(firstName: string, verifyUrl: string, hours: number): string
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:20px;border:1px solid #e4e0d0;overflow:hidden;">
         <tr><td style="background:#dfe8d8;padding:28px 32px;">
           <h1 style="margin:0;font-size:22px;color:#4a3f2e;">🧧 Chinese Toon</h1>
-          <p style="margin:6px 0 0;font-size:13px;color:#6d6250;">Confirm your email address</p>
+          <p style="margin:6px 0 0;font-size:13px;color:#6d6250;">Email verification code</p>
         </td></tr>
         <tr><td style="padding:32px;">
           <p style="margin:0 0 16px;font-size:15px;color:#4a3f2e;line-height:1.6;">
             Hello ${firstName},<br/>
-            Welcome to Chinese Toon! Please confirm your email address to activate your account.
-            Click the button below:
+            Welcome to Chinese Toon! Enter this verification code on the verification screen to activate your account:
           </p>
           <p style="margin:24px 0;text-align:center;">
-            <a href="${verifyUrl}" style="display:inline-block;background:#a8c9a0;border:1px solid #8db585;border-radius:999px;padding:14px 36px;font-size:16px;font-weight:bold;color:#3d331f;text-decoration:none;">Verify my email</a>
+            <span style="display:inline-block;background:#f0f4ea;border:1px solid #d8e2cc;border-radius:16px;padding:18px 32px;font-size:38px;font-weight:bold;letter-spacing:12px;color:#3d331f;font-family:'Courier New',monospace;">${code}</span>
           </p>
-          <p style="margin:0 0 8px;font-size:13px;color:#6d6250;line-height:1.6;">
-            Or copy this link into your browser:<br/>
-            <span style="color:#6d6250;word-break:break-all;font-size:12px;">${verifyUrl}</span>
-          </p>
-          <p style="margin:12px 0 0;font-size:13px;color:#6d6250;">
-            ⏱️ This link expires in <strong>${hours} hours</strong> and can be used only <strong>once</strong>.
+          <p style="margin:0 0 8px;font-size:13px;color:#6d6250;">
+            ⏱️ This code expires in <strong>${minutes} minutes</strong> and can be used only <strong>once</strong>.
           </p>
           <p style="margin:8px 0 0;font-size:13px;color:#6d6250;line-height:1.6;">
             🔒 Didn't create an account with Chinese Toon? You can safely ignore this email.
+            Never share this code with anyone.
           </p>
         </td></tr>
         <tr><td style="background:#faf8f0;padding:16px 32px;border-top:1px solid #eee9da;">
@@ -127,37 +124,42 @@ function verifyHtml(firstName: string, verifyUrl: string, hours: number): string
 </body></html>`
 }
 
-function verifyText(firstName: string, verifyUrl: string, hours: number): string {
+function verifyText(firstName: string, code: string, minutes: number): string {
   return [
-    'Chinese Toon — Confirm your email address',
+    'Chinese Toon — Email Verification Code',
     '',
     `Hello ${firstName},`,
-    'Welcome to Chinese Toon! Please confirm your email address to activate your account:',
-    verifyUrl,
+    'Welcome to Chinese Toon! Enter this verification code on the verification screen to activate your account:',
+    'Your verification code is: ' + code,
     '',
-    `This link expires in ${hours} hours and can be used only once.`,
+    `The code expires in ${minutes} minutes and can be used only once.`,
     "Didn't create an account with Chinese Toon? You can safely ignore this email.",
+    'Never share this code with anyone.',
   ].join('\n')
 }
 
 /**
- * ارسال ایمیل «تأیید آدرس ایمیل» با لینک یک‌بارمصرف.
- * همان سیاست ارسال کد بازیابی: با RESEND_API_KEY واقعاً ارسال می‌شود؛
- * بدون آن فقط در کنسول سرور لاگ می‌شود (توسعه). نتیجه هرگز در پاسخ API
- * افشا نمی‌شود (ضد نشت وجود حساب).
+ * ارسال ایمیل «کد تأیید ایمیل» — کدمحور مثل بازیابی رمز.
+ * با RESEND_API_KEY واقعاً ارسال می‌شود؛ بدون آن فقط در کنسول سرور لاگ
+ * می‌شود (توسعه). نتیجه هرگز در پاسخ API افشا نمی‌شود (ضد نشت وجود حساب).
+ *
+ * ⚠️ نکتهٔ ارائه‌دهنده (رفع 403 در لاگ Resend): دامنهٔ تستی resend.dev فقط
+ * به ایمیلِ خودِ صاحب اکانت اجازهٔ ارسال می‌دهد. برای ارسال به همه، دامنهٔ
+ * chinesetoon.com را در پنل Resend (Domains) verify کنید و سپس متغیر
+ * MAIL_FROM را روی «Chinese Toon <noreply@chinesetoon.com>» بگذارید.
  */
-export async function sendEmailVerification(
+export async function sendEmailVerificationCode(
   to: string,
   firstName: string,
-  verifyUrl: string,
-  hours: number
+  code: string,
+  minutes: number
 ): Promise<MailResult> {
   const apiKey = (process.env.RESEND_API_KEY ?? '').trim()
   const from = (process.env.MAIL_FROM ?? '').trim() || 'Chinese Toon <onboarding@resend.dev>'
 
   if (!apiKey) {
     console.log(
-      `[mail] RESEND_API_KEY not configured — email verification for ${to} (console-only delivery):\n  link: ${verifyUrl}`
+      `[mail] RESEND_API_KEY not configured — email verification code for ${to} (console-only delivery):\n  code: ${code}`
     )
     return { sent: false, provider: 'console' }
   }
@@ -166,9 +168,9 @@ export async function sendEmailVerification(
     const body = JSON.stringify({
       from,
       to: [to],
-      subject: 'Confirm your email — Chinese Toon',
-      html: verifyHtml(firstName, verifyUrl, hours),
-      text: verifyText(firstName, verifyUrl, hours),
+      subject: `Your Chinese Toon verification code: ${code}`,
+      html: verifyHtml(firstName, code, minutes),
+      text: verifyText(firstName, code, minutes),
     })
 
     let lastError = ''

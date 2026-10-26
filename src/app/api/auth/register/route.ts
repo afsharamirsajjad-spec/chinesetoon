@@ -17,7 +17,7 @@ import {
   isValidEmail,
   sanitizePhone,
   toSafeUser,
-  createEmailVerifyToken,
+  createEmailVerifyCode,
   EMAIL_VERIFY_TTL_MS,
 } from '@/lib/user-auth'
 import { countryByCode } from '@/lib/countries'
@@ -25,7 +25,7 @@ import { guardResponse } from '@/lib/http-guard'
 import { notifyUser } from '@/lib/notifications'
 import { logAppError } from '@/lib/error-log'
 import { ensureSchema, isSchemaDriftError } from '@/lib/ensure-schema'
-import { sendEmailVerification } from '@/lib/mail'
+import { sendEmailVerificationCode, isDevMailPreview } from '@/lib/mail'
 
 export const dynamic = 'force-dynamic'
 
@@ -141,17 +141,20 @@ export async function POST(req: NextRequest) {
       return { ...created, uniqueCode }
     })
 
-    // ✉️ توکن تأیید ایمیل (یک‌بارمصرف، ۲۴ ساعت) + ایمیل با after() تا پاسخ
-    // فوراً برگردد و کاربر برای تأخیر ارائه‌دهنده منتظر نماند. اگر ایمیل
-    // ارسال نشود حساب سر جایش است — کاربر از همان صفحه دکمهٔ «ارسال دوباره» دارد.
-    const { token } = await createEmailVerifyToken(user.id)
-    const baseUrl = (
-      process.env.APP_BASE_URL?.trim() ||
-      new URL(req.url).origin
-    ).replace(/\/+$/, '')
-    const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}`
+    // ✉️ کد تأیید ایمیل ۶ رقمی (یک‌بارمصرف، ۱۰ دقیقه — همان الگوی بازیابی رمز)
+    // با after() ارسال می‌شود تا پاسخ فوراً برگردد. اگر ایمیل ارسال نشود حساب
+    // سر جایش است — کاربر از همان صفحه دکمهٔ «ارسال دوباره» دارد.
+    const { code } = await createEmailVerifyCode(user.id)
     after(async () => {
-      await sendEmailVerification(email, firstName, verifyUrl, Math.round(EMAIL_VERIFY_TTL_MS / 3_600_000))
+      const mail = await sendEmailVerificationCode(
+        email,
+        firstName,
+        code,
+        Math.round(EMAIL_VERIFY_TTL_MS / 60_000)
+      )
+      if (!mail.sent && mail.provider === 'resend') {
+        console.error('[register] verification code email could not be delivered via provider — owner should check mail configuration (MAIL_FROM domain)')
+      }
     })
 
     // 🔔 اعلان REGISTRATION — رویداد واقعی ساخت حساب در DB (فاز ۵۲)
@@ -162,12 +165,17 @@ export async function POST(req: NextRequest) {
       title: 'Welcome to Chinese Toon 🧧',
       body: `Your account is ready, ${firstName}. Your unique student code is ${user.uniqueCode} — keep it for reference. Browse classes, pick a package and pay by bank card — your order and enrollment status will always be visible here in your account.`,
     })
-    // ✉️ بدون سشن — ورود فقط پس از تأیید ایمیل ممکن است (الزام تسک).
-    // مقصد «بازگشت به پرداخت» در sessionStorage می‌ماند و بعد از تأیید+ورود مصرف می‌شود.
-    return NextResponse.json(
-      { ok: true, verificationRequired: true, user: toSafeUser(user) },
-      { status: 201 }
-    )
+    // ✉️ بدون سشن — ورود فقط پس از تأیید کد ایمیل ممکن است (الزام تسک).
+    // مقصد «بازگشت به پرداخت» در sessionStorage می‌ماند و بعد از تأیید مصرف می‌شود.
+    // 🧪 حالت توسعهٔ بدون ارائه‌دهنده — کد برای تست لوکال برگردانده می‌شود
+    // (فقط وقتی NODE_ENV !== 'production' و ارائه‌دهنده تنظیم نیست — هم‌قرارداد forgot)
+    const baseResponse: Record<string, unknown> = {
+      ok: true,
+      verificationRequired: true,
+      user: toSafeUser(user),
+    }
+    if (isDevMailPreview()) baseResponse.devCode = code
+    return NextResponse.json(baseResponse, { status: 201 })
   }
 
   try {

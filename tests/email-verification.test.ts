@@ -10,7 +10,7 @@ import {
   EMAIL_VERIFY_TTL_MS,
   EMAIL_VERIFICATION_ROLLOUT_MS,
 } from '../src/lib/user-auth'
-import { sendEmailVerification, isDevMailPreview } from '../src/lib/mail'
+import { sendEmailVerificationCode, isDevMailPreview } from '../src/lib/mail'
 
 // ---------- isEmailVerificationRequired — قاعدهٔ عفو کاربران قدیمی ----------
 
@@ -41,15 +41,15 @@ describe('isEmailVerificationRequired', () => {
 // ---------- ثابت‌ها ----------
 
 describe('email verification constants', () => {
-  test('لینک تأیید ۲۴ ساعت اعتبار دارد', () => {
-    expect(EMAIL_VERIFY_TTL_MS).toBe(24 * 60 * 60 * 1000)
+  test('کد تأیید ۱۰ دقیقه اعتبار دارد (همان عمر کد بازیابی رمز)', () => {
+    expect(EMAIL_VERIFY_TTL_MS).toBe(10 * 60 * 1000)
   })
 })
 
 // ---------- mail — مسیر console-only بدون RESEND_API_KEY ----------
 
-describe('sendEmailVerification (console provider)', () => {
-  test('بدون RESEND_API_KEY لینک در کنسول لاگ و sent:false برمی‌گرداند', async () => {
+describe('sendEmailVerificationCode (console provider)', () => {
+  test('بدون RESEND_API_KEY کد در کنسول لاگ و sent:false برمی‌گرداند', async () => {
     // این تست فقط وقتی معنا دارد که کلید واقعی تنظیم نباشد (محیط CI/لوکال)
     if ((process.env.RESEND_API_KEY ?? '').trim()) {
       expect(isDevMailPreview()).toBe(false)
@@ -59,18 +59,18 @@ describe('sendEmailVerification (console provider)', () => {
     const orig = console.log
     console.log = (...args: unknown[]) => logs.push(args.join(' '))
     try {
-      const res = await sendEmailVerification('test@local', 'Test', 'https://x/api/auth/verify-email?token=abc', 24)
+      const res = await sendEmailVerificationCode('test@local', 'Test', '123456', 10)
       expect(res.sent).toBe(false)
       expect(res.provider).toBe('console')
-      expect(logs.some((l) => l.includes('https://x/api/auth/verify-email?token=abc'))).toBe(true)
+      expect(logs.some((l) => l.includes('123456'))).toBe(true)
     } finally {
       console.log = orig
     }
   })
 
-  test('قالب HTML لینک را دوبار (دکمه + متن جایگزین) و قواعد یک‌بارمصرف را دارد', async () => {
+  test('کد ۶ رقمی در موضوع ایمیل قرار می‌گیرد و قراردادهای عمومی تابع برقرار است', async () => {
     // تولید مستقیم رندر قالب — از طریق تابع ارسال در حالت console قابل بررسی نیست
     // (HTML داخلی است)، پس فقط قراردادهای عمومی تابع را می‌سنچیم
-    expect(typeof sendEmailVerification).toBe('function')
+    expect(typeof sendEmailVerificationCode).toBe('function')
   })
 })

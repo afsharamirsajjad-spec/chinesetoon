@@ -1,21 +1,22 @@
 // ---------------------------------------------------------------------------
-// ✉️ POST /api/auth/resend-verification — ارسال دوبارهٔ لینک تأیید ایمیل
+// ✉️ POST /api/auth/resend-verification — ارسال دوبارهٔ کد تأیید ایمیل
 //
 // سیاست ضد افشا: پاسخ همیشه 200 عمومی است — چه حساب وجود داشته باشد چه نه،
 // چه تأییدشده باشد چه نه. (کسی نمی‌تواند با این endpoint فهرست ایمیل‌های
-// ثبت‌شده سایت را بیرون بکشد.) ایمیل واقعی فقط برای حسابِ موجودِ
-// تأییدنشدهٔ بعد از rollout ارسال می‌شود.
+// ثبت‌شده سایت را بیرون بکشد.) کد واقعی فقط برای حسابِ موجودِ تأییدنشدهٔ
+// بعد از rollout ارسال می‌شود.
 //
 // محدودیت‌ها: ۱۰ درخواست/ساعت برای هر IP + ۳ درخواست/۳۰ دقیقه برای هر ایمیل
 // (ضد آزار ایمیل و ضد سوءاستفاده). ارسال با after() تا پاسخ فوری باشد.
+// 🧪 در حالت توسعهٔ بدون ارائه‌دهنده، کد تست در پاسخ برمی‌گردد (devCode).
 // ---------------------------------------------------------------------------
 
 import { NextRequest, NextResponse, after } from 'next/server'
 import { db } from '@/lib/db'
 import { rateLimit, tooManyRequests } from '@/lib/rate-limit'
 import { guardResponse } from '@/lib/http-guard'
-import { createEmailVerifyToken, EMAIL_VERIFY_TTL_MS, isEmailVerificationRequired } from '@/lib/user-auth'
-import { sendEmailVerification } from '@/lib/mail'
+import { createEmailVerifyCode, EMAIL_VERIFY_TTL_MS, isEmailVerificationRequired } from '@/lib/user-auth'
+import { sendEmailVerificationCode, isDevMailPreview } from '@/lib/mail'
 import { ensureSchema, isSchemaDriftError } from '@/lib/ensure-schema'
 
 export const dynamic = 'force-dynamic'
@@ -50,14 +51,23 @@ export async function POST(req: NextRequest) {
     // کاربر غایب / قبلاً تأییدشده / قبل از rollout → همان پاسخ عمومی
     if (!user || !isEmailVerificationRequired(user)) return genericOk
 
-    // توکن‌های قبلی باطل و توکن تازه صادر می‌شود
-    const { token } = await createEmailVerifyToken(user.id)
-    const baseUrl = (process.env.APP_BASE_URL?.trim() || new URL(req.url).origin).replace(/\/+$/, '')
-    const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}`
-    const firstName = user.firstName || 'there'
+    // کدهای قبلی باطل و کد تازه صادر می‌شود
+    const { code } = await createEmailVerifyCode(user.id)
     after(async () => {
-      await sendEmailVerification(email, firstName, verifyUrl, Math.round(EMAIL_VERIFY_TTL_MS / 3_600_000))
+      const mail = await sendEmailVerificationCode(
+        email,
+        user.firstName || 'there',
+        code,
+        Math.round(EMAIL_VERIFY_TTL_MS / 60_000)
+      )
+      if (!mail.sent && mail.provider === 'resend') {
+        console.error('[resend-verification] code email could not be delivered via provider — owner should check mail configuration (MAIL_FROM domain)')
+      }
     })
+    // 🧪 فقط توسعهٔ محلی بدون ارائه‌دهنده — هم‌قرارداد forgot-password
+    if (isDevMailPreview()) {
+      return NextResponse.json({ ok: true, devCode: code })
+    }
     return genericOk
   } catch (initialError) {
     let e: unknown = initialError
@@ -71,8 +81,7 @@ export async function POST(req: NextRequest) {
       }
     }
     console.error('[POST /api/auth/resend-verification] error:', e instanceof Error ? e.message : e)
-    // حتی در خطا هم پاسخ عمومی — ولی 500 تا کلاینت بداند شاید ارسال نشد؟
-    // نه: پاسخ همیشه ok تا خطا تبدیل به ابزار کشف حساب نشود.
+    // حتی در خطا هم پاسخ عمومی — شکست دیتابیس نباید وجود حساب را لو بدهد
     return genericOk
   }
 }

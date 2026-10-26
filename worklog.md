@@ -294,3 +294,29 @@ Changes:
 - tests/email-verification.test.ts: grandfathering rule matrix (verified/legacy/new/rollout-boundary), TTL constant, console-provider mail path logs the link and returns sent:false.
 
 Verification: prisma validate + generate OK; tsc 0 errors; eslint clean; bun test 42/42 pass; next build OK (routes /api/auth/verify-email + /api/auth/resend-verification in output). LIMITATION: true end-to-end DB flow could not run locally — .env DATABASE_URL is a stale non-reachable path (pre-existing env issue) and no local Postgres/Docker exists; DB-dependent runtime steps (actual email send with RESEND_API_KEY, link consumption, login of unverified user) are verified by build+unit coverage of the pure logic and must be smoke-tested on staging/production after deploy.
+
+---
+Task ID: ENROLLMENT-SIMPLIFY-1
+Task: Fix the class-selection flow and simplify registration (owner request).
+
+Changes:
+1. Hero (HomePage.tsx): "Join a Class" is now the single CTA and navigates to /classes where users see and pick a class (was: navigated straight to /register with no class). The separate "Explore Classes" secondary button is removed — one clear flow. Selection made on /classes is carried into registration via the existing sessionStorage handoff (ct-selected-class) and shown as the "Selected class" card throughout enrollment.
+2. RegisterPage.tsx: the "Current Chinese Level" select is removed completely; level is derived server-bound from the selected class (catalogLock.level → fileLock.level → 'Unspecified'). Price box now only appears with a selected class (no-class combo matrix removed). New butter banner when no class is selected: "No class selected yet — pick a class…" + "Browse classes" button → /classes. Removed the "Edit profile" link from the "Registering as" card.
+3. /api/register: level schema relaxed — optional, empty→'Unspecified' (same max length); dedupe + record storage unchanged.
+4. AccountPage.tsx: personal-info display removed (avatar, member-since, last-login, country, telegram, phone grid + InfoBox helper + unused icons); compact header keeps name, email, sign-out and the unique student code; orders/notifications/schedule/homework (enrollment) untouched. There was no profile-edit form or API to remove — the only "Edit profile" affordance was the RegisterPage link (removed).
+
+Verification: tsc 0 errors, eslint clean, bun test 42/42, next build OK. Browser flow test (local prod server): hero button → /classes; 6 Register buttons; click → /register with sessionStorage ct-selected-class = "HSK 1 — Beginner Chinese" (carried through the auth gate too); /register renders with no level select and no no-class banner when a class is carried. DB-backed submit still unverifiable locally (stale .env DATABASE_URL, no local Postgres) — server schema change is unit-simple (optional level → 'Unspecified').
+
+---
+Task ID: EMAIL-VERIFICATION-2
+Task: Switch email verification from one-time link to a 6-digit code (owner request — same pattern as password reset); verification success now signs the user in directly.
+
+Changes:
+- user-auth.ts: createEmailVerifyToken → createEmailVerifyCode (6-digit randomInt, sha256 stored, previous open codes deleted so only the latest is valid); EMAIL_VERIFY_TTL_MS 24h → 10min (same as reset codes).
+- mail.ts: sendEmailVerification → sendEmailVerificationCode — branded HTML/text with a large monospace code chip, minutes-based expiry, "Never share this code" wording; subject embeds the code; comment documents the Resend 403 fix (verify the chinesetoon.com domain in the Resend panel, then set MAIL_FROM=Chinese Toon <noreply@chinesetoon.com> — the onboarding@resend.dev test domain only delivers to the account owner's own inbox).
+- /api/auth/verify-email: GET link-redirect → POST {email, code}; atomic updateMany consumption (last open code of this user, one-time, unexpired); generic 400 on any failure (no account enumeration); success sets emailVerified + lastLoginAt and CREATES a session — entering the code proves email ownership, mirroring the reset flow; the pay-redirect handoff is consumed client-side after verify.
+- register + resend-verification routes: send the code via after() (non-blocking); dev-only devCode in the JSON response when NODE_ENV !== 'production' and no provider configured (same contract as forgot-password); provider delivery failure logged server-side only, never leaked to responses.
+- AccountPage.tsx: "Check your inbox" panel is now a code-entry form (numeric input, autoComplete=one-time-code, dev-code chip in local dev, inline error, Verify & continue); the unverified-login banner's resend now navigates straight to the code screen; the ?verified=1|0 link-result banner removed (no more link); success → toast + refreshUser + consumePayRedirect. Also fixed two leftover TS errors: devCode is read from the SUCCESS branch of resilientJsonFetch (FetchOk has no .kind), not the http-fail branch.
+- tests/email-verification.test.ts: TTL = 10 minutes; console-provider path logs the code and returns sent:false; function contract test renamed to sendEmailVerificationCode.
+
+Verification: tsc 0 errors; eslint clean on all changed files; bun test 42/42 pass; next build OK (both routes in output). End-to-end DB flow still requires staging/production (local .env DATABASE_URL is a stale non-reachable path — pre-existing env issue).
