@@ -61,6 +61,10 @@ async function runEnsure(): Promise<void> {
   // هر کوئری سفارش (create/find) با P2022 می‌شکند؛ باید حتی وقتی جدول‌های
   // LMS هنوز روی دیتابیس زنده ساخته نشده‌اند هم اعمال شود.
   await ddl(`ALTER TABLE "UsdtOrder" ADD COLUMN IF NOT EXISTS "receiptUrl" TEXT`, 'UsdtOrder.receiptUrl')
+  // ✉️ تأیید ایمیل — ستون nullable؛ کاربران قدیمی با گارد createdAt در کد
+  // بی‌خیال می‌شوند (هیچ backfill اینجا انجام نمی‌شود تا ثبت‌نام‌های جدید
+  // تأییدنشده نمانند)
+  await ddl(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "emailVerified" TIMESTAMP(3)`, 'User.emailVerified')
   await ddl(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "role" TEXT NOT NULL DEFAULT 'student'`, 'User.role')
   await ddl(`ALTER TABLE "CourseClass" ADD COLUMN IF NOT EXISTS "teacherId" TEXT`, 'CourseClass.teacherId')
   await ddl(`ALTER TABLE "Homework" ADD COLUMN IF NOT EXISTS "classId" TEXT`, 'Homework.classId')
@@ -70,6 +74,21 @@ async function runEnsure(): Promise<void> {
   await ddl(`ALTER TABLE "HomeworkSubmission" ADD COLUMN IF NOT EXISTS "releasedAt" TIMESTAMP(3)`, 'HomeworkSubmission.releasedAt')
 
   // ---- جدول‌های جدید ----
+  // ✉️ تأیید ایمیل — توکن یک‌بارمصرف هش‌شده (الگوی PasswordResetToken)
+  await ddl(
+    `CREATE TABLE IF NOT EXISTS "EmailVerifyToken" (
+      "id" TEXT NOT NULL,
+      "tokenHash" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "expiresAt" TIMESTAMP(3) NOT NULL,
+      "usedAt" TIMESTAMP(3),
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "EmailVerifyToken_pkey" PRIMARY KEY ("id")
+    )`,
+    'CREATE EmailVerifyToken'
+  )
+  await ddl(`CREATE UNIQUE INDEX IF NOT EXISTS "EmailVerifyToken_tokenHash_key" ON "EmailVerifyToken"("tokenHash")`, 'uniq EmailVerifyToken.tokenHash')
+  await ddl(`CREATE INDEX IF NOT EXISTS "EmailVerifyToken_userId_idx" ON "EmailVerifyToken"("userId")`, 'idx EmailVerifyToken.userId')
   // 🧭 Practice Hub — رویدادهای فعالیت تمرین (فقط افزایشی/ایدمپوتنت)
   await ddl(
     `CREATE TABLE IF NOT EXISTS "PracticeEvent" (

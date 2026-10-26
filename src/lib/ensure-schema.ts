@@ -208,6 +208,7 @@ const CREATE_TABLES: readonly string[] = [
     "telegramUsername" TEXT,
     "telegramId" TEXT,
     "uniqueCode" TEXT,
+    "emailVerified" DATETIME,
     "lastLoginAt" DATETIME,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
@@ -229,6 +230,15 @@ const CREATE_TABLES: readonly string[] = [
     "usedAt" DATETIME,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "PasswordResetToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE TABLE IF NOT EXISTS "EmailVerifyToken" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "tokenHash" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "expiresAt" DATETIME NOT NULL,
+    "usedAt" DATETIME,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "EmailVerifyToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
   )`,
   `CREATE TABLE IF NOT EXISTS "UsdtOrder" (
     "id" TEXT NOT NULL PRIMARY KEY,
@@ -471,6 +481,8 @@ const CREATE_INDEXES: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS "UserSession_userId_idx" ON "UserSession"("userId")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "PasswordResetToken_tokenHash_key" ON "PasswordResetToken"("tokenHash")`,
   `CREATE INDEX IF NOT EXISTS "PasswordResetToken_userId_idx" ON "PasswordResetToken"("userId")`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "EmailVerifyToken_tokenHash_key" ON "EmailVerifyToken"("tokenHash")`,
+  `CREATE INDEX IF NOT EXISTS "EmailVerifyToken_userId_idx" ON "EmailVerifyToken"("userId")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "UsdtOrder_ref_key" ON "UsdtOrder"("ref")`,
   `CREATE INDEX IF NOT EXISTS "UsdtOrder_userId_idx" ON "UsdtOrder"("userId")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "UsdtOrder_txHash_key" ON "UsdtOrder"("txHash")`,
@@ -527,6 +539,7 @@ const ALTER_COLUMNS: Readonly<Record<string, readonly string[]>> = {
     'ALTER TABLE "User" ADD COLUMN "telegramId" TEXT',
     'ALTER TABLE "User" ADD COLUMN "uniqueCode" TEXT',
     'ALTER TABLE "User" ADD COLUMN "lastLoginAt" DATETIME',
+    'ALTER TABLE "User" ADD COLUMN "emailVerified" DATETIME',
   ],
   UserSession: ['ALTER TABLE "UserSession" ADD COLUMN "userAgent" TEXT NOT NULL DEFAULT \'\''],
   PasswordResetToken: ['ALTER TABLE "PasswordResetToken" ADD COLUMN "usedAt" DATETIME'],

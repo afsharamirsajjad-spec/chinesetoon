@@ -6,7 +6,7 @@
 // پاسخ‌ها فیلد-محور است؛ passwordHash هرگز در پاسخ نیست.
 // ---------------------------------------------------------------------------
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { randomBytes } from 'crypto'
 import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
@@ -16,15 +16,16 @@ import {
   normalizeTelegram,
   isValidEmail,
   sanitizePhone,
-  createUserSession,
-  setSessionCookie,
   toSafeUser,
+  createEmailVerifyToken,
+  EMAIL_VERIFY_TTL_MS,
 } from '@/lib/user-auth'
 import { countryByCode } from '@/lib/countries'
 import { guardResponse } from '@/lib/http-guard'
 import { notifyUser } from '@/lib/notifications'
 import { logAppError } from '@/lib/error-log'
 import { ensureSchema, isSchemaDriftError } from '@/lib/ensure-schema'
+import { sendEmailVerification } from '@/lib/mail'
 
 export const dynamic = 'force-dynamic'
 
@@ -118,6 +119,8 @@ export async function POST(req: NextRequest) {
     // ♻️ فاز ۶۱ — ثبت‌نام اتمی: ساخت حساب + کد یکتا داخل یک تراکنش.
     // قبلاً اگر کد یکتا وسط راه شکست می‌خورد، حسابِ بدون کد باقی می‌ماند؛
     // حالا یا حساب کامل (با کد) ساخته می‌شود یا هیچ‌چیز.
+    // ✉️ emailVerified عمداً null می‌ماند — کاربر باید ایمیلش را تأیید کند
+    // تا بتواند وارد شود (الزام سمت سرور در /api/auth/login).
     const { assignUniqueCode } = await import('@/lib/unique-code')
     const user = await db.$transaction(async (tx) => {
       const created = await tx.user.create({
@@ -137,7 +140,20 @@ export async function POST(req: NextRequest) {
       const uniqueCode = await assignUniqueCode(created.id, tx as never)
       return { ...created, uniqueCode }
     })
-    const { token, expiresAt } = await createUserSession(user.id, req.headers.get('user-agent') ?? '')
+
+    // ✉️ توکن تأیید ایمیل (یک‌بارمصرف، ۲۴ ساعت) + ایمیل با after() تا پاسخ
+    // فوراً برگردد و کاربر برای تأخیر ارائه‌دهنده منتظر نماند. اگر ایمیل
+    // ارسال نشود حساب سر جایش است — کاربر از همان صفحه دکمهٔ «ارسال دوباره» دارد.
+    const { token } = await createEmailVerifyToken(user.id)
+    const baseUrl = (
+      process.env.APP_BASE_URL?.trim() ||
+      new URL(req.url).origin
+    ).replace(/\/+$/, '')
+    const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}`
+    after(async () => {
+      await sendEmailVerification(email, firstName, verifyUrl, Math.round(EMAIL_VERIFY_TTL_MS / 3_600_000))
+    })
+
     // 🔔 اعلان REGISTRATION — رویداد واقعی ساخت حساب در DB (فاز ۵۲)
     notifyUser({
       userId: user.id,
@@ -146,9 +162,12 @@ export async function POST(req: NextRequest) {
       title: 'Welcome to Chinese Toon 🧧',
       body: `Your account is ready, ${firstName}. Your unique student code is ${user.uniqueCode} — keep it for reference. Browse classes, pick a package and pay by bank card — your order and enrollment status will always be visible here in your account.`,
     })
-    const res = NextResponse.json({ user: toSafeUser(user) }, { status: 201 })
-    setSessionCookie(res, token, expiresAt)
-    return res
+    // ✉️ بدون سشن — ورود فقط پس از تأیید ایمیل ممکن است (الزام تسک).
+    // مقصد «بازگشت به پرداخت» در sessionStorage می‌ماند و بعد از تأیید+ورود مصرف می‌شود.
+    return NextResponse.json(
+      { ok: true, verificationRequired: true, user: toSafeUser(user) },
+      { status: 201 }
+    )
   }
 
   try {

@@ -15,6 +15,7 @@ import {
   ArrowRight,
   BookOpen,
   CalendarDays,
+  CheckCircle2,
   ChevronDown,
   Clock,
   Copy,
@@ -24,8 +25,10 @@ import {
   GraduationCap,
   Loader2,
   LogOut,
+  MailCheck,
   Phone,
   Send,
+  TriangleAlert,
   Wallet,
 } from 'lucide-react'
 import { siteContent, PageKey } from '@/content/site-content'
@@ -120,6 +123,10 @@ export function AccountPage({ onNavigate, onToast, go }: AccountPageProps) {
   const [regErrors, setRegErrors] = useState<Record<string, string>>({})
   const [regError, setRegError] = useState('')
   const [regSending, setRegSending] = useState(false)
+  // ✉️ تأیید ایمیل — بعد از ثبت‌نام موفق، به‌جای ورودِ خودکار صفحهٔ
+  // «ایمیلت را چک کن» نشان داده می‌شود (ورود فقط پس از تأیید ممکن است)
+  const [verifyNotice, setVerifyNotice] = useState<string | null>(null)
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle')
 
   // 🎂 سقف تاریخ تولد = ۵ سال پیش (حداقل سن ۵ سال) — بعد از mount ست می‌شود
   // تا hydration-mismatch نداشته باشیم
@@ -135,6 +142,41 @@ export function AccountPage({ onNavigate, onToast, go }: AccountPageProps) {
   const [loginError, setLoginError] = useState('')
   const [loginSending, setLoginSending] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
+  // ✉️ ورود کاربر تأییدنشده — پیام سرور + دکمهٔ «ارسال دوبارهٔ ایمیل تأیید»
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null)
+  const [unverifiedResend, setUnverifiedResend] = useState<'idle' | 'sending' | 'sent'>('idle')
+
+  // 📩 نتیجهٔ کلیک روی لینک ایمیل — /account?verified=1|0 (لینک مصرف می‌شود و
+  // پارامتر از URL پاک می‌شود تا refresh دوباره تُست نشان ندهد)
+  const [verifyResult, setVerifyResult] = useState<'ok' | 'fail' | null>(null)
+  useEffect(() => {
+    const v = new URLSearchParams(window.location.search).get('verified')
+    if (v === '1' || v === '0') {
+      setVerifyResult(v === '1' ? 'ok' : 'fail')
+      try {
+        window.history.replaceState(null, '', '/account')
+      } catch {
+        /* history در دسترس نیست */
+      }
+    }
+  }, [])
+
+  // ✉️ ارسال دوبارهٔ لینک تأیید — پاسخ سرور همیشه عمومی است؛ UI حالت ارسال
+  // را نشان می‌دهد و دکمه موقتاً غیرفعال می‌شود (سرور خودش rate-limit دارد)
+  const resendVerification = async (email: string, done: (s: 'idle' | 'sending' | 'sent') => void) => {
+    if (!email || done === undefined) return
+    done('sending')
+    try {
+      await resilientJsonFetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+    } catch {
+      /* حتی در خطای شبکه هم پیام عمومی کافی است */
+    }
+    done('sent')
+  }
 
   // 🗣️ فاز ۶۱ — بعد از ورود از بخشی غیر از جریان کلاس‌ها: اگر کاربر هنوز هیچ
   // ثبت‌نام/سفارشی ندارد، از او می‌پرسیم که آیا می‌خواهد ثبت‌نام کلاس را کامل
@@ -235,6 +277,8 @@ export function AccountPage({ onNavigate, onToast, go }: AccountPageProps) {
         error?: string
         errors?: Record<string, string>
         ref?: string
+        ok?: boolean
+        verificationRequired?: boolean
       }>('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -252,10 +296,13 @@ export function AccountPage({ onNavigate, onToast, go }: AccountPageProps) {
       })
 
       if (result.ok) {
-        onToast(c.welcomeToast)
-        await refreshUser()
-        // اگر از دروازهٔ پرداخت آمده بودیم، به همان‌جا برمی‌گردیم
-        consumePayRedirect(go)
+        // ✉️ ثبت‌نام موفق → ورود خودکار نداریم؛ کاربر باید ایمیلش را تأیید کند.
+        // مقصد «بازگشت به پرداخت» عمداً در sessionStorage می‌ماند و بعد از
+        // تأیید + ورود مصرف می‌شود.
+        setVerifyNotice(regForm.email.trim())
+        setResendState('idle')
+        setRegErrors({})
+        setRegError('')
         return
       }
 
@@ -291,6 +338,7 @@ export function AccountPage({ onNavigate, onToast, go }: AccountPageProps) {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoginError('')
+    setUnverifiedEmail(null)
     if (!loginForm.email.trim() || !loginForm.password) {
       setLoginError('Email and password are required')
       return
@@ -298,7 +346,7 @@ export function AccountPage({ onNavigate, onToast, go }: AccountPageProps) {
     setLoginSending(true)
     try {
       // 🌐 فاز ۶۲ — fetch تاب‌آور (ریشهٔ «Could not sign in» هنگام ری‌استارت لحظه‌ای سرور)
-      const result = await resilientJsonFetch<{ error?: string; ref?: string }>('/api/auth/login', {
+      const result = await resilientJsonFetch<{ error?: string; ref?: string; code?: string }>('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: loginForm.email, password: loginForm.password, remember }),
@@ -323,14 +371,22 @@ export function AccountPage({ onNavigate, onToast, go }: AccountPageProps) {
         }
         return
       }
+      // ✉️ حساب تأییدنشده — پیام شفاف + دکمهٔ «ارسال دوبارهٔ ایمیل تأیید»
+      const loginData =
+        result.kind === 'http' && result.data && typeof result.data === 'object'
+          ? (result.data as { error?: string; ref?: string; code?: string })
+          : null
+      if (loginData?.code === 'EMAIL_NOT_VERIFIED') {
+        setUnverifiedEmail(loginForm.email.trim())
+        setUnverifiedResend('idle')
+        setLoginError(loginData.error || 'Please verify your email address before signing in.')
+        return
+      }
       // پیام صادقانه: خطای واقعی سرور (مثل «Incorrect email or password») یا
       // پیام تلاش‌مجدد برای unreachable — هر دو بدون افشای اطلاعات حساس
-      // 🆔 فاز ۶۳ — کد رهگیری خطا در پیام نمایش داده می‌شود
+      // 🆔 فاز ۶۳ — کد رهگیری خطا در پیام نمایش داده می‌شود تا قابل گزارش باشد
       const loginBase = result.message
-      const loginRef =
-        result.kind === 'http' && result.data && typeof result.data === 'object'
-          ? (result.data as { ref?: string }).ref
-          : undefined
+      const loginRef = loginData?.ref
       setLoginError(loginRef ? `${loginBase} (Ref: ${loginRef})` : loginBase)
     } catch {
       setLoginError('Could not sign in. Please try again.')
@@ -428,6 +484,36 @@ export function AccountPage({ onNavigate, onToast, go }: AccountPageProps) {
                   </button>
                 </div>
 
+                {/* ✉️ نتیجهٔ کلیک روی لینک تأیید ایمیل — از ?verified=1|0 */}
+                {verifyResult && (
+                  <div
+                    role="status"
+                    className={`mb-6 rounded-2xl px-4 py-3.5 text-sm flex items-start gap-2.5 ${
+                      verifyResult === 'ok'
+                        ? 'bg-sage-light/25 border border-sage/30 text-brown-dark'
+                        : 'bg-peach-light/30 border border-peach/40 text-brown'
+                    }`}
+                  >
+                    {verifyResult === 'ok' ? (
+                      <>
+                        <CheckCircle2 className="w-5 h-5 text-sage-dark flex-shrink-0" aria-hidden="true" />
+                        <span>
+                          <strong>Email verified 🎉</strong> — your account is active. Sign in below with your email
+                          and password to continue.
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <TriangleAlert className="w-5 h-5 text-peach-dark flex-shrink-0" aria-hidden="true" />
+                        <span>
+                          That verification link is invalid or has expired. Sign in with your email and password and
+                          use the <strong>Resend verification email</strong> option to get a fresh link.
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )}
+
                 {/* 🔵 بنر خطای ورود با گوگل (از ?googleError=… در callback) — فقط وقتی فلگ فعال باشد */}
                 {c.googleSignInEnabled && (
                   <div className="mb-5">
@@ -442,7 +528,70 @@ export function AccountPage({ onNavigate, onToast, go }: AccountPageProps) {
                   </div>
                 )}
 
-                {tab === 'register' ? (
+                {tab === 'register' && verifyNotice ? (
+                  /* ---------------- ✉️ صفحهٔ «ایمیلت را چک کن» ---------------- */
+                  <div className="space-y-5 text-center animate-ct-fadeInUp py-6" role="status">
+                    <div className="w-16 h-16 rounded-full bg-sage-light/40 mx-auto flex items-center justify-center">
+                      <MailCheck className="w-8 h-8 text-sage-dark" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-brown-dark mb-2">Check your inbox</h2>
+                      <p className="text-sm text-brown-light leading-relaxed max-w-md mx-auto">
+                        We sent a verification link to{' '}
+                        <span className="font-semibold text-brown-dark break-all">{verifyNotice}</span>.
+                        Click it to activate your account — verification is required before you can sign in.
+                      </p>
+                    </div>
+                    {resendState === 'sent' && (
+                      <p className="text-sm text-sage-dark bg-sage-light/25 border border-sage/30 rounded-xl px-4 py-3">
+                        Verification email sent again — please check your inbox (and spam folder).
+                      </p>
+                    )}
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => resendVerification(verifyNotice, setResendState)}
+                        disabled={resendState !== 'idle'}
+                        className="bg-white border-2 border-sage/40 text-brown-dark px-6 py-3 rounded-full text-sm font-semibold hover:border-sage transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2 min-h-[44px]"
+                      >
+                        {resendState === 'sending' ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> Sending…
+                          </>
+                        ) : resendState === 'sent' ? (
+                          <>
+                            <MailCheck className="w-4 h-4" aria-hidden="true" /> Email sent
+                          </>
+                        ) : (
+                          'Resend verification email'
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVerifyNotice(null)
+                          setTab('login')
+                        }}
+                        className="text-sm font-semibold text-sage-dark hover:underline cursor-pointer inline-flex items-center gap-1.5 min-h-[44px]"
+                      >
+                        {c.haveAccountLink} <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-brown-light">
+                      Wrong address?{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVerifyNotice(null)
+                          setResendState('idle')
+                        }}
+                        className="font-semibold text-sage-dark hover:underline cursor-pointer"
+                      >
+                        Register again
+                      </button>
+                    </p>
+                  </div>
+                ) : tab === 'register' ? (
                   /* ---------------- 📝 فرم ثبت‌نام ---------------- */
                   <form onSubmit={handleRegister} noValidate className="space-y-6 animate-ct-fadeInUp">
                     <div className="grid md:grid-cols-2 gap-6">
@@ -794,6 +943,35 @@ export function AccountPage({ onNavigate, onToast, go }: AccountPageProps) {
                       <p className="text-sm text-red-500 bg-red-50 border border-red-100 rounded-xl px-4 py-3" role="alert">
                         {loginError}
                       </p>
+                    )}
+
+                    {/* ✉️ حساب تأییدنشده — دکمهٔ ارسال دوبارهٔ لینک تأیید */}
+                    {unverifiedEmail && (
+                      <div className="bg-sage-light/20 border border-sage/30 rounded-xl px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
+                        <p className="text-xs text-brown leading-relaxed flex-1 min-w-48">
+                          {unverifiedResend === 'sent'
+                            ? 'Verification email sent again — check your inbox (and spam folder).'
+                            : `We can send the verification link to ${unverifiedEmail} again.`}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => resendVerification(unverifiedEmail, setUnverifiedResend)}
+                          disabled={unverifiedResend !== 'idle'}
+                          className="bg-white border border-sage/50 text-brown-dark px-4 py-2 rounded-full text-xs font-bold hover:border-sage transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-1.5 min-h-[36px] flex-shrink-0"
+                        >
+                          {unverifiedResend === 'sending' ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> Sending…
+                            </>
+                          ) : unverifiedResend === 'sent' ? (
+                            <>
+                              <MailCheck className="w-3.5 h-3.5" aria-hidden="true" /> Sent
+                            </>
+                          ) : (
+                            'Resend verification email'
+                          )}
+                        </button>
+                      </div>
                     )}
 
                     <button

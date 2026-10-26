@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { randomBytes } from 'crypto'
 import { db } from '@/lib/db'
 import { rateLimit, tooManyRequests } from '@/lib/rate-limit'
-import { verifyPassword, createUserSession, setSessionCookie, toSafeUser, SESSION_TTL_MS, purgeExpiredAuthRecords } from '@/lib/user-auth'
+import { verifyPassword, createUserSession, setSessionCookie, toSafeUser, SESSION_TTL_MS, purgeExpiredAuthRecords, isEmailVerificationRequired } from '@/lib/user-auth'
 import { guardResponse } from '@/lib/http-guard'
 import { ensureSchema, isSchemaDriftError } from '@/lib/ensure-schema'
 
@@ -55,6 +55,21 @@ export async function POST(req: NextRequest) {
     if (!user) return genericError
 
     if (!verifyPassword(password, user.passwordHash)) return genericError
+
+    // ✉️ الزام تأیید ایمیل — فقط بعد از درستیِ رمز چک می‌شود (چون فقط دارندهٔ
+    // واقعی حساب به این نقطه می‌رسد، پاسخ وجود حساب را لو نمی‌دهد).
+    // کاربران قدیمی (قبل از rollout) با گارد createdAt عفو می‌شوند.
+    // نشست ساخته نمی‌شود؛ کلاینت پیام شفاف + دکمهٔ «ارسال دوباره» می‌بیند.
+    if (isEmailVerificationRequired(user)) {
+      return NextResponse.json(
+        {
+          error:
+            'Please verify your email address before signing in — check your inbox for the verification link we sent when you registered.',
+          code: 'EMAIL_NOT_VERIFIED',
+        },
+        { status: 403 }
+      )
+    }
 
     const updated = await db.user.update({
       where: { id: user.id },

@@ -65,6 +65,51 @@ export function purgeExpiredAuthRecords(): void {
   const now = new Date()
   void db.userSession.deleteMany({ where: { expiresAt: { lt: now } } }).catch(() => {})
   void db.passwordResetToken.deleteMany({ where: { expiresAt: { lt: now } } }).catch(() => {})
+  void db.emailVerifyToken.deleteMany({ where: { expiresAt: { lt: now } } }).catch(() => {})
+}
+
+// ---------------------------------------------------------------------------
+// ✉️ تأیید ایمیل — توکن لینک یک‌بارمصرف + قاعدهٔ عفوی کاربران قدیمی
+// ---------------------------------------------------------------------------
+
+/** عمر لینک تأیید ایمیل */
+export const EMAIL_VERIFY_TTL_MS = 24 * 60 * 60 * 1000 // ۲۴ ساعت
+/**
+ * تاریخ اجرای الزام تأیید ایمیل — کاربرانی که «قبل از این لحظه» ثبت‌نام
+ * کرده‌اند و emailVerified آن‌ها null است عفو می‌شوند (هیچ کاربر موجودی
+ * قفل نمی‌شود). ثبت‌نام‌های بعد از این تاریخ باید ایمیلشان را تأیید کنند.
+ */
+export const EMAIL_VERIFICATION_ROLLOUT_MS = Date.parse('2026-10-26T00:00:00Z')
+
+/**
+ * آیا این کاربر باید ایمیلش را تأیید کند؟
+ *  • emailVerified ست شده → نه (تأیید شده یا کاربر گوگل)
+ *  • null ولی ثبت‌نام قبل از rollout → نه (عفوی کاربران قدیمی)
+ *  • null و ثبت‌نام بعد از rollout → بله
+ */
+export function isEmailVerificationRequired(user: {
+  emailVerified: Date | null
+  createdAt: Date
+}): boolean {
+  return user.emailVerified === null && user.createdAt.getTime() >= EMAIL_VERIFICATION_ROLLOUT_MS
+}
+
+/**
+ * ساخت توکن تأیید ایمیل — خروجی «توکن خام» (فقط برای لینک ایمیل) و انقضا.
+ * در دیتابیس فقط sha256 توکن ذخیره می‌شود؛ توکن‌های قبلی همان کاربر
+ * باطل می‌شوند (حذف) تا همیشه فقط آخرین لینک معتبر باشد.
+ */
+export async function createEmailVerifyToken(
+  userId: string,
+  ttlMs: number = EMAIL_VERIFY_TTL_MS
+): Promise<{ token: string; expiresAt: Date }> {
+  await db.emailVerifyToken.deleteMany({ where: { userId } })
+  const token = randomBytes(32).toString('hex')
+  const expiresAt = new Date(Date.now() + ttlMs)
+  await db.emailVerifyToken.create({
+    data: { tokenHash: sha256(token), userId, expiresAt },
+  })
+  return { token, expiresAt }
 }
 
 /** کاربرِ درخواست‌دهنده از روی کوکی سشن — null یعنی مهمان */
@@ -133,6 +178,8 @@ export interface SafeUser {
   uniqueCode: string | null
   // 🎓 LMS — student | teacher (تغییر فقط از پنل ادمین)
   role: string
+  // ✉️ فقط بولی برای UI — تاریخ تأیید هرگز به کلاینت نمی‌رود
+  emailVerified: boolean
   createdAt: string
   lastLoginAt: string | null
 }
@@ -149,6 +196,7 @@ export function toSafeUser(user: {
   telegramId: string | null
   uniqueCode?: string | null
   role?: string | null
+  emailVerified?: Date | null
   createdAt: Date
   lastLoginAt: Date | null
 }): SafeUser {
@@ -164,6 +212,8 @@ export function toSafeUser(user: {
     telegramId: user.telegramId,
     uniqueCode: user.uniqueCode ?? null,
     role: user.role ?? 'student',
+    // ⚠️ فقط وضعیت بولی برای UI — تاریخ دقیق تأیید هرگز به کلاینت نمی‌رود
+    emailVerified: user.emailVerified ? true : false,
     createdAt: user.createdAt.toISOString(),
     lastLoginAt: user.lastLoginAt ? user.lastLoginAt.toISOString() : null,
   }

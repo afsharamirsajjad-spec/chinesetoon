@@ -108,6 +108,8 @@ async function findOrCreateGoogleUser(profile: GoogleProfile) {
       passwordHash: hashPassword(unguessablePassword),
       country: '',
       countryCode: '',
+      // ✉️ ایمیل گوگل قبلاً توسط خود گوگل تأیید شده — نیازی به تأیید ما نیست
+      emailVerified: new Date(),
     },
   })
   // 🆔 کد یکتای پایدار دانش‌پذیر — همان قواعد ثبت‌نام معمولی

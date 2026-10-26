@@ -82,6 +82,123 @@ function brandText(code: string, minutes: number): string {
   ].join('\n')
 }
 
+// ---------------------------------------------------------------------------
+// ✉️ ایمیل «تأیید آدرس ایمیل» — لینک یک‌بارمصرف با انقضا (ثبت‌نام حساب)
+// ---------------------------------------------------------------------------
+
+function verifyHtml(firstName: string, verifyUrl: string, hours: number): string {
+  return `<!doctype html>
+<html><body style="margin:0;padding:0;background:#f6f4ec;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f4ec;padding:32px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:20px;border:1px solid #e4e0d0;overflow:hidden;">
+        <tr><td style="background:#dfe8d8;padding:28px 32px;">
+          <h1 style="margin:0;font-size:22px;color:#4a3f2e;">🧧 Chinese Toon</h1>
+          <p style="margin:6px 0 0;font-size:13px;color:#6d6250;">Confirm your email address</p>
+        </td></tr>
+        <tr><td style="padding:32px;">
+          <p style="margin:0 0 16px;font-size:15px;color:#4a3f2e;line-height:1.6;">
+            Hello ${firstName},<br/>
+            Welcome to Chinese Toon! Please confirm your email address to activate your account.
+            Click the button below:
+          </p>
+          <p style="margin:24px 0;text-align:center;">
+            <a href="${verifyUrl}" style="display:inline-block;background:#a8c9a0;border:1px solid #8db585;border-radius:999px;padding:14px 36px;font-size:16px;font-weight:bold;color:#3d331f;text-decoration:none;">Verify my email</a>
+          </p>
+          <p style="margin:0 0 8px;font-size:13px;color:#6d6250;line-height:1.6;">
+            Or copy this link into your browser:<br/>
+            <span style="color:#6d6250;word-break:break-all;font-size:12px;">${verifyUrl}</span>
+          </p>
+          <p style="margin:12px 0 0;font-size:13px;color:#6d6250;">
+            ⏱️ This link expires in <strong>${hours} hours</strong> and can be used only <strong>once</strong>.
+          </p>
+          <p style="margin:8px 0 0;font-size:13px;color:#6d6250;line-height:1.6;">
+            🔒 Didn't create an account with Chinese Toon? You can safely ignore this email.
+          </p>
+        </td></tr>
+        <tr><td style="background:#faf8f0;padding:16px 32px;border-top:1px solid #eee9da;">
+          <p style="margin:0;font-size:11px;color:#a39a86;">
+            Chinese Toon — Professional Mandarin Chinese Learning · This is an automated message, please do not reply.
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`
+}
+
+function verifyText(firstName: string, verifyUrl: string, hours: number): string {
+  return [
+    'Chinese Toon — Confirm your email address',
+    '',
+    `Hello ${firstName},`,
+    'Welcome to Chinese Toon! Please confirm your email address to activate your account:',
+    verifyUrl,
+    '',
+    `This link expires in ${hours} hours and can be used only once.`,
+    "Didn't create an account with Chinese Toon? You can safely ignore this email.",
+  ].join('\n')
+}
+
+/**
+ * ارسال ایمیل «تأیید آدرس ایمیل» با لینک یک‌بارمصرف.
+ * همان سیاست ارسال کد بازیابی: با RESEND_API_KEY واقعاً ارسال می‌شود؛
+ * بدون آن فقط در کنسول سرور لاگ می‌شود (توسعه). نتیجه هرگز در پاسخ API
+ * افشا نمی‌شود (ضد نشت وجود حساب).
+ */
+export async function sendEmailVerification(
+  to: string,
+  firstName: string,
+  verifyUrl: string,
+  hours: number
+): Promise<MailResult> {
+  const apiKey = (process.env.RESEND_API_KEY ?? '').trim()
+  const from = (process.env.MAIL_FROM ?? '').trim() || 'Chinese Toon <onboarding@resend.dev>'
+
+  if (!apiKey) {
+    console.log(
+      `[mail] RESEND_API_KEY not configured — email verification for ${to} (console-only delivery):\n  link: ${verifyUrl}`
+    )
+    return { sent: false, provider: 'console' }
+  }
+
+  try {
+    const body = JSON.stringify({
+      from,
+      to: [to],
+      subject: 'Confirm your email — Chinese Toon',
+      html: verifyHtml(firstName, verifyUrl, hours),
+      text: verifyText(firstName, verifyUrl, hours),
+    })
+
+    let lastError = ''
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const res = await fetch(RESEND_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body,
+          signal: AbortSignal.timeout(10_000),
+        })
+        if (res.ok) return { sent: true, provider: 'resend' }
+        console.error(`[mail] provider rejected the verification send (status ${res.status})`)
+        return { sent: false, provider: 'resend' }
+      } catch (e) {
+        lastError = e instanceof Error ? e.message : String(e)
+        if (attempt < 2) await new Promise((r) => setTimeout(r, 1500))
+      }
+    }
+    console.error('[mail] verification request failed:', lastError)
+    return { sent: false, provider: 'resend' }
+  } catch (e) {
+    console.error('[mail] could not build/send the verification email:', e instanceof Error ? e.message : e)
+    return { sent: false, provider: 'resend' }
+  }
+}
+
 /**
  * ارسال ایمیل «کد تأیید بازیابی رمز عبور».
  * با RESEND_API_KEY واقعاً ارسال می‌شود؛ بدون آن فقط در کنسول سرور لاگ می‌شود

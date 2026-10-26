@@ -294,6 +294,10 @@ model User {
   // Ø§Ø¯Ù…ÛŒÙ† Ø®ÙˆØ¯Ø´ Ø³ÛŒØ³ØªÙ… Ø³Ø´Ù† Ø¬Ø¯Ø§Ú¯Ø§Ù†Ù‡ Ø¯Ø§Ø±Ø¯ Ùˆ Ø¯Ø± Ø§ÛŒÙ† ÙÛŒÙ„Ø¯ Ù†Ù…ÛŒâ€ŒØ¢ÛŒØ¯
   role             String    @default("student")
   lastLoginAt      DateTime?
+  // ✉️ Email verification — null = not verified yet. Users registered before
+  // the rollout (see EMAIL_VERIFICATION_ROLLOUT_MS in user-auth.ts) are
+  // grandfathered by createdAt, so nobody existing is locked out.
+  emailVerified    DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -301,6 +305,7 @@ model User {
   sessions UserSession[]
   practiceEvents PracticeEvent[]
   resetTokens PasswordResetToken[]
+  emailVerifyTokens EmailVerifyToken[]
   registrations Registration[] @relation("RegistrationUser")
   schedules        ClassSchedule[] @relation("ScheduleUser")
   scheduleAlerts   ScheduleNotification[]
@@ -341,8 +346,23 @@ model PasswordResetToken {
   tokenHash String    @unique // sha256(token)
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime // Ø­Ø¯Ø§Ú©Ø«Ø± Û¶Û° Ø¯Ù‚ÛŒÙ‚Ù‡ Ù¾Ø³ Ø§Ø² Ø³Ø§Ø®Øª
-  usedAt    DateTime? // Ø³Øªâ€ŒØ´Ø¯Ù† ÛŒØ¹Ù†ÛŒ Ù…ØµØ±Ùâ€ŒØ´Ø¯Ù‡ â€” Ù‡Ø±Ú¯Ø² Ø¯ÙˆØ¨Ø§Ø±Ù‡ Ù‚Ø§Ø¨Ù„ Ø§Ø³ØªÙØ§Ø¯Ù‡ Ù†ÛŒØ³Øª
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// Email verification — single-use hashed token sent as a link when a user
+// registers. Raw token never stored; sha256 only (same pattern as
+// PasswordResetToken). usedAt set atomically when consumed.
+model EmailVerifyToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique // sha256(token)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
   createdAt DateTime  @default(now())
 
   @@index([userId])
