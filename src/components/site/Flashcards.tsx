@@ -82,7 +82,7 @@ export function Flashcards({ cards }: { cards?: FlashCardData[] }) {
   }
 
   return (
-    <div className="mt-20 bg-white rounded-3xl border border-sage-light/20 shadow-sm overflow-hidden scroll-animate">
+    <div className="bg-white rounded-3xl border border-sage-light/20 shadow-sm overflow-hidden scroll-animate">
       {/* نوار گرادیانی بالای کارت (هماهنگ با آزمون) */}
       <div className="h-2.5 bg-gradient-to-r from-peach via-butter to-sage"></div>
 

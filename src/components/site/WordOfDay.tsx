@@ -17,7 +17,18 @@ import { speakChinese, stopSpeak as stopCtSpeak } from '@/lib/ct-speak'
 
 const wod = siteContent.home.wordOfDay
 
-export function WordOfDay({ onNavigate }: { onNavigate: (page: PageKey) => void }) {
+/**
+ * @param dividerFill رنگ بخشِ «قبلی» برای CurveDivider — روی خانه (بعد از
+ * نظرات هلویی) پیش‌فرض درست است؛ در هاب تمرین بخش قبلی کرم است و از prop
+ * داده می‌شود تا نوار رنگی ناهماهنگ نسازد.
+ */
+export function WordOfDay({
+  onNavigate,
+  dividerFill = 'var(--color-sec-peach)',
+}: {
+  onNavigate: (page: PageKey) => void
+  dividerFill?: string
+}) {
   const total = wod.words.length
 
   // کلمهٔ روز: شمارهٔ روز از ابتدای سال mod تعداد کلمات — هر ۲۴ ساعت عوض می‌شود
@@ -68,8 +79,8 @@ export function WordOfDay({ onNavigate }: { onNavigate: (page: PageKey) => void 
 
   return (
     <section className="py-20 relative overflow-hidden bg-sec-butter" aria-labelledby="wod-title">
-      {/* 🌊 لبهٔ منحنی از بخش نظرات (هلویی) وارد کرهٔ کره‌ای می‌شود */}
-      <CurveDivider fill="var(--color-sec-peach)" />
+      {/* 🌊 لبهٔ منحنی — هم‌رنگ بخش قبلی (prop) */}
+      <CurveDivider fill={dividerFill} />
       {/* واترمارک کاراکتر پشت کارت */}
       <div className="char-bg top-8 right-4 md:right-24" style={{ fontSize: '220px', opacity: 0.04 }} aria-hidden="true">
         词

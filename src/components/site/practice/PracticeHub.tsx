@@ -394,15 +394,15 @@ export function PracticeHub() {
       </section>
 
       {/* ================= فعالیت‌های تعبیه‌شده — همه در همین صفحه ================= */}
-      {/* 📅 کلمهٔ روز — سکشن تمام-عرض با پس‌زمینهٔ خودش (مقصد کارت daily-word) */}
+      {/* 📅 کلمهٔ روز — سکشن تمام-عرض؛ جداکننده هم‌رنگ بخش قبلی (کرم) */}
       <div id="practice-daily-word" className="scroll-mt-24">
-        <WordOfDay onNavigate={navigate} />
+        <WordOfDay onNavigate={navigate} dividerFill="var(--color-cream)" />
       </div>
 
-      {/* 👂 🃏 🧩 بازی تُن‌ها + فلش‌کارت‌ها + آزمون سطح — کارت‌های سفید روی
-          زمینهٔ کرم؛ لنگرهای مقصد کارت‌های tone-trainer/flashcards/level-quiz */}
-      <section className="pb-24">
-        <div className="max-w-5xl mx-auto px-6 space-y-4">
+      {/* 👂 🃏 🧩 بازی تُن‌ها + فلش‌کارت‌ها + آزمون سطح — فاصلهٔ یکنواخت ۱۶؛
+          لنگرهای مقصد کارت‌های tone-trainer/flashcards/level-quiz */}
+      <section className="pb-28 pt-16">
+        <div className="max-w-5xl mx-auto px-6 space-y-16">
           <div id="practice-tone-trainer" className="scroll-mt-28">
             <ToneTrainer />
           </div>

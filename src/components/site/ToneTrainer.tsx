@@ -229,7 +229,9 @@ export function ToneTrainer() {
   const isCorrect = answered && picked === round.item.tone
 
   return (
-    <section className="mt-20" aria-labelledby="tone-trainer-title">
+    // 🧭 فقط در هاب تمرین (/practice) استفاده می‌شود — فاصلهٔ عمودی با container
+    // همان‌جا مدیریت می‌شود (mt قبلی برای جریان قدیمی صفحهٔ Learn بود)
+    <section aria-labelledby="tone-trainer-title">
       <div className="text-center mb-8">
         <span className="inline-block text-xs font-semibold uppercase tracking-widest text-sage-dark mb-3">
           {t.eyebrow}

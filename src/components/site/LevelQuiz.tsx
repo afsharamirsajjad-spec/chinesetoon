@@ -200,7 +200,7 @@ export function LevelQuiz({ onNavigate }: { onNavigate: (page: PageKey) => void 
   }
 
   return (
-    <div className="mt-16 bg-white rounded-3xl border border-sage-light/20 shadow-sm overflow-hidden scroll-animate">
+    <div className="bg-white rounded-3xl border border-sage-light/20 shadow-sm overflow-hidden scroll-animate">
       {/* نوار بالای کارت */}
       <div className="h-2.5 bg-gradient-to-r from-sage via-butter to-peach"></div>
 
