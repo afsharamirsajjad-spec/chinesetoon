@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState, useSyncExternalStore } from 'react'
-import { ArrowRight, BookOpen, CalendarDays, Check, Clock, Globe2, Info, Loader2, Lock, TicketPercent, TriangleAlert, UserRound, Wallet } from 'lucide-react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { ArrowRight, CalendarDays, Check, Clock, Globe2, Info, Loader2, Lock, TicketPercent, TriangleAlert, UserRound, Wallet } from 'lucide-react'
 import { appNavigate } from '@/lib/nav'
 import { siteContent } from '@/content/site-content'
 import { useUser } from '@/lib/user-store'
 import { SUPPORTED_TIMEZONES, timezoneLabel } from '@/lib/timezones'
 import { WEEKDAY_KEYS, WEEKDAY_LABELS, type Weekday } from '@/lib/schedule'
+import type { PublicClassItem } from '@/lib/classes/store'
 
 // ساعت‌های مجاز انتخاب — شبکهٔ ساعتی ۰۶:۰۰ تا ۲۳:۰۰ (گذر نیمه‌شب = پایان ≤ شروع)
 const TIME_OPTIONS = Array.from({ length: 18 }, (_, i) => `${String(6 + i).padStart(2, '0')}:00`)
@@ -123,6 +124,20 @@ function clearSelectedClass() {
   selectedClassListeners.forEach((l) => l())
 }
 
+/**
+ * 🎓 انتخاب کلاس از داخل خود فرم ثبت‌نام — همان منبع حقیقتِ دکمهٔ Register
+ * صفحهٔ کلاس‌ها (sessionStorage + store) تا کل زنجیرهٔ قفل نوع/قیمت/پرداخت
+ * بدون تغییر کار کند. انتخاب خالی = حذف.
+ */
+function setSelectedClass(title: string) {
+  try {
+    sessionStorage.setItem(SELECTED_CLASS_KEY, title)
+  } catch {
+    // بی‌اهمیت
+  }
+  selectedClassListeners.forEach((l) => l())
+}
+
 interface RegisterPageProps {
   onToast: (message: string) => void
 }
@@ -226,7 +241,7 @@ function normTitle(s: string): string {
 // 🎨 جعبهٔ پیش‌نمایش قیمت — سه حالت: قیمت قطعی (سبز برند)، راهنمای انتخاب
 // نوع (خنثی)، و ترکیب ناموجود (هشدار زرد — بدون هیچ قیمت قلابی)
 // ---------------------------------------------------------------------
-function PricePreviewBox({ resolution, codePreview }: { resolution: PriceResolution; codePreview?: CodePreview | null }) {
+function PricePreviewBox({ resolution, codePreview, note }: { resolution: PriceResolution; codePreview?: CodePreview | null; note?: string }) {
   if (resolution.kind === 'idle') return null
 
   if (resolution.kind === 'loading') {
@@ -259,6 +274,11 @@ function PricePreviewBox({ resolution, codePreview }: { resolution: PriceResolut
           )}
         </div>
         {cp && <CodePreviewLines cp={cp} />}
+        {note && (
+          <p className="text-xs font-semibold text-sage-dark mt-2 flex items-center gap-1.5">
+            <Check className="w-3.5 h-3.5" aria-hidden="true" /> {note}
+          </p>
+        )}
         <p className="text-xs text-brown-light mt-2.5 leading-relaxed">{c.priceBoxHint}</p>
       </div>
     )
@@ -383,6 +403,35 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
       alive = false
     }
   }, [])
+
+  // 🎓 فهرست کلاس‌ها برای انتخابِ داخل خود فرم — گزینه‌ها از همان منبع رسمی
+  // (/api/classes) می‌آید؛ انتخاب خالی است تا کاربر خودش کلاسش را بردارد
+  const [classOptions, setClassOptions] = useState<PublicClassItem[]>([])
+  useEffect(() => {
+    let alive = true
+    fetch('/api/classes')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { classes?: PublicClassItem[] } | null) => {
+        if (!alive || !d || !Array.isArray(d.classes)) return
+        setClassOptions(
+          d.classes.filter((cl) => cl.status === 'active' || cl.status === 'full')
+        )
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  // 💰 جزئیات جلسات/قیمت هر جلسهٔ کلاسِ انتخابی — برای به‌روزرسانی زندهٔ جعبهٔ قیمت
+  const selectedClassItem = useMemo(
+    () =>
+      classOptions.find((cl) => normTitle(cl.title) === normTitle(selectedClass ?? '')) ?? null,
+    [classOptions, selectedClass]
+  )
+  const sessionsNote = selectedClassItem?.pricing
+    ? `${selectedClassItem.pricing.sessions} sessions · $${selectedClassItem.pricing.pricePerSession} per session`
+    : ''
 
   // 🔒 کلاس انتخاب‌شده → نوع کلاس قفل می‌شود.
   // فاز ۴۲: منبع اصلی = کاتالوگ سرور (کلاس‌های مدیریت‌شده از پنل ادمین)؛
@@ -545,6 +594,11 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    // 🎓 کلاس الزامی — گارد دفاعی کنارِ required بودن سلکت
+    if (!selectedClass) {
+      setError('Please choose a class first — your level, price and payment all come from it.')
+      return
+    }
     setSending(true)
     setError('')
     // 👤 نام/ایمیل/تلفن سمت سرور از پروفایل حساب تأییدشده خوانده می‌شود — نه از مرورگر
@@ -664,49 +718,9 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
               </div>
             ) : !submitted ? (
               <div className="bg-white rounded-3xl p-8 md:p-10 shadow-lg border border-sage-light/20">
-                {/* کلاس انتخاب‌شده از صفحهٔ کلاس‌ها / نتیجهٔ آزمون — فقط نمایش؛
-                    دکمهٔ حذف عمداً نیست: پاک‌کردن انتخاب، قیمت/فرم را ریست می‌کرد و
-                    اطلاعات کاربر می‌پرید. برای تعویض کلاس، از صفحهٔ کلاس‌ها کلاس
-                    دیگری انتخاب می‌شود (انتخاب جدید، جایگزین قبلی می‌شود). */}
-                {selectedClass && (
-                  <div className="animate-ct-fadeInUp mb-7 flex items-center gap-3 bg-sage-light/25 border border-sage/30 rounded-2xl px-4 py-3">
-                    <span className="w-9 h-9 rounded-xl bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
-                      <BookOpen className="w-4.5 h-4.5 text-sage-dark" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] uppercase tracking-wider text-sage-dark font-bold">
-                        {c.selectedClassLabel}
-                      </p>
-                      <p className="text-sm font-semibold text-brown-dark truncate">{selectedClass}</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* 🎯 کلاس الزامی است — بدون کلاسِ انتخاب‌شده (ورود از جای غیر از
-                    صفحهٔ کلاس‌ها) فرم اصلاً باز نمی‌شود؛ سطح، قیمت و پرداخت همه از
-                    خودِ کلاسِ انتخابی می‌آیند */}
-                {!selectedClass && (
-                  <div className="animate-ct-fadeInUp bg-butter/25 border border-butter/60 rounded-2xl p-8 text-center">
-                    <span className="w-14 h-14 rounded-2xl bg-white mx-auto mb-4 flex items-center justify-center shadow-sm">
-                      <BookOpen className="w-7 h-7 text-sage-dark" aria-hidden="true" />
-                    </span>
-                    <h2 className="text-lg font-bold text-brown-dark mb-2">No class selected yet</h2>
-                    <p className="text-sm text-brown-light leading-relaxed max-w-md mx-auto mb-5">
-                      Registration is class-based: browse the class list, pick the class you want
-                      to join and your choice carries straight into this form — level, schedule,
-                      price and payment all come from the class itself.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => appNavigate('/classes')}
-                      className="bg-sage text-brown-dark px-7 py-3 rounded-full text-sm font-bold hover:bg-sage-dark transition-colors cursor-pointer inline-flex items-center gap-2 min-h-[44px]"
-                    >
-                      <BookOpen className="w-4 h-4" aria-hidden="true" /> Browse classes
-                    </button>
-                  </div>
-                )}
-
-                {selectedClass && (
+                {/* 🎯 کلاسِ انتخاب‌شده از صفحهٔ کلاس‌ها/آزمون هم به همین سلکت می‌رسد؛
+                    انتخاب خالی است و کاربر همین‌جا کلاسش را برمی‌دارد — سطح،
+                    قیمت و پرداخت همه از خودِ کلاس می‌آیند */}
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* 👤 کارت هویت کاربر واردشده — جای فیلدهای نام/ایمیل/تلفن (فاز ۳۱) */}
                   {user && (
@@ -722,6 +736,39 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
                       </div>
                     </div>
                   )}
+
+                  {/* 🎓 انتخاب کلاس — الزامی و شروعِ خالی (درخواست مالک): کاربر
+                      همین‌جا از لیست، کلاسش را برمی‌دارد؛ با انتخاب هر کلاس سطح/نوع
+                      قفل می‌شود و جعبهٔ قیمت با قیمت و جلساتِ همان کلاس به‌روز
+                      می‌شود. کلاسِ انتخاب‌شده از صفحهٔ کلاس‌ها/آزمون هم به همین
+                      سلکت می‌رسد (همان منبع حقیقت) */}
+                  <div>
+                    <label htmlFor="reg-class" className={labelCls}>
+                      {c.classSelectLabel}
+                    </label>
+                    <select
+                      id="reg-class"
+                      required
+                      value={selectedClass ?? ''}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        if (v) setSelectedClass(v)
+                        else clearSelectedClass()
+                      }}
+                      className={`${inputCls} appearance-none ${selectedClass ? '' : 'text-brown-light/60'}`}
+                    >
+                      <option value="" disabled>
+                        {c.classSelectPlaceholder}
+                      </option>
+                      {classOptions.map((cl) => (
+                        <option key={cl.slug} value={cl.title} disabled={cl.status === 'full'}>
+                          {cl.title}
+                          {cl.status === 'full' ? ' — Full (waitlist)' : ` · ${cl.type}`}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-brown-light mt-1">{c.classSelectHint}</p>
+                  </div>
 
                   {/* 🎓 سطح از خودِ کلاسِ انتخابی سرور-سمت مشتق می‌شود — پرسیدن
                       دوبارهٔ سطح تکراری و گیج‌کننده است (کلاس الزامی است، نه سطح) */}
@@ -764,9 +811,13 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
                   </div>
                   )}
 
-                  {/* 🎯 پیش‌نمایش قیمت قطعی «نوع کلاس + سطح» — از کاتالوگ سرور */}
+                  {/* 🎯 پیش‌نمایش قیمت قطعی — از کاتالوگ سرور + تعداد جلسات کلاس انتخابی */}
                   {showPriceBox && (
-                    <PricePreviewBox resolution={priceResolution} codePreview={codePreviewFor === resolvedProductId ? codePreview : null} />
+                    <PricePreviewBox
+                      resolution={priceResolution}
+                      codePreview={codePreviewFor === resolvedProductId ? codePreview : null}
+                      note={sessionsNote}
+                    />
                   )}
 
                   {/* 🗓️ ترجیحات ساخت‌یافتهٔ برنامه — منطقهٔ زمانی → روز → بازهٔ ساعتی (فاز ۴۷) */}
@@ -981,7 +1032,6 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
                     )}
                   </button>
                 </form>
-                )}
               </div>
             ) : (
               <div className="bg-white rounded-3xl p-8 md:p-10 shadow-lg border border-sage-light/20 text-center animate-ct-fadeInUp">

@@ -902,6 +902,18 @@ export const siteContent = {
     },
 
     // -------------------------------------------------------------
+    //  📚 منابع عمومی دانلودی — پایین صفحهٔ Learn (کتاب/جزوه/صدا از پنل ادمین)
+    //  اگر هیچ منبعی منتشر نشده باشد کل سکشن نمایش داده نمی‌شود
+    // -------------------------------------------------------------
+    resources: {
+      eyebrow: "Free Library",
+      title: "Books & Study Materials",
+      subtitle:
+        "Free downloadable materials — books, worksheets and audio. Take what you need and learn at your own pace.",
+      downloadLabel: "Download",
+    },
+
+    // -------------------------------------------------------------
     //  🃏 فلش‌کارت واژگان — پایین صفحهٔ Learn (زیر آزمون تعیین سطح)
     //  یک کارت بزرگ در هر لحظه؛ کلیک = چرخش کارت و دیدن معنی
     //  👇 برای افزودن واژهٔ جدید، یک بلوک به cards اضافه کنید
@@ -1515,6 +1527,10 @@ export const siteContent = {
       { key: "not-sure", label: "Not Sure" },
     ],
     classType: "Preferred Class Type",
+    // 🎓 انتخاب کلاس داخل خود فرم — لیست خالی؛ قیمت/جلسات با انتخاب به‌روز می‌شود
+    classSelectLabel: "Class *",
+    classSelectPlaceholder: "Choose a class…",
+    classSelectHint: "Pick the class you want to join — your level, price and payment come from it. The price updates automatically when you choose.",
     // 🔒 وقتی کلاس خاصی انتخاب شده باشد، نوع کلاس از تنظیمات همان کلاس خوانده می‌شود
     // و کاربر نمی‌تواند آن را عوض کند (مثلاً گروهی را خصوصی نکند)
     classTypeFromCourse: "Class Type",
@@ -2475,6 +2491,24 @@ export const siteContent = {
     lessonContentLabel: "Lesson text (optional — full lesson body)",
     lessonContentPlaceholder: "Write the lesson as text — explanations, short dialogues, grammar notes… One blank line starts a new paragraph.",
     lessonContentHint: "Shown on the lesson page above the word list. Leave empty for word-only lessons.",
+    // 📚 منابع عمومی دانلودی
+    tabResources: "Resources",
+    resourcesUploadTitle: "Upload a resource (book, worksheet, audio…)",
+    resourceTitleLabel: "Title *",
+    resourceTitlePlaceholder: "e.g. HSK 1 Grammar Book",
+    resourceDescLabel: "Description",
+    resourceDescPlaceholder: "One or two lines about this file…",
+    resourceFileLabel: "File *",
+    resourceUploadBtn: "Upload resource",
+    resourceUploading: "Uploading…",
+    resourceCreatedToast: "Resource published! Visitors can download it from the Learn page 🎉",
+    resourceDeletedToast: "Resource deleted.",
+    confirmDeleteResource: "Delete this resource? The file becomes unavailable immediately.",
+    resourcesEmpty: "No resources yet — upload the first book or file above.",
+    resourceSizeCapNote: "Allowed: PDF, EPUB, MOBI, DOC(X), PPT(X), XLS(X), ZIP, TXT, MP3, M4A, MP4, images. Large files upload directly to cloud storage; small ones go through the form (4MB).",
+    resourceTypeError: "Unsupported file type — allowed: PDF, EPUB, MOBI, DOC(X), PPT(X), XLS(X), ZIP, TXT, MP3, M4A, MP4, images.",
+    resourceDownloadLabel: "downloads",
+    resourceTestDownload: "Download",
     lessonBigLabel: "Big character on card",
     lessonBigPlaceholder: "e.g. 你好 or 🧧 or HSK 1",
     lessonSmallLabel: "Small line under the big character",
