@@ -321,7 +321,7 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
     breakdown: CodePreview | null
   } | null>(null)
   // 👤 نام/ایمیل/تلفن از حساب کاربری خوانده می‌شود — این فرم فقط جزئیات کلاس می‌گیرد
-  // (فیلد «Current Chinese Level» حذف شده — سطح از کلاس انتخابی مشتق می‌شود)
+  // 🎓 سطح پرسیده نمی‌شود — از خودِ کلاسِ انتخابی مشتق می‌شود (کلاس الزامی است)
   const [form, setForm] = useState({
     classType: 'group',
     goal: '',
@@ -456,8 +456,8 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
       }
       return { kind: 'class-unavailable' }
     }
-    // بدون کلاسِ انتخاب‌شده هیچ قیمت و هیچ سفارشی نیست — ثبت‌نام ساده انجام
-    // می‌شود (جریان رسمی اکنون کلاس‌محور است: کلاس‌ها → انتخاب کلاس → ثبت‌نام)
+    // 🎓 کلاس الزامی است — بدون کلاسِ انتخاب‌شده فرم اصلاً رندر نمی‌شود (گیت پایین)،
+    // پس این شاخه در عمل هرگز قیمت‌سازی نمی‌شود؛ صرفاً برای کامل‌بودن تایپ
     return { kind: 'idle' }
   })()
 
@@ -550,8 +550,7 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
     // 👤 نام/ایمیل/تلفن سمت سرور از پروفایل حساب تأییدشده خوانده می‌شود — نه از مرورگر
     const payload = {
       ...form,
-      // 🎓 سطح از خودِ کلاس انتخابی مشتق می‌شود (فیلد سطح در فرم نیست)؛
-      // بدون کلاس = 'Unspecified' — سرور می‌پذیرد و ادمین پیگیری می‌کند
+      // 🎓 سطح از خودِ کلاس انتخابی مشتق می‌شود — ثبت‌نام بدون کلاس وجود ندارد
       level: catalogLock?.level || fileLock?.level || 'Unspecified',
       classTitle: selectedClass ?? '',
       // 🗓️ ترجیحات برنامه — سرور همه را دوباره اعتبارسنجی می‌کند
@@ -683,23 +682,31 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
                   </div>
                 )}
 
-                {/* 🎯 جریان کلاس‌محور — بدون کلاس انتخابی، کاربر اول به صفحهٔ کلاس‌ها هدایت می‌شود */}
+                {/* 🎯 کلاس الزامی است — بدون کلاسِ انتخاب‌شده (ورود از جای غیر از
+                    صفحهٔ کلاس‌ها) فرم اصلاً باز نمی‌شود؛ سطح، قیمت و پرداخت همه از
+                    خودِ کلاسِ انتخابی می‌آیند */}
                 {!selectedClass && (
-                  <div className="animate-ct-fadeInUp mb-7 flex flex-wrap items-center justify-between gap-3 bg-butter/25 border border-butter/60 rounded-2xl px-4 py-3">
-                    <p className="text-xs text-brown leading-relaxed flex-1 min-w-48">
-                      No class selected yet — pick a class from the list and your choice carries
-                      straight into this registration.
+                  <div className="animate-ct-fadeInUp bg-butter/25 border border-butter/60 rounded-2xl p-8 text-center">
+                    <span className="w-14 h-14 rounded-2xl bg-white mx-auto mb-4 flex items-center justify-center shadow-sm">
+                      <BookOpen className="w-7 h-7 text-sage-dark" aria-hidden="true" />
+                    </span>
+                    <h2 className="text-lg font-bold text-brown-dark mb-2">No class selected yet</h2>
+                    <p className="text-sm text-brown-light leading-relaxed max-w-md mx-auto mb-5">
+                      Registration is class-based: browse the class list, pick the class you want
+                      to join and your choice carries straight into this form — level, schedule,
+                      price and payment all come from the class itself.
                     </p>
                     <button
                       type="button"
                       onClick={() => appNavigate('/classes')}
-                      className="bg-white border border-sage/50 text-brown-dark px-4 py-2 rounded-full text-xs font-bold hover:border-sage transition-colors cursor-pointer min-h-[36px] flex-shrink-0 inline-flex items-center gap-1.5"
+                      className="bg-sage text-brown-dark px-7 py-3 rounded-full text-sm font-bold hover:bg-sage-dark transition-colors cursor-pointer inline-flex items-center gap-2 min-h-[44px]"
                     >
-                      <BookOpen className="w-3.5 h-3.5 text-sage-dark" aria-hidden="true" /> Browse classes
+                      <BookOpen className="w-4 h-4" aria-hidden="true" /> Browse classes
                     </button>
                   </div>
                 )}
 
+                {selectedClass && (
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* 👤 کارت هویت کاربر واردشده — جای فیلدهای نام/ایمیل/تلفن (فاز ۳۱) */}
                   {user && (
@@ -716,12 +723,11 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
                     </div>
                   )}
 
-                  {/* 🎓 فیلد «Current Chinese Level» به درخواست مالک حذف شد — سطح از
-                      خودِ کلاس انتخابی سرور-سمت مشتق می‌شود؛ فرم فقط اطلاعاتی را
-                      می‌پرسد که برای ثبت‌نام واقعاً لازم است */}
+                  {/* 🎓 سطح از خودِ کلاسِ انتخابی سرور-سمت مشتق می‌شود — پرسیدن
+                      دوبارهٔ سطح تکراری و گیج‌کننده است (کلاس الزامی است، نه سطح) */}
 
                   {/* 🔒 نوع کلاس — وقتی کلاس مشخصی انتخاب شده، از تنظیمات همان کلاس خوانده
-                      می‌شود و کاربر نمی‌تواند آن را عوض کند؛ بدون کلاس انتخابی، ترجیح آزاد است */}
+                      می‌شود و کاربر نمی‌تواند آن را عوض کند */}
                   {lockedClass ? (
                     <div>
                       <span className={labelCls}>{c.classTypeFromCourse}</span>
@@ -975,6 +981,7 @@ export function RegisterPage({ onToast }: RegisterPageProps) {
                     )}
                   </button>
                 </form>
+                )}
               </div>
             ) : (
               <div className="bg-white rounded-3xl p-8 md:p-10 shadow-lg border border-sage-light/20 text-center animate-ct-fadeInUp">
