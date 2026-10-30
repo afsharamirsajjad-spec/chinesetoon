@@ -350,3 +350,44 @@ Changes:
 - The old "no class selected yet" banner was replaced by this gate; after submitting, the selection is consumed so "Register again" returns to the gate until a new class is picked.
 
 Verification: tsc 0 errors; eslint clean; bun test 42/42; next build OK. Browser (local prod server): guest still sees the account gate first (pre-existing); the signed-in no-class gate is a simple conditional verified by types/code (needs a session — local DB unreachable); /classes → Register still carries the selection through the auth gate and opens the form.
+
+---
+Task ID: PRACTICE-POLISH-1
+Task: Fix the visual problems of the embedded Practice Hub (owner: «بخش تمرین‌ها خرابه و مشکلات دارد»).
+
+Problems found (browser inspection, 1440px + 390px):
+- WordOfDay's CurveDivider was drawn with its home-page assumption (peach) → a stray peach band on the cream /practice background.
+- Uneven vertical rhythm: ToneTrainer (mt-20), Flashcards (mt-20) and LevelQuiz (mt-16) carried their old in-page margins INTO the hub's space-y-4 wrapper → double/uneven gaps and the quiz card hugging the footer.
+- Tone Trainer heading clipped under the sticky header when jumping to its card anchor (scroll-mt too small at some positions).
+
+Fixes:
+- WordOfDay: new optional `dividerFill` prop (default = old peach, home unchanged); /practice passes the cream color so the curve blends into the section above.
+- ToneTrainer/Flashcards/LevelQuiz root margins removed (all three now live ONLY in the hub); PracticeHub container: pt-16 + space-y-16 + pb-28 → even 4rem rhythm.
+- All three anchors scrolled via scroll-mt-28; mobile 390px verified clean (no horizontal overflow).
+
+Verification: tsc 0 errors; eslint clean; bun test 49/49; next build OK (37/37). Browser screenshots: cream→butter transition smooth, even gaps between the three activity cards on desktop and mobile.
+
+---
+Task ID: REGISTER-CLASS-SELECT-1
+Task: Owner correction of REGISTER-CLASS-GATE-1 — do NOT push the user to /classes to pick a class; the register form itself has a class dropdown that starts EMPTY, and the price + sessions of the chosen class update live in the form.
+
+Changes:
+- RegisterPage.tsx: new `setSelectedClass` store helper (same sessionStorage source of truth as the Classes-page Register button, so the whole type-lock/price/payment pipeline reacts unchanged). New class `<select>` as the first form field — required, starts empty («Choose a class…»), options from GET /api/classes (active + full, full ones disabled with "— Full (waitlist)", label includes the class type). The previous no-class gate card and the green "Selected class" card were removed (the select shows the choice). Submit guarded: no class → inline error, no request.
+- Live price: PricePreviewBox gained a `note` prop; the register page fetches class details and shows "{sessions} sessions · ${pricePerSession} per session" next to the catalog's exact package price when a class with pricing is selected. Level select stays removed (level comes from the class — owner's earlier ruling).
+- site-content register keys: classSelectLabel/classSelectPlaceholder/classSelectHint.
+
+Verification: tsc 0 errors; eslint clean; bun test 49/49; next build OK. Browser: guest gate still renders (signed-in dropdown needs a DB session — code verified by types; the select reuses the exact store that the previous session's browser test proved end-to-end from /classes).
+
+---
+Task ID: RESOURCES-1
+Task: Public file downloads (owner request): admin uploads books/materials from the panel; every visitor can browse and download them on the site.
+
+Architecture:
+- prisma: `Resource` model (title, description, fileName display-only, fileUrl [Blob URL or FS hex filename], fileSize, mimeType, downloads counter, published, sortOrder) + migration 20261026000003_resources + self-heal DDL in lms-schema.ts (Postgres) and ensure-schema.ts (SQLite).
+- src/lib/resources.ts — PURE validation shared by API and admin form (no server imports): extension allowlist (PDF/EPUB/MOBI/DOC(X)/PPT(X)/XLS(X)/ZIP/TXT/MP3/M4A/MP4/images — executables/scripts/HTML always rejected), MIME map, display-name/title/description sanitizers, size caps + human formatting. src/lib/resources-store.ts — server storage: Vercel Blob first (putBlobFile), fallback CT_DATA_DIR/uploads/resources with 48-hex unpredictable filenames (receipts pattern).
+- APIs: GET /api/resources (public, published only; ?all=1 with admin key → all); POST (admin; multipart ≤4MB server-side store, or JSON to register a file already uploaded browser→Blob); DELETE (admin; removes row + file); GET /api/resources/upload-token (GET → {configured}; POST → @vercel/blob v2 handleUpload flow issuing a short-lived client token scoped by onBeforeGenerateToken to resources/<48-hex>.<allowed-ext> + locked MIME — the read-write token never reaches the browser); GET /api/resources/[id]/file (public download: streams from Blob with server auth — works for private stores too — or reads local FS; Content-Disposition attachment with RFC 5987 unicode filename; increments the downloads counter).
+- Admin tab "Resources" (FolderDown icon) after Lessons: upload form (title/description/file) that picks the browser→Blob path when Blob is configured (multipart:true, any size) and falls back to the server multipart path otherwise; list with size/downloads/test-download and confirm-delete.
+- Public section: ResourcesSection component at the bottom of /learn ("Free Library — Books & Study Materials") — hidden entirely when nothing is published; download buttons hit the file route.
+- tests/resources.test.ts: 7 unit tests (extension allowlist/rejections, MIME coverage, sanitizers, caps, size formatting).
+
+Verification: prisma generate OK (EPERM on the engine DLL was a stale server process holding the file — killed, regenerated clean); tsc 0 errors; eslint clean; bun test 49/49 (42 + 7 new); next build OK (37/37, all three /api/resources routes in output). Browser: /learn renders and correctly HIDES the library section while the DB is empty. API smoke: POST without admin key → 401; the two 500s seen locally are the pre-existing stale local DATABASE_URL (PrismaClientInitializationError in the log) — every DB-backed endpoint behaves the same locally; on Vercel+Neon they work. End-to-end upload/download needs staging/production with BLOB_READ_WRITE_TOKEN.

@@ -49,7 +49,9 @@ import {
   DatabaseBackup,
   ScrollText,
   BookOpenCheck,
+  FolderDown,
 } from 'lucide-react'
+import { formatResourceSize, resourceExtensionOf } from '@/lib/resources'
 import { ClassesAdminTab } from '../admin/ClassesAdminTab'
 import { FaqAdminTab, type AdminFaqItem } from '../admin/FaqAdminTab'
 import { DiscountsAdminTab, type DiscountItem } from '../admin/DiscountsAdminTab'
@@ -329,6 +331,21 @@ interface AdminLesson {
   words: LessonWordRow[]
   sortOrder: number
   published: boolean
+}
+
+// 📚 منبع عمومی دانلودی — کتاب/جزوه/… آپلودی از همین تب؛ دانلود عمومی از Learn
+interface AdminResource {
+  id: string
+  title: string
+  description: string
+  fileName: string
+  fileUrl: string
+  fileSize: number
+  mimeType: string
+  downloads: number
+  published: boolean
+  sortOrder: number
+  createdAt: string
 }
 
 interface AdminAnnouncement {
@@ -2040,6 +2057,223 @@ function ReviewForm({
   )
 }
 
+// ---------------------------------------------------------------------------
+// 📚 تب Resources — آپلود فایل عمومی (کتاب/جزوه/صدا/…) + فهرست و حذف
+// آپلود دو مسیر دارد: ۱) توکن کوتاه‌عمر → آپلود مستقیم مرورگر→Blob (فایل
+// بزرگ‌تر از سقف ۴.۵MB بدنهٔ Vercel — کتاب‌ها) ۲) multipart سمت سرور (سقف
+// ۴MB / FS محلی). قواعد پسوند/نام از lib/resources (مشترک با API).
+// ---------------------------------------------------------------------------
+function ResourcesAdmin({
+  token,
+  resources,
+  onRefresh,
+  onToast,
+}: {
+  token: string
+  resources: AdminResource[]
+  onRefresh: () => void
+  onToast: (m: string) => void
+}) {
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [file, setFile] = useState<File | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (busy || !file || !title.trim()) return
+    setBusy(true)
+    setError('')
+    try {
+      const headers = { 'x-admin-key': token }
+      // 🛡️ اعتبارسنجی پسوند سمت کلاینت — همان قاعدهٔ سرور
+      const ext = resourceExtensionOf(file.name)
+      if (!ext) {
+        setError(a.resourceTypeError)
+        return
+      }
+      // ۱) آپلود مستقیم مرورگر→Blob (فایل بزرگ) — توکن کوتاه‌عمر از handleUpload
+      //    می‌آید و فقط به همین فایل اسکوپ می‌شود؛ توکن اصلی هرگز به مرورگر نمی‌رود
+      const cfgRes = await fetch('/api/resources/upload-token', { headers })
+      const cfg = (await cfgRes.json().catch(() => null)) as { configured?: boolean } | null
+      if (cfgRes.ok && cfg?.configured) {
+        const bytes = crypto.getRandomValues(new Uint8Array(24))
+        const id = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+        const { upload } = await import('@vercel/blob/client')
+        const blob = await upload(`resources/${id}.${ext}`, file, {
+          access: 'public',
+          handleUploadUrl: '/api/resources/upload-token',
+          headers,
+          contentType: file.type || undefined,
+          multipart: true,
+        })
+        // ثبت ردیف DB برای فایل آپلودشده
+        const save = await fetch('/api/resources', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-admin-key': token },
+          body: JSON.stringify({
+            title,
+            description,
+            fileName: file.name,
+            url: blob.url,
+            size: file.size,
+            mime: file.type || '',
+          }),
+        })
+        if (!save.ok) {
+          const d = await save.json().catch(() => ({}))
+          setError(d?.error || 'Could not save the resource.')
+          return
+        }
+      } else {
+        // ۲) مسیر multipart سرور — FS محلی/سندباکس و فایل‌های ≤۴MB
+        const fd = new FormData()
+        fd.set('title', title)
+        fd.set('description', description)
+        fd.set('file', file)
+        const save = await fetch('/api/resources', { method: 'POST', headers, body: fd })
+        if (!save.ok) {
+          const d = await save.json().catch(() => ({}))
+          setError(d?.error || 'Could not upload the file.')
+          return
+        }
+      }
+      onToast(a.resourceCreatedToast)
+      setTitle('')
+      setDescription('')
+      setFile(null)
+      onRefresh()
+    } catch {
+      setError('Upload failed — check the file and try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const remove = async (id: string) => {
+    if (!window.confirm(a.confirmDeleteResource)) return
+    const res = await fetch('/api/resources', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': token },
+      body: JSON.stringify({ id }),
+    })
+    if (res.ok) {
+      onToast(a.resourceDeletedToast)
+      onRefresh()
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* فرم آپلود */}
+      <form onSubmit={submit} className="bg-white rounded-2xl border border-sage-light/30 p-5 space-y-4">
+        <h3 className="text-sm font-bold text-brown-dark">{a.resourcesUploadTitle}</h3>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="res-title" className="block text-xs font-semibold uppercase tracking-wider text-brown mb-1.5">
+              {a.resourceTitleLabel}
+            </label>
+            <input
+              id="res-title"
+              required
+              maxLength={160}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={a.resourceTitlePlaceholder}
+              className={inputSoft}
+            />
+          </div>
+          <div>
+            <label htmlFor="res-file" className="block text-xs font-semibold uppercase tracking-wider text-brown mb-1.5">
+              {a.resourceFileLabel}
+            </label>
+            <input
+              id="res-file"
+              type="file"
+              required
+              accept=".pdf,.epub,.mobi,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.txt,.mp3,.m4a,.mp4,.png,.jpg,.jpeg,.webp"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              className={`${inputSoft} py-2`}
+            />
+          </div>
+        </div>
+        <div>
+          <label htmlFor="res-desc" className="block text-xs font-semibold uppercase tracking-wider text-brown mb-1.5">
+            {a.resourceDescLabel}
+          </label>
+          <textarea
+            id="res-desc"
+            rows={2}
+            maxLength={1000}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={a.resourceDescPlaceholder}
+            className={inputSoft}
+          />
+        </div>
+        {error && (
+          <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>
+        )}
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="submit"
+            disabled={busy || !file || !title.trim()}
+            className="bg-sage text-brown-dark px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-sage-dark transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {busy ? a.resourceUploading : a.resourceUploadBtn}
+          </button>
+          <p className="text-[11px] text-brown-light flex-1 min-w-48">{a.resourceSizeCapNote}</p>
+        </div>
+      </form>
+
+      {/* فهرست منابع */}
+      {resources.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-sage-light/50">
+          <FolderDown className="w-10 h-10 mx-auto mb-3 text-brown-light/50" />
+          <p className="text-sm text-brown-light">{a.resourcesEmpty}</p>
+        </div>
+      ) : (
+        <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+          {resources.map((r) => (
+            <div
+              key={r.id}
+              className="bg-white rounded-2xl border border-sage-light/20 p-4 flex items-center gap-4 hover:border-sage/40 transition-colors"
+            >
+              <span className="w-11 h-11 rounded-xl bg-sage-light/30 flex items-center justify-center flex-shrink-0">
+                <FolderDown className="w-5 h-5 text-sage-dark" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-brown-dark truncate">{r.title}</p>
+                <p className="text-xs text-brown-light mt-0.5 truncate">
+                  {r.fileName} · {formatResourceSize(r.fileSize)} · {r.downloads}{' '}
+                  {a.resourceDownloadLabel}
+                  {!r.published ? ` · ${a.unpublishLabel}` : ''}
+                </p>
+              </div>
+              <a
+                href={`/api/resources/${r.id}/file`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden sm:inline-flex items-center text-xs font-semibold text-sage-dark hover:underline cursor-pointer flex-shrink-0"
+              >
+                {a.resourceTestDownload}
+              </a>
+              <button
+                onClick={() => remove(r.id)}
+                title={a.confirmDeleteResource}
+                className="text-brown-light hover:text-red-500 cursor-pointer p-2 flex-shrink-0"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function LessonForm({
   token,
   onDone,
@@ -3084,7 +3318,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
   const [token, setToken] = useState<string | null>(null)
   const [checked, setChecked] = useState(false)
   const [tab, setTab] = useState<
-    'dashboard' | 'classes' | 'messages' | 'registrations' | 'scheduling' | 'students' | 'orders' | 'newsletter' | 'blog' | 'reviews' | 'faq' | 'discounts' | 'lessons' | 'words' | 'quiz' | 'teachers' | 'homework' | 'settings' | 'backup' | 'logs'
+    'dashboard' | 'classes' | 'messages' | 'registrations' | 'scheduling' | 'students' | 'orders' | 'newsletter' | 'blog' | 'reviews' | 'faq' | 'discounts' | 'lessons' | 'resources' | 'words' | 'quiz' | 'teachers' | 'homework' | 'settings' | 'backup' | 'logs'
   >('dashboard')
   const [messages, setMessages] = useState<SupportMsg[]>([])
   const [registrations, setRegistrations] = useState<Registration[]>([])
@@ -3100,6 +3334,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
   const [quizQuestions, setQuizQuestions] = useState<AdminQuiz[]>([])
   const [teachers, setTeachers] = useState<AdminTeacher[]>([])
   const [lessons, setLessons] = useState<AdminLesson[]>([])
+  const [resources, setResources] = useState<AdminResource[]>([])
   // 💳 فاز ۵۹ — پرداخت دستی کارت بانکی: تنظیمات + شمارنده‌ها + فیلتر ورودی تب Payments
   const [bankSettings, setBankSettings] = useState<BankSettingsState | null>(null)
   const [payCounts, setPayCounts] = useState<{
@@ -3238,7 +3473,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
         if (res.status === 401) return { unauthorized: true as const }
         return res.ok ? res.json() : {}
       }
-      const [m, r, n, p, s, rev, wc, qq, tc, ls, st, ps, fd, dc, reva, fda] = await Promise.all([
+      const [m, r, n, p, s, rev, wc, qq, tc, ls, st, ps, fd, dc, reva, fda, rs] = await Promise.all([
         get('/api/support'),
         get('/api/register'),
         get('/api/newsletter'),
@@ -3255,6 +3490,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
         get('/api/discounts'),
         get('/api/testimonials?archived=1'),
         get('/api/faq?archived=1'),
+        get('/api/resources?all=1'),
       ])
       if (
         'unauthorized' in m ||
@@ -3282,6 +3518,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
       setQuizQuestions(qq.questions ?? [])
       setTeachers(tc.teachers ?? [])
       setLessons(ls.lessons ?? [])
+      setResources(rs.resources ?? [])
       setBankSettings(ps?.settings ?? null)
       setSettings({
         announcement: st?.settings?.announcement ?? null,
@@ -3647,6 +3884,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
     { key: 'discounts' as const, label: a.tabDiscounts, count: discounts.length, alert: 0, icon: TicketPercent },
     { key: 'blog' as const, label: a.tabBlog, count: posts.length, alert: 0, icon: Newspaper },
     { key: 'lessons' as const, label: a.tabLessons, count: lessons.length, alert: 0, icon: BookOpen },
+    { key: 'resources' as const, label: a.tabResources, count: resources.length, alert: 0, icon: FolderDown },
     { key: 'words' as const, label: a.tabWords, count: learnCards.length, alert: 0, icon: Layers },
     { key: 'quiz' as const, label: a.tabQuiz, count: quizQuestions.length, alert: 0, icon: ListChecks },
     { key: 'teachers' as const, label: a.tabTeachers, count: teachers.length, alert: 0, icon: UserRound },
@@ -4813,6 +5051,16 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
                     onPage={setPage}
                   />
                 </div>
+              )}
+
+              {/* 📚 منابع عمومی دانلودی — آپلود کتاب/جزوه، دانلود عمومی از Learn */}
+              {tab === 'resources' && (
+                <ResourcesAdmin
+                  token={token!}
+                  resources={resources}
+                  onRefresh={load}
+                  onToast={onToast ?? (() => {})}
+                />
               )}
 
               {/* 🃏 واژه‌ها — فلش‌کارت‌های صفحهٔ Learn */}

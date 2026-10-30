@@ -191,6 +191,19 @@ const CREATE_TABLES: readonly string[] = [
     "published" BOOLEAN NOT NULL DEFAULT 1,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
+  `CREATE TABLE IF NOT EXISTS "Resource" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "title" TEXT NOT NULL,
+    "description" TEXT NOT NULL DEFAULT '',
+    "fileName" TEXT NOT NULL DEFAULT '',
+    "fileUrl" TEXT NOT NULL,
+    "fileSize" INTEGER NOT NULL DEFAULT 0,
+    "mimeType" TEXT NOT NULL DEFAULT '',
+    "downloads" INTEGER NOT NULL DEFAULT 0,
+    "published" BOOLEAN NOT NULL DEFAULT 1,
+    "sortOrder" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
   `CREATE TABLE IF NOT EXISTS "SiteSetting" (
     "key" TEXT NOT NULL PRIMARY KEY,
     "value" TEXT NOT NULL,

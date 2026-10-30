@@ -104,6 +104,24 @@ async function runEnsure(): Promise<void> {
   )
   await ddl(`CREATE INDEX IF NOT EXISTS "PracticeEvent_userId_createdAt_idx" ON "PracticeEvent"("userId", "createdAt")`, 'idx PracticeEvent.userId')
   await ddl(`CREATE INDEX IF NOT EXISTS "PracticeEvent_activityKey_createdAt_idx" ON "PracticeEvent"("activityKey", "createdAt")`, 'idx PracticeEvent.activityKey')
+  // 📚 منابع عمومی دانلودی — آپلود از پنل ادمین، دانلود عمومی (کتاب/جزوه/صدا)
+  await ddl(
+    `CREATE TABLE IF NOT EXISTS "Resource" (
+      "id" TEXT NOT NULL,
+      "title" TEXT NOT NULL,
+      "description" TEXT NOT NULL DEFAULT '',
+      "fileName" TEXT NOT NULL DEFAULT '',
+      "fileUrl" TEXT NOT NULL,
+      "fileSize" INTEGER NOT NULL DEFAULT 0,
+      "mimeType" TEXT NOT NULL DEFAULT '',
+      "downloads" INTEGER NOT NULL DEFAULT 0,
+      "published" BOOLEAN NOT NULL DEFAULT true,
+      "sortOrder" INTEGER NOT NULL DEFAULT 0,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "Resource_pkey" PRIMARY KEY ("id")
+    )`,
+    'CREATE Resource'
+  )
   await ddl(
     `CREATE TABLE IF NOT EXISTS "ClassEnrollment" (
       "id" TEXT NOT NULL,

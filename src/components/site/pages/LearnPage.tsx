@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ArrowRight, Play } from 'lucide-react'
 import { InstagramIcon, TelegramIcon } from '../brand-icons'
+import { ResourcesSection } from '../ResourcesSection'
 import { siteContent } from '@/content/site-content'
 import { appNavigate } from '@/lib/nav'
 
@@ -183,7 +184,10 @@ export function LearnPage() {
           </div>
 
           {/* 👂 🃏 بازی تُن‌ها و فلش‌کارت‌ها به هاب تمرین (/practice) منتقل شدند
-              (درخواست مالک) — این صفحه فقط کتابخانهٔ درس‌هاست */}
+              (درخواست مالک) — این صفحه کتابخانهٔ درس‌ها + منابع دانلودی است */}
+
+          {/* 📚 کتابخانهٔ رایگان — فایل‌های آپلودی پنل (بدون منبع = بدون سکشن) */}
+          <ResourcesSection />
 
           <div className="text-center mt-14">
             {/* 🧭 پیوند متنی به هاب تمرین — همهٔ فعالیت‌ها در یک صفحه */}
