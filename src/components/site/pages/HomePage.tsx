@@ -22,7 +22,6 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import { HomeBlogSection } from '../HomeBlogSection'
-import { WordOfDay } from '../WordOfDay'
 import { HomeSectionNav } from '../HomeSectionNav'
 import { HomeReviewsCarousel } from '../HomeReviewsCarousel'
 import { HeroScene } from '../HeroScene'
@@ -521,13 +520,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
       {/* ================= کاروسل نظرات دانشجویان (#reviews) ================= */}
       <HomeReviewsCarousel onNavigate={onNavigate} />
 
-      {/* ================= کلمهٔ روز (每日一词) ================= */}
-      <div id="word" className="scroll-mt-44">
-        {/* 📅 کلمهٔ روز — لنگر #word-of-day (مقصد هاب تمرین /practice) */}
-        <div id="word-of-day" className="scroll-mt-32">
-          <WordOfDay onNavigate={onNavigate} />
-        </div>
-      </div>
+      {/* 📅 کلمهٔ روز به هاب تمرین (/practice) منتقل شد (درخواست مالک) */}
 
       {/* ================= آخرین مقالات وبلاگ ================= */}
       <div id="blog" className="scroll-mt-44">

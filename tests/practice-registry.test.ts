@@ -12,16 +12,17 @@ import {
 } from '../src/lib/practice/registry'
 
 // مسیرها/لنگرهای مجاز — لنگرها باید واقعاً در صفحهٔ مقصد وجود داشته باشند
-// (id های تزریق‌شده: #word-of-day در خانه، #flashcards/#tone-trainer در /learn،
-//  #level-quiz در /classes)
+// (درخواست مالک: فعالیت‌های تعاملی داخل خود /practice تعبیه شده‌اند —
+//  idهای تزریق‌شده: #practice-daily-word/#practice-tone-trainer/
+//  #practice-flashcards/#practice-level-quiz؛ فقط درس‌ها به /learn لینک‌اند)
 const VALID_HREFS = new Set([
   '/',
-  '/#word-of-day',
   '/learn',
-  '/learn#flashcards',
-  '/learn#tone-trainer',
   '/classes',
-  '/classes#level-quiz',
+  '/practice#practice-daily-word',
+  '/practice#practice-flashcards',
+  '/practice#practice-tone-trainer',
+  '/practice#practice-level-quiz',
 ])
 
 describe('practice registry', () => {

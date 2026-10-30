@@ -9,12 +9,13 @@
 //      هیچ عددی جعل نمی‌شود؛ مهمان: بنر شفاف «برای ذخیرهٔ پیشرفت وارد شو».
 //   ۲) جست‌وجو + فیلتر دسته + مرتب‌سازی (پیشنهادی/اخیراً استفاده‌شده) —
 //      روی متادیتای واقعی رجیستری کار می‌کند.
-//   ۳) کارت فعالیت‌ها — هر کارت به «خودِ تمرین واقعی» لینک است
-//      (بخش‌های موجود در /learn، /classes و Word of Day خانه) با نشانگر
-//      «انجام‌شدهٔ امروز» برای کاربر واردشده.
+//   ۳) کارت فعالیت‌ها — هر کارت به «خودِ تمرین واقعی» می‌رسد (درخواست مالک:
+//      فعالیت‌های تعاملی داخل همین صفحه تعبیه شده‌اند و کارت فقط به لنگرِ
+//      پایین صفحه اسکرول می‌کند؛ تنها استثنا کتابخانهٔ درس‌ها در /learn).
+//   ۴) فعالیت‌های تعبیه‌شده: کلمهٔ روز، بازی تُن‌ها، فلش‌کارت‌ها و آزمون سطح.
 // ---------------------------------------------------------------------------
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
   ArrowRight,
@@ -32,6 +33,12 @@ import {
 } from 'lucide-react'
 import { PRACTICE_ACTIVITIES, PRACTICE_CATEGORIES, type PracticeActivity } from '@/lib/practice/registry'
 import { recordPractice } from '@/lib/practice/record'
+import { WordOfDay } from '../WordOfDay'
+import { ToneTrainer } from '../ToneTrainer'
+import { Flashcards, type FlashCardData } from '../Flashcards'
+import { LevelQuiz } from '../LevelQuiz'
+import { appNavigate } from '@/lib/nav'
+import type { PageKey } from '@/content/site-content'
 
 const ICONS = {
   sun: Sun,
@@ -62,6 +69,15 @@ export function PracticeHub() {
   const [category, setCategory] = useState<string>('all')
   const [sort, setSort] = useState<'recommended' | 'recent'>('recommended')
 
+  // 🃏 واژه‌های فلش‌کارت از دیتابیس (پنل ادمین) — تا وقتی خالی باشد نسخهٔ
+  // پیش‌فرض فایل محتوا داخل خود Flashcards استفاده می‌شود
+  const [cards, setCards] = useState<FlashCardData[] | null>(null)
+
+  // 🧭 adapter ناوبری برای کامپوننت‌های تعبیه‌شده (CTA ثبت‌نام) — PageKey → مسیر
+  const navigate = useCallback((page: PageKey) => {
+    appNavigate(page === 'home' ? '/' : `/${page}`)
+  }, [])
+
   useEffect(() => {
     let cancelled = false
     fetch('/api/practice/progress', { cache: 'no-store' })
@@ -78,6 +94,23 @@ export function PracticeHub() {
           setState('failed')
         }
       })
+    fetch('/api/learn/cards')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && Array.isArray(data.cards) && data.cards.length > 0) {
+          setCards(
+            data.cards.map(
+              (c: { chinese: string; pinyin: string; meaning: string; example: string | null }) => ({
+                chinese: c.chinese,
+                pinyin: c.pinyin,
+                meaning: c.meaning,
+                example: c.example,
+              })
+            )
+          )
+        }
+      })
+      .catch(() => {})
     return () => {
       cancelled = true
     }
@@ -357,6 +390,28 @@ export function PracticeHub() {
               })}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* ================= فعالیت‌های تعبیه‌شده — همه در همین صفحه ================= */}
+      {/* 📅 کلمهٔ روز — سکشن تمام-عرض با پس‌زمینهٔ خودش (مقصد کارت daily-word) */}
+      <div id="practice-daily-word" className="scroll-mt-24">
+        <WordOfDay onNavigate={navigate} />
+      </div>
+
+      {/* 👂 🃏 🧩 بازی تُن‌ها + فلش‌کارت‌ها + آزمون سطح — کارت‌های سفید روی
+          زمینهٔ کرم؛ لنگرهای مقصد کارت‌های tone-trainer/flashcards/level-quiz */}
+      <section className="pb-24">
+        <div className="max-w-5xl mx-auto px-6 space-y-4">
+          <div id="practice-tone-trainer" className="scroll-mt-28">
+            <ToneTrainer />
+          </div>
+          <div id="practice-flashcards" className="scroll-mt-28">
+            <Flashcards key={`cards-${cards?.length ?? 0}`} cards={cards ?? undefined} />
+          </div>
+          <div id="practice-level-quiz" className="scroll-mt-28">
+            <LevelQuiz key="practice-level-quiz" onNavigate={navigate} />
+          </div>
         </div>
       </section>
     </div>

@@ -320,3 +320,33 @@ Changes:
 - tests/email-verification.test.ts: TTL = 10 minutes; console-provider path logs the code and returns sent:false; function contract test renamed to sendEmailVerificationCode.
 
 Verification: tsc 0 errors; eslint clean on all changed files; bun test 42/42 pass; next build OK (both routes in output). End-to-end DB flow still requires staging/production (local .env DATABASE_URL is a stale non-reachable path — pre-existing env issue).
+
+---
+Task ID: PRACTICE-EMBED-1
+Task: (1) Practice Hub self-contained — interactive activities live inside /practice, not on other pages (owner request). (2) Remove "First trial session is free — come and see if it fits!" from the class-details dialog. (3) Lessons support free text, not only word lists (owner request).
+
+Changes (1) — practice embeds:
+- registry.ts: daily-word / flashcards / tone-trainer / level-quiz hrefs → same-page anchors (/practice#practice-<key>); lessons + lesson-listen remain /learn links (lesson library).
+- PracticeHub.tsx: WordOfDay, ToneTrainer, Flashcards and LevelQuiz now render embedded below the activity cards (the /api/learn/cards fetch moved here from LearnPage); navigate adapter for the register CTAs.
+- Removals from other pages (owner request): LearnPage (ToneTrainer + Flashcards sections + cards fetch — Learn keeps only the lesson library), ClassesPage (#level-quiz block), HomePage (#word-of-day section). Testimonial copy updated to "in the Practice Hub".
+- tests/practice-registry.test.ts: href allowlist updated to the new same-page anchors.
+
+Changes (2): detailsNote removed from site-content classes + the butter note block deleted from the ClassesPage detail dialog (buttons kept).
+
+Changes (3) — lesson text:
+- prisma/schema.prisma: Lesson.content TEXT default '' + migration 20261026000002_lesson_content (additive/idempotent); self-heal DDL added to lms-schema.ts (Postgres) and ensure-schema.ts (SQLite create-table + ALTER list).
+- /api/learn/lessons: content added to the zod schema (max 20000); GET returns it via the row spread; serialize passes it through.
+- AdminPage LessonForm: "Lesson text (optional)" textarea (blank line starts a new paragraph) + AdminLesson.content field.
+- LessonDetailPage: new "Lesson text" section above the word list — paragraphs split on blank lines, brand styling.
+
+Verification: prisma generate + validate OK (schema comment cleanup on Lesson while editing); tsc 0 errors; eslint clean; bun test 42/42; next build OK (37/37). Browser (local prod server): /practice shows all four activities embedded and cards scroll to same-page anchors (DOM + screenshots at 1440px verified); /register guest gate, /learn, / all render. A transient "empty main on hard load" observed mid-session on some pages was cold-server/bundle timing, not a code issue — with a warm server every page fills correctly, and the same HTML streaming pattern exists on production www.chinesetoon.com whose /learn renders fine. DB-backed content flow (admin edit → lesson page) needs staging (local DATABASE_URL stale — pre-existing).
+
+---
+Task ID: REGISTER-CLASS-GATE-1
+Task: Registering from anywhere other than /classes must not be possible without picking a class — the CLASS is mandatory (owner correction: do NOT ask the level; level comes from the class).
+
+Changes:
+- RegisterPage.tsx: with no class carried in sessionStorage (ct-selected-class), the form no longer renders at all — a butter gate card ("No class selected yet") explains that registration is class-based and offers "Browse classes" → /classes. With a class selected the flow is unchanged: level derived from the class, price box from the server catalog, auto-redirect to payment after submit. The level select stays removed (asking the level was explicitly rejected); /api/register unchanged (optional level → 'Unspecified' remains as a dead-path defense).
+- The old "no class selected yet" banner was replaced by this gate; after submitting, the selection is consumed so "Register again" returns to the gate until a new class is picked.
+
+Verification: tsc 0 errors; eslint clean; bun test 42/42; next build OK. Browser (local prod server): guest still sees the account gate first (pre-existing); the signed-in no-class gate is a simple conditional verified by types/code (needs a session — local DB unreachable); /classes → Register still carries the selection through the auth gate and opens the form.

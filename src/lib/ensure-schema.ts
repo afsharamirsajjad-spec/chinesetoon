@@ -185,6 +185,7 @@ const CREATE_TABLES: readonly string[] = [
     "color" TEXT NOT NULL DEFAULT 'sage',
     "action" TEXT NOT NULL DEFAULT 'Learn',
     "isVideo" BOOLEAN NOT NULL DEFAULT 0,
+    "content" TEXT NOT NULL DEFAULT '',
     "words" TEXT NOT NULL DEFAULT '[]',
     "sortOrder" INTEGER NOT NULL DEFAULT 0,
     "published" BOOLEAN NOT NULL DEFAULT 1,
@@ -682,6 +683,7 @@ const ALTER_COLUMNS: Readonly<Record<string, readonly string[]>> = {
     'ALTER TABLE "Lesson" ADD COLUMN "color" TEXT NOT NULL DEFAULT \'sage\'',
     'ALTER TABLE "Lesson" ADD COLUMN "action" TEXT NOT NULL DEFAULT \'Learn\'',
     'ALTER TABLE "Lesson" ADD COLUMN "isVideo" BOOLEAN NOT NULL DEFAULT 0',
+    'ALTER TABLE "Lesson" ADD COLUMN "content" TEXT NOT NULL DEFAULT \'\'',
     'ALTER TABLE "Lesson" ADD COLUMN "words" TEXT NOT NULL DEFAULT \'[]\'',
   ],
   Post: [

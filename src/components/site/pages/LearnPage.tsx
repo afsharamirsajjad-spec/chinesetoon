@@ -3,8 +3,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ArrowRight, Play } from 'lucide-react'
 import { InstagramIcon, TelegramIcon } from '../brand-icons'
-import { Flashcards } from '../Flashcards'
-import { ToneTrainer } from '../ToneTrainer'
 import { siteContent } from '@/content/site-content'
 import { appNavigate } from '@/lib/nav'
 
@@ -71,12 +69,6 @@ export function LearnPage() {
 
   // 📚 فاز ۲۲: به‌جای مودال، هر درس صفحهٔ اختصاصی دارد: /lesson/<slug>
 
-  // 🗄️ واژه‌های فلش‌کارت از دیتابیس (پنل ادمین) — تا وقتی خالی باشد
-  // نسخهٔ پیش‌فرض فایل محتوا نمایش داده می‌شود
-  const [cards, setCards] = useState<
-    { chinese: string; pinyin: string; meaning: string; example: string | null }[]
-  | null>(null)
-
   // 📚 ناوبری به صفحهٔ اختصاصی درس (لینک‌پذیر و قابل اشتراک‌گذاری: /lesson/<slug>)
   const goToLesson = useCallback((slug: string) => {
     try {
@@ -89,39 +81,19 @@ export function LearnPage() {
 
   useEffect(() => {
     let cancelled = false
-    const loadData = () => {
-      fetch('/api/learn/lessons')
-        .then((res) => res.json())
-        .then((data) => {
-          if (cancelled) return
-          if (Array.isArray(data.lessons) && data.lessons.length > 0) {
-            setDbLessons(data.lessons)
-          } else if (Array.isArray(data.lessons) && data.lessons.length === 0) {
-            setDbLessons(null) // دیتابیس خالی شد → برگرد به محتوای پیش‌فرض
-          }
-        })
-        .catch(() => {})
-      fetch('/api/learn/cards')
-        .then((res) => res.json())
-        .then((data) => {
-          if (!cancelled && Array.isArray(data.cards) && data.cards.length > 0) {
-            setCards(
-              data.cards.map(
-                (c: { chinese: string; pinyin: string; meaning: string; example: string | null }) => ({
-                  chinese: c.chinese,
-                  pinyin: c.pinyin,
-                  meaning: c.meaning,
-                  example: c.example,
-                })
-              )
-            )
-          } else if (!cancelled && Array.isArray(data.cards) && data.cards.length === 0) {
-            setCards(null) // دیتابیس خالی شد → برگرد به محتوای پیش‌فرض
-          }
-        })
-        .catch(() => {})
-    }
-    loadData()
+    // 🃏 فلش‌کارت‌ها اکنون در هاب تمرین (/practice) زندگی می‌کنند — این صفحه
+    // فقط درس‌ها را می‌خواند
+    fetch('/api/learn/lessons')
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return
+        if (Array.isArray(data.lessons) && data.lessons.length > 0) {
+          setDbLessons(data.lessons)
+        } else if (Array.isArray(data.lessons) && data.lessons.length === 0) {
+          setDbLessons(null) // دیتابیس خالی شد → برگرد به محتوای پیش‌فرض
+        }
+      })
+      .catch(() => {})
     return () => {
       cancelled = true
     }
@@ -210,15 +182,8 @@ export function LearnPage() {
             })}
           </div>
 
-          {/* 👂 بازی تمرین تُن‌ها — گوش بده و تُن را حدس بزن (لنگر هاب تمرین) */}
-          <div id="tone-trainer" className="scroll-mt-32">
-            <ToneTrainer />
-          </div>
-
-          {/* 🃏 فلش‌کارت واژگان — زیر بازی، قبل از بخش فوتر صفحه (لنگر هاب تمرین) */}
-          <div id="flashcards" className="scroll-mt-32">
-            <Flashcards key={`cards-${cards?.length ?? 0}`} cards={cards ?? undefined} />
-          </div>
+          {/* 👂 🃏 بازی تُن‌ها و فلش‌کارت‌ها به هاب تمرین (/practice) منتقل شدند
+              (درخواست مالک) — این صفحه فقط کتابخانهٔ درس‌هاست */}
 
           <div className="text-center mt-14">
             {/* 🧭 پیوند متنی به هاب تمرین — همهٔ فعالیت‌ها در یک صفحه */}

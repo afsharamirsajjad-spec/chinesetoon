@@ -251,8 +251,9 @@ model Lesson {
   category  String   @default("vocabulary") // Ø¯Ø³ØªÙ‡Ù” ÙÛŒÙ„ØªØ± Learn (Ù…Ø«Ù„ vocabulary everyday)
   color     String   @default("sage") // sage | butter | peach | cream
   action    String   @default("Learn") // Ù…ØªÙ† Ø¯Ú©Ù…Ù‡Ù” Ú©Ø§Ø±Øª (Learn / Watch)
-  isVideo   Boolean  @default(false) // Ù†Ø´Ø§Ù† Video Ø±ÙˆÛŒ Ú©Ø§Ø±Øª
-  words     String   @default("[]") // JSON Ø¢Ø±Ø§ÛŒÙ‡Ù” ÙˆØ§Ú˜Ù‡â€ŒÙ‡Ø§ÛŒ Ø¯Ø±Ø³
+  isVideo   Boolean  @default(false)
+  content   String   @default("") // free-form lesson body (paragraphs) shown on /lesson/<slug> — not just word lists
+  words     String   @default("[]") // JSON array of lesson words
   sortOrder Int      @default(0)
   published Boolean  @default(true)
   createdAt DateTime @default(now())

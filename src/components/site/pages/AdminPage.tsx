@@ -317,6 +317,7 @@ interface AdminLesson {
   slug: string
   title: string
   text: string
+  content: string
   subtitle: string
   big: string
   small: string
@@ -2054,6 +2055,8 @@ function LessonForm({
   const [slug, setSlug] = useState(initial?.slug ?? '')
   const [title, setTitle] = useState(initial?.title ?? '')
   const [text, setText] = useState(initial?.text ?? '')
+  // 📝 بدنهٔ متنی درس — چند پاراگراف آزاد (خط خالی = پاراگراف جدید)
+  const [content, setContent] = useState(initial?.content ?? '')
   const [subtitle, setSubtitle] = useState(initial?.subtitle ?? '')
   const [big, setBig] = useState(initial?.big ?? '')
   const [small, setSmall] = useState(initial?.small ?? '')
@@ -2102,6 +2105,7 @@ function LessonForm({
           slug: slug.trim().toLowerCase(),
           title,
           text,
+          content,
           subtitle,
           big,
           small,
@@ -2194,6 +2198,23 @@ function LessonForm({
             className={inputSoft}
           />
         </div>
+      </div>
+
+      {/* 📝 بدنهٔ متنی آزاد درس — درس می‌تواند نثر/توضیح/گرامر هم داشته باشد، نه فقط واژه */}
+      <div>
+        <label htmlFor="lf-content" className="block text-xs font-semibold uppercase tracking-wider text-brown mb-1.5">
+          {a.lessonContentLabel}
+        </label>
+        <textarea
+          id="lf-content"
+          rows={8}
+          maxLength={20000}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder={a.lessonContentPlaceholder}
+          className={inputSoft}
+        />
+        <p className="text-[11px] text-brown-light mt-1">{a.lessonContentHint}</p>
       </div>
 
       {/* ظاهر کارت */}

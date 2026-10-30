@@ -41,11 +41,13 @@ export interface PracticeActivity {
 }
 
 // ⚠️ فقط فعالیت‌های واقعاً موجود:
-//   daily-word   → بخش Word of Day در صفحهٔ خانه (#word-of-day)
-//   flashcards   → فلش‌کارت واژگان در پایین /learn (#flashcards)
-//   lessons      → درس‌های واژگان تعاملی /learn (هر درس صفحهٔ /lesson/<slug> با تلفظ هر واژه)
-//   tone-trainer → بازی شنیداری تُن‌ها در /learn (#tone-trainer)
-//   level-quiz   → آزمون تعیین سطح در پایین /classes (#level-quiz) — نتیجه سمت سرور ذخیره می‌شود
+//   daily-word   → بخش Word of Day — تعبیه‌شده در همین صفحهٔ /practice
+//   flashcards   → فلش‌کارت واژگان — تعبیه‌شده در همین صفحهٔ /practice
+//   lessons      → کتابخانهٔ درس‌های واژگان /learn (هر درس صفحهٔ /lesson/<slug> با تلفظ هر واژه)
+//   tone-trainer → بازی شنیداری تُن‌ها — تعبیه‌شده در همین صفحهٔ /practice
+//   level-quiz   → آزمون تعیین سطح — تعبیه‌شده در همین صفحهٔ /practice (نتیجه سمت سرور ذخیره می‌شود)
+// 🧭 درخواست مالک: فعالیت‌های تعاملی خودِ تمرین داخل همان صفحهٔ /practice می‌زنند —
+//    کارت‌ها فقط به لنگرِ همان صفحه اسکرول می‌کنند؛ تنها استثنا کتابخانهٔ درس‌هاست.
 export const PRACTICE_ACTIVITIES: PracticeActivity[] = [
   {
     key: 'daily-word',
@@ -53,7 +55,7 @@ export const PRACTICE_ACTIVITIES: PracticeActivity[] = [
     description:
       'A fresh word every day with hanzi, pinyin, meaning, example sentence and native-style audio.',
     category: 'vocabulary',
-    href: '/#word-of-day',
+    href: '/practice#practice-daily-word',
     icon: 'sun',
     level: 'All levels',
     minutes: 2,
@@ -65,7 +67,7 @@ export const PRACTICE_ACTIVITIES: PracticeActivity[] = [
     description:
       'Flip, shuffle and review core words — hanzi and pinyin on the front, meaning and example on the back.',
     category: 'vocabulary',
-    href: '/learn#flashcards',
+    href: '/practice#practice-flashcards',
     icon: 'layers',
     level: 'Beginner',
     minutes: 5,
@@ -89,7 +91,7 @@ export const PRACTICE_ACTIVITIES: PracticeActivity[] = [
     description:
       'Listen to a syllable and pick the right tone. Builds the ear for all four Mandarin tones plus neutral.',
     category: 'pronunciation',
-    href: '/learn#tone-trainer',
+    href: '/practice#practice-tone-trainer',
     icon: 'ear',
     level: 'All levels',
     minutes: 5,
@@ -101,7 +103,7 @@ export const PRACTICE_ACTIVITIES: PracticeActivity[] = [
     description:
       'Multiple-choice placement quiz — get a beginner/elementary/intermediate band with server-graded scoring.',
     category: 'quizzes',
-    href: '/classes#level-quiz',
+    href: '/practice#practice-level-quiz',
     icon: 'target',
     level: 'All levels',
     minutes: 5,

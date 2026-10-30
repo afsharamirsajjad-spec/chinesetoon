@@ -412,7 +412,6 @@ export const siteContent = {
     detailsTitle: "Class Details",
     whatYouLearn: "What you'll learn",
     priceLabel: "Price",
-    detailsNote: "First trial session is free — come and see if it fits!",
     // 🎟️ تخفیف بسته + کد تخفیف (فاز ۴۷) — ارائهٔ شفاف، بدون فریب و بدون شمارندهٔ قلابی
     discount: {
       saveLabel: "You save {amount}",
@@ -748,6 +747,7 @@ export const siteContent = {
         notFoundTitle: "Lesson not found",
         notFoundText: "This lesson may have been unpublished or the link is wrong. Browse all lessons instead!",
         lessonBadge: "Lesson",
+        lessonTextLabel: "Lesson text",
         speakSentence: "Hear the sentence", // 🔈 دکمهٔ پخش جملهٔ نمونهٔ هر واژه
       },
       greetings: {
@@ -1800,7 +1800,7 @@ export const siteContent = {
         initials: "MT",
         color: "sage",
         rating: 5,
-        text: "I passed HSK 1 after three months! The flashcards and the tone trainer on the Learn page made practice feel like a game, not homework.",
+        text: "I passed HSK 1 after three months! The flashcards and the tone trainer in the Practice Hub made practice feel like a game, not homework.",
       },
       {
         name: "Aisha K.",
@@ -2472,6 +2472,9 @@ export const siteContent = {
     lessonCardTextPlaceholder: "One or two lines shown on the Learn card…",
     lessonSubtitleLabel: "Lesson intro (shown above the words)",
     lessonSubtitlePlaceholder: "e.g. Your very first Chinese words — say hello, thank you and goodbye.",
+    lessonContentLabel: "Lesson text (optional — full lesson body)",
+    lessonContentPlaceholder: "Write the lesson as text — explanations, short dialogues, grammar notes… One blank line starts a new paragraph.",
+    lessonContentHint: "Shown on the lesson page above the word list. Leave empty for word-only lessons.",
     lessonBigLabel: "Big character on card",
     lessonBigPlaceholder: "e.g. 你好 or 🧧 or HSK 1",
     lessonSmallLabel: "Small line under the big character",

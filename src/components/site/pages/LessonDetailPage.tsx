@@ -58,6 +58,7 @@ interface DbLesson {
   slug: string
   title: string
   text: string
+  content: string
   subtitle: string
   big: string
   small: string
@@ -224,6 +225,34 @@ export function LessonDetailPage({
           )}
         </div>
       </section>
+
+      {/* ================= متن درس (بدنهٔ نثر — درخواست مالک: فقط واژه نباشد) ================= */}
+      {state === 'ready' && lesson && lesson.content.trim() && (
+        <section className="py-16 bg-cream relative overflow-hidden">
+          <div
+            aria-hidden="true"
+            className="absolute top-10 right-0 w-1/3 h-48 ct-dots opacity-40 [mask-image:linear-gradient(to_left,black,transparent)]"
+          ></div>
+          <div className="max-w-3xl mx-auto px-6 relative">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-sage-dark mb-6 scroll-animate">
+              <BookOpenText className="w-3.5 h-3.5 inline-block mr-1.5 -mt-0.5" aria-hidden="true" />
+              {ld.lessonTextLabel}
+            </h2>
+            <div className="space-y-4">
+              {/* خط خالی = پاراگراف جدید — همان قاعده‌ای که در ادیتور پنل نوشته می‌شود */}
+              {lesson.content
+                .split(/\n\s*\n/)
+                .map((p) => p.trim())
+                .filter(Boolean)
+                .map((p, i) => (
+                  <p key={i} className="text-brown leading-relaxed whitespace-pre-line">
+                    {p}
+                  </p>
+                ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ================= واژه‌های درس (سبز پاستلی) ================= */}
       {state === 'ready' && lesson && (

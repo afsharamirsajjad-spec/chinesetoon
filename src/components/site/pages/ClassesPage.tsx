@@ -27,7 +27,6 @@ import { useCloseOnNavigate } from '../use-nav-close'
 import { HskPromo } from '../HskPromo'
 import { CurveDivider } from '../CurveDivider'
 import { Leaflet } from '../ToonBranch'
-import { LevelQuiz } from '../LevelQuiz'
 import { selectClassForRegistration } from '../class-selection'
 import { siteContent, PageKey } from '@/content/site-content'
 import type { PublicClassItem } from '@/lib/classes/store'
@@ -347,11 +346,7 @@ export function ClassDetailContent({
           </div>
         )}
 
-        {/* یادداشت کلاس آزمایشی + دکمه‌ها */}
-        <div className="bg-butter/15 rounded-2xl p-4 mb-5 text-xs text-brown flex items-start gap-2">
-          <Info className="w-4 h-4 mt-0.5 shrink-0 text-brown" />
-          {c.detailsNote}
-        </div>
+        {/* دکمه‌های اقدام — یادداشت کلاس آزمایشی حذف شد (درخواست مالک) */}
         <div className="flex flex-wrap gap-3">
           <button
             onClick={() => onRegister(item.title)}
@@ -611,12 +606,8 @@ export function ClassesPage({ onNavigate, initialSlug }: ClassesPageProps) {
             </div>
           )}
 
-          {/* 🧩 آزمون تعیین سطح سریع — از تب Learn به این‌جا منتقل شد (تسک ۴۷):
-              «مطمئن نیستی کدام کلاس مناسب توست؟» → همین‌جا قبل از جعبهٔ راهنما
-              (لنگر #level-quiz — مقصد کارت آزمون در هاب تمرین /practice) */}
-          <div id="level-quiz" className="scroll-mt-32">
-            <LevelQuiz key="classes-level-quiz" onNavigate={onNavigate} />
-          </div>
+          {/* 🧩 آزمون تعیین سطح به هاب تمرین (/practice) منتقل شد (درخواست مالک) —
+              این صفحه فقط فهرست کلاس‌هاست */}
 
           <div className="text-center mt-16 bg-white rounded-3xl p-10 shadow-sm border border-sage-light/20">
             <h3 className="text-xl font-bold text-brown-dark mb-3">{c.helpBox.title}</h3>

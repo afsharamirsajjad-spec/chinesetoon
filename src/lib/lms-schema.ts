@@ -68,6 +68,8 @@ async function runEnsure(): Promise<void> {
   await ddl(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "role" TEXT NOT NULL DEFAULT 'student'`, 'User.role')
   await ddl(`ALTER TABLE "CourseClass" ADD COLUMN IF NOT EXISTS "teacherId" TEXT`, 'CourseClass.teacherId')
   await ddl(`ALTER TABLE "Homework" ADD COLUMN IF NOT EXISTS "classId" TEXT`, 'Homework.classId')
+  // 📚 متن آزاد درس — بدنهٔ نثر در صفحهٔ /lesson/<slug> (فقط واژه نباشد)
+  await ddl(`ALTER TABLE "Lesson" ADD COLUMN IF NOT EXISTS "content" TEXT NOT NULL DEFAULT ''`, 'Lesson.content')
   await ddl(`ALTER TABLE "Homework" ADD COLUMN IF NOT EXISTS "maxScore" INTEGER NOT NULL DEFAULT 100`, 'Homework.maxScore')
   await ddl(`ALTER TABLE "HomeworkSubmission" ADD COLUMN IF NOT EXISTS "score" INTEGER`, 'HomeworkSubmission.score')
   await ddl(`ALTER TABLE "HomeworkSubmission" ADD COLUMN IF NOT EXISTS "status" TEXT NOT NULL DEFAULT 'SUBMITTED'`, 'HomeworkSubmission.status')

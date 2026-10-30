@@ -25,6 +25,9 @@ const lessonSchema = z.object({
     .regex(/^[a-z0-9-]+$/, 'slug must be lowercase letters/numbers/dashes'),
   title: z.string().trim().min(2).max(160),
   text: z.string().trim().max(400).default(''),
+  // 📝 متن آزاد درس — بدنهٔ نثر (چند پاراگراف) در صفحهٔ /lesson/<slug>؛
+  // جدا از فهرست واژه‌ها تا درس بتواند توضیح/داستان/گرامر هم داشته باشد
+  content: z.string().trim().max(20000).default(''),
   subtitle: z.string().trim().max(400).default(''),
   big: z.string().trim().max(20).default(''),
   small: z.string().trim().max(80).default(''),
