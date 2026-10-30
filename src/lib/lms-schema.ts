@@ -122,6 +122,26 @@ async function runEnsure(): Promise<void> {
     )`,
     'CREATE Resource'
   )
+  // 📝 آزمون‌های HSK-مانند — سؤالات JSON از XML پنل؛ نمره‌دهی سمت سرور
+  await ddl(
+    `CREATE TABLE IF NOT EXISTS "Exam" (
+      "id" TEXT NOT NULL,
+      "slug" TEXT NOT NULL,
+      "title" TEXT NOT NULL,
+      "description" TEXT NOT NULL DEFAULT '',
+      "level" TEXT NOT NULL DEFAULT '',
+      "durationMin" INTEGER NOT NULL DEFAULT 0,
+      "passPercent" INTEGER NOT NULL DEFAULT 60,
+      "published" BOOLEAN NOT NULL DEFAULT true,
+      "sortOrder" INTEGER NOT NULL DEFAULT 0,
+      "questions" TEXT NOT NULL DEFAULT '[]',
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL,
+      CONSTRAINT "Exam_pkey" PRIMARY KEY ("id")
+    )`,
+    'CREATE Exam'
+  )
+  await ddl(`CREATE UNIQUE INDEX IF NOT EXISTS "Exam_slug_key" ON "Exam"("slug")`, 'uniq Exam.slug')
   await ddl(
     `CREATE TABLE IF NOT EXISTS "ClassEnrollment" (
       "id" TEXT NOT NULL,

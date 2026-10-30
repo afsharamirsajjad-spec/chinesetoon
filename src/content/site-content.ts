@@ -914,6 +914,37 @@ export const siteContent = {
     },
 
     // -------------------------------------------------------------
+    //  📝 آزمون‌های HSK-مانند — صفحهٔ /exams (سؤالات از XML پنل ادمین)
+    // -------------------------------------------------------------
+    exams: {
+      eyebrow: "Exam Hall",
+      title: "Test Your Chinese",
+      subtitle:
+        "Take a full mock exam — timed, multiple-choice and graded on the server. You get your score the moment you submit.",
+      startLabel: "Start the exam",
+      questionsLabel: "questions",
+      minutesLabel: "min",
+      passLabel: "pass",
+      noExams: "No exams are open right now — new mock exams are added regularly. Check back soon!",
+      questionOf: "Question {n} of {total}",
+      timeLeft: "Time left",
+      submitLabel: "Submit exam",
+      nextLabel: "Next",
+      prevLabel: "Previous",
+      grading: "Grading…",
+      submitConfirm: "Submit the exam with {answered} of {total} questions answered?",
+      passedTitle: "Congratulations — you passed! 🎉",
+      failedTitle: "Not passed this time — keep practicing!",
+      scoreLine: "Your score",
+      reviewTitle: "Answer review",
+      yourAnswer: "Your answer",
+      correctAnswer: "Correct answer",
+      unanswered: "Unanswered",
+      retakeLabel: "Retake this exam",
+      backLabel: "Back to all exams",
+    },
+
+    // -------------------------------------------------------------
     //  🃏 فلش‌کارت واژگان — پایین صفحهٔ Learn (زیر آزمون تعیین سطح)
     //  یک کارت بزرگ در هر لحظه؛ کلیک = چرخش کارت و دیدن معنی
     //  👇 برای افزودن واژهٔ جدید، یک بلوک به cards اضافه کنید
@@ -2507,6 +2538,22 @@ export const siteContent = {
     resourcesEmpty: "No resources yet — upload the first book or file above.",
     resourceSizeCapNote: "Allowed: PDF, EPUB, MOBI, DOC(X), PPT(X), XLS(X), ZIP, TXT, MP3, M4A, MP4, images. Large files upload directly to cloud storage; small ones go through the form (4MB).",
     resourceTypeError: "Unsupported file type — allowed: PDF, EPUB, MOBI, DOC(X), PPT(X), XLS(X), ZIP, TXT, MP3, M4A, MP4, images.",
+    // 📝 آزمون‌ها (XML)
+    tabExams: "Exams",
+    examsUploadTitle: "Import an exam from an XML file",
+    examsUploadHint:
+      "Upload the questions as XML — importing a slug that already exists replaces its questions. Format: <exam slug title level durationMin passPercent description> with <question><text>…</text><option correct=\"true\">…</option>…</question> elements.",
+    examsFileLabel: "XML file *",
+    examsPublishedLabel: "Publish immediately",
+    examsUploadBtn: "Import exam",
+    examsUploading: "Importing…",
+    examsCreatedToast: "Exam imported! It is now available on the Exams page 🎉",
+    examsEmpty: "No exams yet — import the first XML file above.",
+    examsQuestionCount: "questions",
+    examsPublishLabel: "Published",
+    examsUnpublishLabel: "Draft",
+    confirmDeleteExam: "Delete this exam? The questions are removed permanently.",
+    examImportError: "Import failed — see the message above.",
     resourceDownloadLabel: "downloads",
     resourceTestDownload: "Download",
     lessonBigLabel: "Big character on card",

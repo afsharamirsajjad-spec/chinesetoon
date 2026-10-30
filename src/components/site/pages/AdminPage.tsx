@@ -348,6 +348,20 @@ interface AdminResource {
   createdAt: string
 }
 
+// 📝 آزمون — سؤالات/پاسخ‌ها از XML ایمپورت می‌شوند (فقط متادیتا در فهرست)
+interface AdminExam {
+  id: string
+  slug: string
+  title: string
+  description: string
+  level: string
+  durationMin: number
+  passPercent: number
+  published: boolean
+  sortOrder: number
+  questionCount: number
+}
+
 interface AdminAnnouncement {
   enabled: boolean
   id: string
@@ -2274,6 +2288,167 @@ function ResourcesAdmin({
   )
 }
 
+// ---------------------------------------------------------------------------
+// 📝 تب Exams — ایمپورت آزمون از فایل XML + فهرست/انتشار/حذف
+// slug تکراری = جایگزینی سؤالات (upsert) — فرمت XML در examsUploadHint مستند است
+// ---------------------------------------------------------------------------
+function ExamsAdmin({
+  token,
+  exams,
+  onRefresh,
+  onToast,
+}: {
+  token: string
+  exams: AdminExam[]
+  onRefresh: () => void
+  onToast: (m: string) => void
+}) {
+  const [file, setFile] = useState<File | null>(null)
+  const [published, setPublished] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (busy || !file) return
+    setBusy(true)
+    setError('')
+    try {
+      const fd = new FormData()
+      fd.set('file', file)
+      fd.set('published', String(published))
+      const res = await fetch('/api/exams', {
+        method: 'POST',
+        headers: { 'x-admin-key': token },
+        body: fd,
+      })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setError(d?.error || a.examImportError)
+        return
+      }
+      onToast(a.examsCreatedToast)
+      setFile(null)
+      onRefresh()
+    } catch {
+      setError(a.examImportError)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const togglePublish = async (id: string, next: boolean) => {
+    const res = await fetch('/api/exams', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': token },
+      body: JSON.stringify({ id, published: next }),
+    })
+    if (res.ok) onRefresh()
+  }
+
+  const remove = async (id: string) => {
+    if (!window.confirm(a.confirmDeleteExam)) return
+    const res = await fetch('/api/exams', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': token },
+      body: JSON.stringify({ id }),
+    })
+    if (res.ok) onRefresh()
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* فرم ایمپورت XML */}
+      <form onSubmit={submit} className="bg-white rounded-2xl border border-sage-light/30 p-5 space-y-4">
+        <h3 className="text-sm font-bold text-brown-dark">{a.examsUploadTitle}</h3>
+        <p className="text-[11px] text-brown-light bg-cream/70 border border-sage-light/25 rounded-xl px-3.5 py-2.5 leading-relaxed font-mono break-words">
+          {a.examsUploadHint}
+        </p>
+        <div className="grid sm:grid-cols-2 gap-4 items-end">
+          <div>
+            <label htmlFor="exam-file" className="block text-xs font-semibold uppercase tracking-wider text-brown mb-1.5">
+              {a.examsFileLabel}
+            </label>
+            <input
+              id="exam-file"
+              type="file"
+              required
+              accept=".xml,.txt"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              className={`${inputSoft} py-2`}
+            />
+          </div>
+          <label className="flex items-center gap-2.5 cursor-pointer pb-1">
+            <input
+              type="checkbox"
+              checked={published}
+              onChange={(e) => setPublished(e.target.checked)}
+              className="w-4 h-4 accent-[#A8C9A0]"
+            />
+            <span className="text-sm text-brown">{a.examsPublishedLabel}</span>
+          </label>
+        </div>
+        {error && (
+          <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>
+        )}
+        <button
+          type="submit"
+          disabled={busy || !file}
+          className="bg-sage text-brown-dark px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-sage-dark transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {busy ? a.examsUploading : a.examsUploadBtn}
+        </button>
+      </form>
+
+      {/* فهرست آزمون‌ها */}
+      {exams.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-sage-light/50">
+          <ListChecks className="w-10 h-10 mx-auto mb-3 text-brown-light/50" />
+          <p className="text-sm text-brown-light">{a.examsEmpty}</p>
+        </div>
+      ) : (
+        <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+          {exams.map((ex) => (
+            <div
+              key={ex.id}
+              className="bg-white rounded-2xl border border-sage-light/20 p-4 flex items-center gap-4 hover:border-sage/40 transition-colors"
+            >
+              <span className="w-11 h-11 rounded-xl bg-sage-light/30 flex items-center justify-center flex-shrink-0">
+                <ListChecks className="w-5 h-5 text-sage-dark" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-brown-dark truncate">
+                  {ex.title}
+                  {ex.level && <span className="ml-2 text-[10px] font-bold bg-cream rounded-full px-2 py-0.5 text-brown">{ex.level}</span>}
+                </p>
+                <p className="text-xs text-brown-light mt-0.5 truncate">
+                  <span className="font-mono">{ex.slug}</span> · {ex.questionCount} {a.examsQuestionCount}
+                  {ex.durationMin > 0 ? ` · ${ex.durationMin} min` : ''} · pass ≥ {ex.passPercent}%
+                </p>
+              </div>
+              <button
+                onClick={() => togglePublish(ex.id, !ex.published)}
+                className={`hidden sm:inline-flex items-center text-[10px] font-bold px-2.5 py-1 rounded-full cursor-pointer ${
+                  ex.published ? 'bg-sage text-brown-dark' : 'bg-butter/50 text-brown'
+                }`}
+              >
+                {ex.published ? a.examsPublishLabel : a.examsUnpublishLabel}
+              </button>
+              <button
+                onClick={() => remove(ex.id)}
+                title={a.confirmDeleteExam}
+                className="text-brown-light hover:text-red-500 cursor-pointer p-2 flex-shrink-0"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function LessonForm({
   token,
   onDone,
@@ -3318,7 +3493,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
   const [token, setToken] = useState<string | null>(null)
   const [checked, setChecked] = useState(false)
   const [tab, setTab] = useState<
-    'dashboard' | 'classes' | 'messages' | 'registrations' | 'scheduling' | 'students' | 'orders' | 'newsletter' | 'blog' | 'reviews' | 'faq' | 'discounts' | 'lessons' | 'resources' | 'words' | 'quiz' | 'teachers' | 'homework' | 'settings' | 'backup' | 'logs'
+    'dashboard' | 'classes' | 'messages' | 'registrations' | 'scheduling' | 'students' | 'orders' | 'newsletter' | 'blog' | 'reviews' | 'faq' | 'discounts' | 'lessons' | 'resources' | 'exams' | 'words' | 'quiz' | 'teachers' | 'homework' | 'settings' | 'backup' | 'logs'
   >('dashboard')
   const [messages, setMessages] = useState<SupportMsg[]>([])
   const [registrations, setRegistrations] = useState<Registration[]>([])
@@ -3335,6 +3510,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
   const [teachers, setTeachers] = useState<AdminTeacher[]>([])
   const [lessons, setLessons] = useState<AdminLesson[]>([])
   const [resources, setResources] = useState<AdminResource[]>([])
+  const [exams, setExams] = useState<AdminExam[]>([])
   // 💳 فاز ۵۹ — پرداخت دستی کارت بانکی: تنظیمات + شمارنده‌ها + فیلتر ورودی تب Payments
   const [bankSettings, setBankSettings] = useState<BankSettingsState | null>(null)
   const [payCounts, setPayCounts] = useState<{
@@ -3473,7 +3649,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
         if (res.status === 401) return { unauthorized: true as const }
         return res.ok ? res.json() : {}
       }
-      const [m, r, n, p, s, rev, wc, qq, tc, ls, st, ps, fd, dc, reva, fda, rs] = await Promise.all([
+      const [m, r, n, p, s, rev, wc, qq, tc, ls, st, ps, fd, dc, reva, fda, rs, ex] = await Promise.all([
         get('/api/support'),
         get('/api/register'),
         get('/api/newsletter'),
@@ -3491,6 +3667,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
         get('/api/testimonials?archived=1'),
         get('/api/faq?archived=1'),
         get('/api/resources?all=1'),
+        get('/api/exams?all=1'),
       ])
       if (
         'unauthorized' in m ||
@@ -3519,6 +3696,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
       setTeachers(tc.teachers ?? [])
       setLessons(ls.lessons ?? [])
       setResources(rs.resources ?? [])
+      setExams(ex.exams ?? [])
       setBankSettings(ps?.settings ?? null)
       setSettings({
         announcement: st?.settings?.announcement ?? null,
@@ -3885,6 +4063,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
     { key: 'blog' as const, label: a.tabBlog, count: posts.length, alert: 0, icon: Newspaper },
     { key: 'lessons' as const, label: a.tabLessons, count: lessons.length, alert: 0, icon: BookOpen },
     { key: 'resources' as const, label: a.tabResources, count: resources.length, alert: 0, icon: FolderDown },
+    { key: 'exams' as const, label: a.tabExams, count: exams.length, alert: 0, icon: ListChecks },
     { key: 'words' as const, label: a.tabWords, count: learnCards.length, alert: 0, icon: Layers },
     { key: 'quiz' as const, label: a.tabQuiz, count: quizQuestions.length, alert: 0, icon: ListChecks },
     { key: 'teachers' as const, label: a.tabTeachers, count: teachers.length, alert: 0, icon: UserRound },
@@ -5058,6 +5237,16 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
                 <ResourcesAdmin
                   token={token!}
                   resources={resources}
+                  onRefresh={load}
+                  onToast={onToast ?? (() => {})}
+                />
+              )}
+
+              {/* 📝 آزمون‌ها — ایمپورت XML + فهرست */}
+              {tab === 'exams' && (
+                <ExamsAdmin
+                  token={token!}
+                  exams={exams}
                   onRefresh={load}
                   onToast={onToast ?? (() => {})}
                 />

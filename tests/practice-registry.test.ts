@@ -19,6 +19,7 @@ const VALID_HREFS = new Set([
   '/',
   '/learn',
   '/classes',
+  '/exams',
   '/practice#practice-daily-word',
   '/practice#practice-flashcards',
   '/practice#practice-tone-trainer',

@@ -5,7 +5,7 @@ import { siteContent } from "@/content/site-content";
 // 🗺️ sitemap.xml — روت‌های واقعی App Router + محتوای عمومی دیتابیس.
 //
 // صفحات ثابت عمومی:
-//   /  /classes  /learn  /about  /blog  /reviews  /support  /register
+//   /  /classes  /learn  /practice  /exams  /about  /blog  /reviews  /support  /register
 // محتوای پویا (فقطِ عمومی/منتشرشده — با هر تغییر پنل، خودکار آپدیت می‌شود):
 //   /classes/<slug>  ← CourseClass با status=active (صفحات غیر active خودشان
 //                      noindex هستند — اینجا هم نمی‌آیند)
@@ -39,6 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/classes`, changeFrequency: "weekly", priority: 0.9 },
     { url: `${base}/learn`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${base}/practice`, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${base}/exams`, changeFrequency: "weekly", priority: 0.7 },
     { url: `${base}/about`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${base}/blog`, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/reviews`, changeFrequency: "weekly", priority: 0.5 },

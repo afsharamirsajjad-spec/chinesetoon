@@ -20,6 +20,7 @@ import Link from 'next/link'
 import {
   ArrowRight,
   BookOpen,
+  ClipboardList,
   Ear,
   Flame,
   Layers,
@@ -47,6 +48,7 @@ const ICONS = {
   ear: Ear,
   target: Target,
   graduation: Sparkles,
+  clipboard: ClipboardList,
 } as const
 
 interface ProgressSummary {

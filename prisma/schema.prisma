@@ -279,6 +279,23 @@ model Resource {
   createdAt   DateTime @default(now())
 }
 
+// 📝 آزمون‌های چندسؤالی (HSK-مانند) — مالک سؤالات را با فایل XML از پنل وارد
+// می‌کند؛ پاسخ درست هرگز به کلاینت نمی‌رود و نمره‌دهی سمت سرور است
+model Exam {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String   @default("")
+  level       String   @default("") // مثلاً HSK 1
+  durationMin Int      @default(0) // 0 = بدون زمان
+  passPercent Int      @default(60)
+  published   Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  questions   String   @default("[]") // JSON: [{q, options: string[], answer: number}]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model SiteSetting {
   key       String   @id
   value     String // JSON

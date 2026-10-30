@@ -32,7 +32,7 @@ export interface PracticeActivity {
   /** روت واقعی + لنگر بخش مربوطه */
   href: string
   /** نام آیکون lucide — در کامپوننت به آیکون نگاشت می‌شود */
-  icon: 'sun' | 'layers' | 'book' | 'ear' | 'target' | 'graduation'
+  icon: 'sun' | 'layers' | 'book' | 'ear' | 'target' | 'graduation' | 'clipboard'
   level: PracticeLevel
   /** برآورد زمان (دقیقه) */
   minutes: number
@@ -108,6 +108,18 @@ export const PRACTICE_ACTIVITIES: PracticeActivity[] = [
     level: 'All levels',
     minutes: 5,
     action: 'Take the quiz',
+  },
+  {
+    key: 'exams',
+    title: 'Mock Exams (HSK-style)',
+    description:
+      'Full timed mock exams — multiple-choice questions graded on the server with an instant score and answer review.',
+    category: 'quizzes',
+    href: '/exams',
+    icon: 'clipboard',
+    level: 'All levels',
+    minutes: 30,
+    action: 'Take an exam',
   },
   {
     key: 'lesson-listen',
