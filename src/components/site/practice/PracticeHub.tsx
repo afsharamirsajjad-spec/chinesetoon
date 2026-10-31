@@ -23,6 +23,7 @@ import {
   ClipboardList,
   Ear,
   Flame,
+  GraduationCap,
   Layers,
   Loader2,
   Search,
@@ -179,6 +180,35 @@ export function PracticeHub() {
               tones, quizzes or listening — and keep your streak alive.
             </p>
           </div>
+
+          {/* ---------- دورهٔ ساختاریافته HSK 1 — صفحهٔ اختصاصی خودش ---------- */}
+          <Link
+            href="/practice/hsk1"
+            className="group block bg-white rounded-3xl border border-sage-light/25 shadow-sm p-6 md:p-8 mb-6 card-hover"
+          >
+            <div className="flex flex-wrap items-center gap-5">
+              <span className="w-14 h-14 rounded-2xl bg-sage-light/30 flex items-center justify-center flex-shrink-0">
+                <GraduationCap className="w-7 h-7 text-sage-dark" aria-hidden="true" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <h2 className="text-base md:text-lg font-bold text-brown-dark group-hover:text-sage-dark transition-colors">
+                    HSK 1 Course — the complete structured path
+                  </h2>
+                  <span className="bg-butter/40 text-brown text-[11px] font-bold px-2.5 py-1 rounded-full">
+                    10 stages · 150 words
+                  </span>
+                </div>
+                <p className="text-sm text-brown-light leading-relaxed">
+                  Vocabulary, grammar, pronunciation and reading in progressive stages — pass each
+                  module to unlock the next, with your progress saved to your account.
+                </p>
+              </div>
+              <span className="self-center inline-flex items-center gap-1.5 bg-sage text-brown-dark px-5 py-2.5 rounded-full text-sm font-bold group-hover:bg-sage-dark transition-colors cursor-pointer min-h-[44px] flex-shrink-0">
+                Open the course <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              </span>
+            </div>
+          </Link>
 
           {/* ---------- داشبورد ---------- */}
           <div className="bg-white rounded-3xl border border-sage-light/20 shadow-sm p-6 md:p-8">

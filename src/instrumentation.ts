@@ -47,6 +47,14 @@ export async function register(): Promise<void> {
       } catch (e) {
         console.error('[instrumentation] blog-seed failed:', e instanceof Error ? e.message : e)
       }
+      // 📚 HSK 1 curriculum — یک‌بار سید می‌شود؛ بعد از آن پنل ادمین منبع حقیقت است
+      try {
+        const { ensureHskSeed } = await import('@/lib/hsk-seed')
+        const seed = await ensureHskSeed()
+        if (seed.seeded) console.info(`[instrumentation] hsk-seed: ${seed.stages} stages seeded`)
+      } catch (e) {
+        console.error('[instrumentation] hsk-seed failed:', e instanceof Error ? e.message : e)
+      }
       return // 🟢 PostgreSQL startup path کامل شد
     }
 

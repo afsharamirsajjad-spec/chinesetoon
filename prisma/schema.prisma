@@ -309,10 +309,278 @@ model LiveChatMessage {
   @@index([createdAt])
 }
 
+// ---------------------------------------------------------------------------
+// 🎓 Learning Platform Upgrade — HSK practice content, question bank, exams,
+// educational files and teaching videos. All admin-managed from the dashboard
+// (no source edits). Additive only — no existing model is touched.
+// ---------------------------------------------------------------------------
+
+// 🗂️ Educational File Manager — one shared store for every upload (audio,
+// images, documents, video, data). Files live in Vercel Blob (private stores
+// supported — isPrivate marks files that must be streamed through
+// /api/files/[id] instead of the raw URL).
+model EducationalFile {
+  id        String   @id @default(cuid())
+  title     String   @default("") // display title (optional)
+  fileName  String // original name (display only)
+  fileUrl   String // Blob URL (public store) or site path (/api/files/[id])
+  isPrivate Boolean  @default(false)
+  mimeType  String
+  size      Int
+  kind      String   @default("other") // image | audio | video | document | data | other
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([kind, createdAt])
+}
+
+// 📚 HSK stages — admin-managed per level (hsk1 | hsk2 | hsk3). The number of
+// stages is NOT hardcoded: admins create/edit/reorder/publish/delete stages.
+model HskStage {
+  id               String   @id @default(cuid())
+  level            String   @default("hsk1") // hsk1 | hsk2 | hsk3
+  stageNumber      Int
+  title            String
+  description      String   @default("")
+  coverImageId     String?
+  published        Boolean  @default(true)
+  manuallyUnlocked Boolean  @default(false) // admin override: always accessible
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  words          HskWord[]
+  grammar        HskGrammar[]
+  pronunciations HskPronunciation[]
+  readings       HskReading[]
+
+  @@unique([level, stageNumber])
+  @@index([level, published, stageNumber])
+}
+
+// 🈶 Vocabulary of a stage
+model HskWord {
+  id             String   @id @default(cuid())
+  stageId        String
+  stage          HskStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  hanzi          String
+  pinyin         String
+  meaning        String
+  category       String   @default("other")
+  example        String   @default("")
+  examplePinyin  String   @default("")
+  exampleEnglish String   @default("")
+  audioFileId    String?
+  imageFileId    String?
+  sortOrder      Int      @default(0)
+  published      Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([stageId, sortOrder])
+}
+
+// 📖 Grammar lessons of a stage (examples/mistakes stored as JSON, same
+// convention as Exam.questions)
+model HskGrammar {
+  id          String   @id @default(cuid())
+  stageId     String
+  stage       HskStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  title       String
+  explanation String   @default("")
+  structure   String   @default("")
+  examples    String   @default("[]") // JSON [{hanzi,pinyin,english}]
+  mistakes    String   @default("[]") // JSON [{wrong,right,note}]
+  sortOrder   Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([stageId, sortOrder])
+}
+
+// 👂 Pronunciation lessons of a stage
+model HskPronunciation {
+  id          String   @id @default(cuid())
+  stageId     String
+  stage       HskStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  title       String
+  intro       String   @default("")
+  sections    String   @default("[]") // JSON [{title,body,items:[{label,note}]}]
+  audioFileId String?
+  sortOrder   Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([stageId, sortOrder])
+}
+
+// 📕 Reading passages of a stage (also reusable as exam reading passages)
+model HskReading {
+  id          String   @id @default(cuid())
+  stageId     String
+  stage       HskStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  title       String
+  form        String   @default("text") // dialogue | text
+  lines       String   @default("[]") // JSON [{hanzi,pinyin,english}]
+  notes       String   @default("[]") // JSON [{word,meaning}]
+  audioFileId String?
+  sortOrder   Int      @default(0)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([stageId, sortOrder])
+}
+
+// 🧩 Shared question/exercise bank — used by Practice module tests (when
+// attached to a stage+skill) and by HSK exams. Correct answers (answerIndex /
+// matchOptions alignment / tiles order) are SERVER-ONLY and never sent to the
+// browser — grading always happens server-side.
+model HskQuestion {
+  id           String   @id @default(cuid())
+  kind         String // mcq | truefalse | fill | match | order | listen
+  prompt       String
+  hanzi        String   @default("")
+  pinyin       String   @default("")
+  options      String   @default("[]") // JSON string[]
+  answerIndex  Int? // mcq | truefalse | fill | listen — index into options
+  matchLeft    String   @default("[]") // JSON string[] — match prompts
+  matchOptions String   @default("[]") // JSON string[] — matchOptions[i] is the correct pairing for matchLeft[i]
+  tiles        String   @default("[]") // JSON string[] — order exercises, stored in CORRECT order
+  explanation  String   @default("")
+  level        String   @default("hsk1") // hsk1 | hsk2 | hsk3
+  skill        String   @default("vocabulary") // vocabulary | grammar | pronunciation | reading | listening
+  stageNumber  Int? // when set (1..N) the question belongs to that practice stage's module test
+  points       Int      @default(1)
+  difficulty   String   @default("easy") // easy | medium | hard
+  audioFileId  String? // listening questions (uploaded MP3/WAV)
+  imageFileId  String? // image-based questions
+  passageId    String? // soft reference to an HskReading for reading comprehension
+  published    Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([level, skill, published])
+  @@index([stageNumber, skill, published])
+}
+
+// 📝 HSK mock exams — a separate system from Practice: simulates exam
+// conditions. questionIds is an ordered JSON array of HskQuestion ids.
+model HskExam {
+  id                 String   @id @default(cuid())
+  slug               String   @unique
+  title              String
+  description        String   @default("")
+  level              String   @default("hsk1") // hsk1 | hsk2 | hsk3
+  examType           String   @default("mock") // mock | listening | reading | vocabulary | grammar | timed | untimed
+  durationMin        Int      @default(0) // 0 = untimed
+  passPercent        Int      @default(60)
+  questionIds        String   @default("[]") // JSON ordered array of HskQuestion ids
+  randomizeQuestions Boolean  @default(false)
+  randomizeOptions   Boolean  @default(false)
+  allowPause         Boolean  @default(true)
+  allowReview        Boolean  @default(true)
+  showCorrectAnswers Boolean  @default(true)
+  showExplanations   Boolean  @default(false)
+  audioReplayLimit   Int      @default(0) // 0 = unlimited replays
+  access             String   @default("free") // free | restricted (signed-in only)
+  published          Boolean  @default(false)
+  sortOrder          Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  versions HskExamVersion[]
+  attempts HskExamAttempt[]
+
+  @@index([level, published, sortOrder])
+}
+
+// 🧷 Immutable snapshot of an exam (config + questions WITH answers) taken
+// when an attempt starts — editing the exam afterwards never changes
+// historical or in-flight results.
+model HskExamVersion {
+  id        String   @id @default(cuid())
+  examId    String
+  exam      HskExam  @relation(fields: [examId], references: [id], onDelete: Cascade)
+  payload   String // JSON snapshot
+  createdAt DateTime @default(now())
+
+  attempts HskExamAttempt[]
+
+  @@index([examId, createdAt])
+}
+
+// 🧾 One student exam attempt — answers autosaved during the exam, graded
+// from the VERSION snapshot at submit time. userId null = guest attempt
+// (graded ephemerally, kept for analytics without a student identity).
+model HskExamAttempt {
+  id           String          @id @default(cuid())
+  examId       String
+  exam         HskExam         @relation(fields: [examId], references: [id], onDelete: Cascade)
+  versionId    String
+  version      HskExamVersion  @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  userId       String?
+  questionOrder String         @default("[]") // JSON ordered question ids as presented (post-randomization)
+  answers      String          @default("{}") // JSON {questionId: answer} — autosaved
+  status       String          @default("in_progress") // in_progress | submitted | expired
+  startedAt    DateTime        @default(now())
+  expiresAt    DateTime? // server-enforced deadline for timed exams
+  submittedAt  DateTime?
+  scorePercent Int?
+  passed       Boolean?
+  scoreJson    String? // JSON {total,max,correct,wrong,unanswered,timeSpentSec,bySkill,pased…}
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([userId, status])
+  @@index([examId, status, createdAt])
+}
+
+// 🎬 Teaching Samples — YouTube library. Only the video ID is stored; embeds
+// are generated safely (never arbitrary iframe HTML from the admin).
+model TeachingVideo {
+  id            String   @id @default(cuid())
+  youtubeId     String
+  title         String
+  teacher       String   @default("")
+  level         String   @default("hsk1") // beginner | hsk1 | hsk2 | hsk3 | advanced
+  category      String   @default("general") // general | grammar | pronunciation | group-class | private-lesson
+  description   String   @default("")
+  durationLabel String   @default("")
+  sortOrder     Int      @default(0)
+  published     Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([published, sortOrder])
+}
+
 model SiteSetting {
   key       String   @id
   value     String // JSON
   updatedAt DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// 📈 Structured HSK Practice — learning progress, one row per user.
+// `data` is a server-built JSON snapshot (like Exam.questions): per-stage
+// per-module best score / completion, attempt history, vocabulary review
+// stats and the last visited stage. Scores are ALWAYS graded server-side in
+// the API (same trust model as /api/exams) — the client never sends a score.
+// Owner queries are always scoped to the session user: one user's learning
+// records are never exposed to another.
+// ---------------------------------------------------------------------------
+model HskProgress {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation("HskProgressUser", fields: [userId], references: [id], onDelete: Cascade)
+  data      String   @default("{}") // JSON snapshot — see /api/practice/hsk/progress
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([updatedAt])
 }
 
 // ---------------------------------------------------------------------------
@@ -358,6 +626,8 @@ model User {
   schedules        ClassSchedule[] @relation("ScheduleUser")
   scheduleAlerts   ScheduleNotification[]
   homeworkSubmissions HomeworkSubmission[]
+  // 📈 Structured HSK Practice — one row per user (server-built JSON snapshot)
+  hskProgress HskProgress? @relation("HskProgressUser")
   // ðŸŽ“ LMS
   taughtClasses CourseClass[] @relation("ClassTeacher")
   enrollments   ClassEnrollment[]

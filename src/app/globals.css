@@ -875,3 +875,11 @@ svg {
     stroke-dashoffset: 0;
   }
 }
+
+/* ===== Structured HSK Practice ===== */
+/* Chinese text needs a CJK-capable font stack on every platform (Poppins has
+   no hanzi): system CJK fonts cover macOS/Windows/Android/iOS without adding
+   a webfont download. */
+.ct-hanzi {
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Source Han Sans SC', 'WenQuanYi Micro Hei', sans-serif;
+}

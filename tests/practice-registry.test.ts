@@ -20,6 +20,7 @@ const VALID_HREFS = new Set([
   '/learn',
   '/classes',
   '/exams',
+  '/practice/hsk1',
   '/practice#practice-daily-word',
   '/practice#practice-flashcards',
   '/practice#practice-tone-trainer',
@@ -56,6 +57,7 @@ describe('practice registry', () => {
   })
 
   test('isKnownActivity — کلیدهای واقعی پذیرفته و جعلی رد می‌شوند', () => {
+    expect(isKnownActivity('hsk-course')).toBe(true)
     expect(isKnownActivity('daily-word')).toBe(true)
     expect(isKnownActivity('level-quiz')).toBe(true)
     expect(isKnownActivity('fake-activity')).toBe(false)

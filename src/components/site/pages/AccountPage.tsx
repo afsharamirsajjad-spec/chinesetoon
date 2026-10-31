@@ -28,6 +28,7 @@ import { siteContent, PageKey } from '@/content/site-content'
 import { AccountSchedule } from '@/components/site/AccountSchedule'
 import { AccountNotifications } from '@/components/site/AccountNotifications'
 import { AccountHomework } from '@/components/site/AccountHomework'
+import { MyLearningSection } from '@/components/site/MyLearningSection'
 import { GoogleSignInButton, GoogleErrorBanner } from '@/components/site/GoogleSignIn'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { COUNTRIES, flagFromCode } from '@/lib/countries'
@@ -1148,6 +1149,9 @@ function ProfileView({
 
   return (
     <div className="animate-ct-fadeInUp">
+        {/* 📈 My learning — HSK practice + exam snapshot (Part 7) */}
+        <MyLearningSection />
+
       {/* 👤 هدر حساب — فشرده؛ نمایش مشخصات شخصی (کشور/تلگرام/تلفن/آمار ورود)
           به درخواست مالک حذف شد. احراز هویت، کد دانش‌پذیری و ثبت‌نام حفظ شده‌اند. */}
       <div className="bg-white rounded-3xl p-8 md:p-10 shadow-lg border border-sage-light/20">

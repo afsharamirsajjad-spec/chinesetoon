@@ -34,6 +34,7 @@ import {
   Star,
   Layers,
   ListChecks,
+  Sparkles,
   UserRound,
   BookOpen,
   SlidersHorizontal,
@@ -64,6 +65,13 @@ import { PaymentSettingsCard, type BankSettingsState } from '../admin/PaymentSet
 import { DashboardAdminTab } from '../admin/DashboardAdminTab'
 import { BackupAdminTab } from '../admin/BackupAdminTab'
 import { LogsAdminTab } from '../admin/LogsAdminTab'
+import { FilesAdminTab } from '../admin/FilesAdminTab'
+import { VideosAdminTab } from '../admin/VideosAdminTab'
+import { AiSettingsAdminTab } from '../admin/AiSettingsAdminTab'
+import { HskPracticeAdminTab } from '../admin/HskPracticeAdminTab'
+import { QuestionsAdminTab } from '../admin/QuestionsAdminTab'
+import { HskExamsAdminTab } from '../admin/HskExamsAdminTab'
+import { ExamResultsAdminTab } from '../admin/ExamResultsAdminTab'
 import { QuizLeadsPanel } from '../QuizLeadsPanel'
 import { AdminGlobalSearch, type SearchTarget } from '../admin/AdminGlobalSearch'
 import { ScheduleMatchesPanel, RegistrationSchedulingLines, type RegistrationRow } from '../admin/SchedulePrefsPanel'
@@ -3660,7 +3668,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
   const [token, setToken] = useState<string | null>(null)
   const [checked, setChecked] = useState(false)
   const [tab, setTab] = useState<
-    'dashboard' | 'classes' | 'messages' | 'registrations' | 'scheduling' | 'students' | 'orders' | 'newsletter' | 'blog' | 'reviews' | 'faq' | 'discounts' | 'lessons' | 'resources' | 'exams' | 'chat' | 'words' | 'quiz' | 'teachers' | 'homework' | 'settings' | 'backup' | 'logs'
+    'dashboard' | 'classes' | 'messages' | 'registrations' | 'scheduling' | 'students' | 'orders' | 'newsletter' | 'blog' | 'reviews' | 'faq' | 'discounts' | 'lessons' | 'resources' | 'exams' | 'chat' | 'words' | 'quiz' | 'teachers' | 'homework' | 'settings' | 'backup' | 'logs' | 'ai' | 'hskpractice' | 'hskquestions' | 'hskexams' | 'hskresults' | 'edufiles' | 'videos'
   >('dashboard')
   const [messages, setMessages] = useState<SupportMsg[]>([])
   const [registrations, setRegistrations] = useState<Registration[]>([])
@@ -4253,6 +4261,14 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
     { key: 'lessons' as const, label: a.tabLessons, count: lessons.length, alert: 0, icon: BookOpen },
     { key: 'resources' as const, label: a.tabResources, count: resources.length, alert: 0, icon: FolderDown },
     { key: 'exams' as const, label: a.tabExams, count: exams.length, alert: 0, icon: ListChecks },
+    // 🎓 Learning platform (Parts 1–5)
+    { key: 'ai' as const, label: 'AI Assistant', count: 0, alert: 0, icon: Sparkles },
+    { key: 'hskpractice' as const, label: 'HSK Practice', count: 0, alert: 0, icon: GraduationCap },
+    { key: 'hskquestions' as const, label: 'Exercise Builder', count: 0, alert: 0, icon: Layers },
+    { key: 'hskexams' as const, label: 'HSK Exam Management', count: 0, alert: 0, icon: ListChecks },
+    { key: 'hskresults' as const, label: 'Exam Results', count: 0, alert: 0, icon: BookOpenCheck },
+    { key: 'edufiles' as const, label: 'File Manager', count: 0, alert: 0, icon: FolderDown },
+    { key: 'videos' as const, label: 'Teaching Videos', count: 0, alert: 0, icon: MessageSquare },
     { key: 'chat' as const, label: a.tabChat, count: 0, alert: 0, icon: MessageSquare },
     { key: 'words' as const, label: a.tabWords, count: learnCards.length, alert: 0, icon: Layers },
     { key: 'quiz' as const, label: a.tabQuiz, count: quizQuestions.length, alert: 0, icon: ListChecks },
@@ -5459,6 +5475,27 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
 
               {/* 💬 پشتیبانی لحظه‌ای — نشست‌های بازدیدکننده + پاسخ */}
               {tab === 'chat' && <ChatAdmin token={token!} onToast={onToast ?? (() => {})} />}
+
+              {/* 🤖 AI 助手设置 — Part 1.3 */}
+              {tab === 'ai' && <AiSettingsAdminTab token={token!} onToast={onToast ?? (() => {})} />}
+
+              {/* 📚 HSK Practice — stages + content managers */}
+              {tab === 'hskpractice' && <HskPracticeAdminTab token={token!} onToast={onToast ?? (() => {})} />}
+
+              {/* 🧩 Exercise Builder — shared question bank */}
+              {tab === 'hskquestions' && <QuestionsAdminTab token={token!} onToast={onToast ?? (() => {})} />}
+
+              {/* 📝 HSK Exam Management — exam builder */}
+              {tab === 'hskexams' && <HskExamsAdminTab token={token!} onToast={onToast ?? (() => {})} />}
+
+              {/* 📊 Exam Results — attempts + analytics + CSV */}
+              {tab === 'hskresults' && <ExamResultsAdminTab token={token!} exams={exams.map((e) => ({ id: e.id, title: e.title }))} />}
+
+              {/* 🗂️ File Manager — educational files */}
+              {tab === 'edufiles' && <FilesAdminTab token={token!} onToast={onToast ?? (() => {})} />}
+
+              {/* 🎬 Teaching Videos — YouTube library */}
+              {tab === 'videos' && <VideosAdminTab token={token!} onToast={onToast ?? (() => {})} />}
 
               {/* 🃏 واژه‌ها — فلش‌کارت‌های صفحهٔ Learn */}
               {tab === 'words' && (

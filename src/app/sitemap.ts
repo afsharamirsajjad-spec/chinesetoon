@@ -40,11 +40,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/learn`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${base}/practice`, changeFrequency: "weekly", priority: 0.7 },
     { url: `${base}/exams`, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${base}/hsk-exams`, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${base}/teaching-videos`, changeFrequency: "weekly", priority: 0.6 },
     { url: `${base}/about`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${base}/blog`, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/reviews`, changeFrequency: "weekly", priority: 0.5 },
     { url: `${base}/support`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/register`, changeFrequency: "monthly", priority: 0.7 },
+  ];
+
+  // 🎯 Structured HSK 1 course — the dashboard + 10 stage overviews are
+  // public, static, indexable teaching pages. (The 40 module pages carry
+  // per-page metadata but stay out of the sitemap to keep it focused.)
+  const hsk1Routes: MetadataRoute.Sitemap = [
+    { url: `${base}/practice/hsk1`, changeFrequency: "weekly", priority: 0.8 },
+    ...Array.from({ length: 10 }, (_, i) => ({
+      url: `${base}/practice/hsk1/stage-${i + 1}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
   ];
 
   let blogPosts: MetadataRoute.Sitemap = [];
@@ -98,7 +112,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 🔁 ضد URL تکراری (نباید پیش بیاید؛ slug ها یکتا و پیشوندها متمایزند)
   const seen = new Set<string>();
-  return [...staticRoutes, ...classPages, ...lessonPages, ...blogPosts].filter((e) => {
+  return [...staticRoutes, ...hsk1Routes, ...classPages, ...lessonPages, ...blogPosts].filter((e) => {
     if (seen.has(e.url)) return false;
     seen.add(e.url);
     return true;

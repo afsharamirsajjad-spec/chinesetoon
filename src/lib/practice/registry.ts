@@ -50,6 +50,18 @@ export interface PracticeActivity {
 //    کارت‌ها فقط به لنگرِ همان صفحه اسکرول می‌کنند؛ تنها استثنا کتابخانهٔ درس‌هاست.
 export const PRACTICE_ACTIVITIES: PracticeActivity[] = [
   {
+    key: 'hsk-course',
+    title: 'HSK 1 Course — 10 Stages',
+    description:
+      'The structured HSK 1 path: vocabulary, grammar, pronunciation and reading in 10 progressive stages with saved progress and unlocking.',
+    category: 'vocabulary',
+    href: '/practice/hsk1',
+    icon: 'graduation',
+    level: 'Beginner',
+    minutes: 15,
+    action: 'Open the course',
+  },
+  {
     key: 'daily-word',
     title: 'Daily Chinese Word',
     description:
