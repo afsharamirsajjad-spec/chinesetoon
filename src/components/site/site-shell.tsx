@@ -25,6 +25,7 @@ import { Header } from './Header'
 import { Footer } from './Footer'
 import { Toast } from './Toast'
 import { BackToTop } from './BackToTop'
+import { ChatWidget } from './chat/ChatWidget'
 import { useReveal } from './useReveal'
 import { setAppRouter } from '@/lib/nav'
 import { PageKey } from '@/content/site-content'
@@ -180,6 +181,7 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
         <Header activePage={activePage} />
         <Toast message={toastMessage} show={toastShow} />
         <BackToTop />
+        <ChatWidget />
         <main className="flex-1">{children}</main>
         <Footer onNavigate={navigateTo} onToast={showToast} />
       </div>

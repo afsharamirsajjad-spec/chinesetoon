@@ -1378,6 +1378,17 @@ export const siteContent = {
     title: "How Can We Help You?",
     subtitle:
       "Answers to common questions, quick contact options, and a direct line to our team — we're here for you.",
+    // 💬 پشتیبانی لحظه‌ای (ویجت شناور + CTA همین صفحه)
+    chat: {
+      launcherLabel: "Open live chat",
+      title: "Live Support",
+      subtitle: "Typically replies within minutes",
+      placeholder: "Type your message…",
+      send: "Send",
+      welcome: "Hi! 👋 How can we help? Ask anything about classes, payments or learning Chinese.",
+      ctaButton: "Chat with us now",
+      ctaNote: "Fastest way to reach us — live, right in your browser.",
+    },
     // کارت‌های تماس سریع
     quickContact: {
       title: "Quick Contact",
@@ -2554,6 +2565,15 @@ export const siteContent = {
     examsUnpublishLabel: "Draft",
     confirmDeleteExam: "Delete this exam? The questions are removed permanently.",
     examImportError: "Import failed — see the message above.",
+    // 💬 پشتیبانی لحظه‌ای
+    tabChat: "Live Chat",
+    chatThreadsEmpty: "No conversations yet — when a visitor starts a chat it appears here.",
+    chatSelectHint: "Select a conversation to read and reply.",
+    chatReplyPlaceholder: "Type your reply…",
+    chatSendReply: "Send reply",
+    chatAnonymous: "Visitor",
+    chatUnreadLabel: "new",
+    chatJustNow: "just now",
     resourceDownloadLabel: "downloads",
     resourceTestDownload: "Download",
     lessonBigLabel: "Big character on card",

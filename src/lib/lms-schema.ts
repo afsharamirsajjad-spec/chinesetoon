@@ -142,6 +142,20 @@ async function runEnsure(): Promise<void> {
     'CREATE Exam'
   )
   await ddl(`CREATE UNIQUE INDEX IF NOT EXISTS "Exam_slug_key" ON "Exam"("slug")`, 'uniq Exam.slug')
+  // 💬 پشتیبانی لحظه‌ای — چت ناشناس بازدیدکننده + پاسخ ادمین (polling)
+  await ddl(
+    `CREATE TABLE IF NOT EXISTS "LiveChatMessage" (
+      "id" TEXT NOT NULL,
+      "session" TEXT NOT NULL,
+      "role" TEXT NOT NULL DEFAULT 'user',
+      "body" TEXT NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "LiveChatMessage_pkey" PRIMARY KEY ("id")
+    )`,
+    'CREATE LiveChatMessage'
+  )
+  await ddl(`CREATE INDEX IF NOT EXISTS "LiveChatMessage_session_createdAt_idx" ON "LiveChatMessage"("session", "createdAt")`, 'idx LiveChatMessage.session')
+  await ddl(`CREATE INDEX IF NOT EXISTS "LiveChatMessage_createdAt_idx" ON "LiveChatMessage"("createdAt")`, 'idx LiveChatMessage.createdAt')
   await ddl(
     `CREATE TABLE IF NOT EXISTS "ClassEnrollment" (
       "id" TEXT NOT NULL,

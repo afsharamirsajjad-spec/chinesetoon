@@ -29,6 +29,7 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
+  MessageSquare,
   MessageSquareQuote,
   Star,
   Layers,
@@ -2289,6 +2290,172 @@ function ResourcesAdmin({
 }
 
 // ---------------------------------------------------------------------------
+// 💬 تب Live Chat — نشست‌های چت بازدیدکننده‌ها + پاسخ ادمین (polling)
+// ---------------------------------------------------------------------------
+function ChatAdmin({ token, onToast }: { token: string; onToast: (m: string) => void }) {
+  interface ChatMsg {
+    id: string
+    role: string
+    body: string
+    createdAt: string
+  }
+  interface ChatThread {
+    session: string
+    lastBody: string
+    lastRole: string
+    lastAt: string
+    unread: number
+  }
+
+  const [threads, setThreads] = useState<ChatThread[]>([])
+  const [selected, setSelected] = useState<string | null>(null)
+  const [messages, setMessages] = useState<ChatMsg[]>([])
+  const [draft, setDraft] = useState('')
+  const [busy, setBusy] = useState(false)
+  const listRef = useRef<HTMLDivElement>(null)
+
+  const loadThreads = useCallback(async () => {
+    try {
+      const res = await fetch('/api/chat/admin', { headers: { 'x-admin-key': token }, cache: 'no-store' })
+      if (res.ok) setThreads(((await res.json()) as { threads?: ChatThread[] }).threads ?? [])
+    } catch {
+      // دور بعد
+    }
+  }, [token])
+
+  const loadThread = useCallback(
+    async (session: string) => {
+      try {
+        const res = await fetch(`/api/chat/admin?session=${encodeURIComponent(session)}`, {
+          headers: { 'x-admin-key': token },
+          cache: 'no-store',
+        })
+        if (res.ok) setMessages(((await res.json()) as { messages?: ChatMsg[] }).messages ?? [])
+      } catch {
+        // دور بعد
+      }
+    },
+    [token]
+  )
+
+  useEffect(() => {
+    void loadThreads()
+  }, [loadThreads])
+
+  useEffect(() => {
+    if (!selected) return
+    void loadThread(selected)
+    const iv = setInterval(() => {
+      void loadThread(selected)
+      void loadThreads()
+    }, 6000)
+    return () => clearInterval(iv)
+  }, [selected, loadThread, loadThreads])
+
+  useEffect(() => {
+    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight
+  }, [messages])
+
+  const reply = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const text = draft.trim()
+    if (!selected || !text || busy) return
+    setBusy(true)
+    try {
+      const res = await fetch('/api/chat/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': token },
+        body: JSON.stringify({ session: selected, text }),
+      })
+      if (res.ok) {
+        setDraft('')
+        onToast('Reply sent ✓')
+        await loadThread(selected)
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="grid lg:grid-cols-[280px_1fr] gap-4">
+      {/* فهرست نشست‌ها */}
+      <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-1">
+        {threads.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-sage-light/50">
+            <MessageSquare className="w-10 h-10 mx-auto mb-3 text-brown-light/50" />
+            <p className="text-sm text-brown-light">{a.chatThreadsEmpty}</p>
+          </div>
+        ) : (
+          threads.map((t) => (
+            <button
+              key={t.session}
+              type="button"
+              onClick={() => setSelected(t.session)}
+              className={`w-full text-left bg-white rounded-2xl border p-3.5 transition-colors cursor-pointer ${
+                selected === t.session ? 'border-sage ring-2 ring-sage/25' : 'border-sage-light/20 hover:border-sage/40'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="text-xs font-bold text-brown-dark">
+                  {a.chatAnonymous.slice(0, 12)}…{t.session.slice(-6)}
+                </span>
+                {t.unread > 0 && (
+                  <span className="bg-sage text-brown-dark text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {t.unread} {a.chatUnreadLabel}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-brown-light truncate">{t.lastBody}</p>
+            </button>
+          ))
+        )}
+      </div>
+
+      {/* رشتهٔ انتخاب‌شده */}
+      <div className="bg-white rounded-2xl border border-sage-light/20 flex flex-col h-[70vh]">
+        {!selected ? (
+          <div className="flex-1 flex items-center justify-center text-sm text-brown-light">{a.chatSelectHint}</div>
+        ) : (
+          <>
+            <div ref={listRef} className="flex-1 overflow-y-auto p-4 space-y-2.5 bg-cream/40">
+              {messages.map((m) =>
+                m.role === 'admin' ? (
+                  <div key={m.id} className="ml-auto bg-sage text-brown-dark rounded-2xl rounded-br-md px-4 py-2.5 text-sm max-w-[85%] font-medium">
+                    {m.body}
+                  </div>
+                ) : (
+                  <div key={m.id} className="mr-auto bg-white border border-sage-light/25 rounded-2xl rounded-bl-md px-4 py-2.5 text-sm text-brown max-w-[85%]">
+                    {m.body}
+                  </div>
+                )
+              )}
+            </div>
+            <form onSubmit={reply} className="border-t border-sage-light/25 p-3 flex items-center gap-2">
+              <input
+                type="text"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                placeholder={a.chatReplyPlaceholder}
+                maxLength={2000}
+                className="flex-1 min-w-0 bg-cream/60 border border-sage-light/40 rounded-full px-4 py-2.5 text-sm text-brown placeholder:text-brown-light/60 focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 transition-colors"
+              />
+              <button
+                type="submit"
+                disabled={busy || !draft.trim()}
+                className="bg-sage text-brown-dark px-4 py-2.5 rounded-full text-xs font-bold hover:bg-sage-dark transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+              >
+                {a.chatSendReply}
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // 📝 تب Exams — ایمپورت آزمون از فایل XML + فهرست/انتشار/حذف
 // slug تکراری = جایگزینی سؤالات (upsert) — فرمت XML در examsUploadHint مستند است
 // ---------------------------------------------------------------------------
@@ -3493,7 +3660,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
   const [token, setToken] = useState<string | null>(null)
   const [checked, setChecked] = useState(false)
   const [tab, setTab] = useState<
-    'dashboard' | 'classes' | 'messages' | 'registrations' | 'scheduling' | 'students' | 'orders' | 'newsletter' | 'blog' | 'reviews' | 'faq' | 'discounts' | 'lessons' | 'resources' | 'exams' | 'words' | 'quiz' | 'teachers' | 'homework' | 'settings' | 'backup' | 'logs'
+    'dashboard' | 'classes' | 'messages' | 'registrations' | 'scheduling' | 'students' | 'orders' | 'newsletter' | 'blog' | 'reviews' | 'faq' | 'discounts' | 'lessons' | 'resources' | 'exams' | 'chat' | 'words' | 'quiz' | 'teachers' | 'homework' | 'settings' | 'backup' | 'logs'
   >('dashboard')
   const [messages, setMessages] = useState<SupportMsg[]>([])
   const [registrations, setRegistrations] = useState<Registration[]>([])
@@ -3511,6 +3678,8 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
   const [lessons, setLessons] = useState<AdminLesson[]>([])
   const [resources, setResources] = useState<AdminResource[]>([])
   const [exams, setExams] = useState<AdminExam[]>([])
+  // 💬 Live Chat — state فقط در ChatAdmin؛ اینجا فقط برای کلید تب
+  const [chatTabReady] = useState(true)
   // 💳 فاز ۵۹ — پرداخت دستی کارت بانکی: تنظیمات + شمارنده‌ها + فیلتر ورودی تب Payments
   const [bankSettings, setBankSettings] = useState<BankSettingsState | null>(null)
   const [payCounts, setPayCounts] = useState<{
@@ -3715,6 +3884,26 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
   useEffect(() => {
     load()
   }, [tab, load])
+
+  // 📰 ایمپورت یک‌جای مقاله‌های سئو (تب Blog) — upsert از scripts/seo-articles
+  const [seoSeeding, setSeoSeeding] = useState(false)
+  const seedSeoArticles = useCallback(async () => {
+    if (!token || seoSeeding) return
+    setSeoSeeding(true)
+    try {
+      const res = await fetch('/api/posts/seed-seo', {
+        method: 'POST',
+        headers: { 'x-admin-key': token },
+      })
+      if (res.ok) {
+        const d = (await res.json().catch(() => null)) as { imported?: number } | null
+        onToast?.(`Imported ${d?.imported ?? 0} SEO articles 🎉`)
+        load()
+      }
+    } finally {
+      setSeoSeeding(false)
+    }
+  }, [token, seoSeeding, load, onToast])
 
   // ----- عملیات وضعیت/حذف -----
   const setMsgStatus = useCallback(
@@ -4064,6 +4253,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
     { key: 'lessons' as const, label: a.tabLessons, count: lessons.length, alert: 0, icon: BookOpen },
     { key: 'resources' as const, label: a.tabResources, count: resources.length, alert: 0, icon: FolderDown },
     { key: 'exams' as const, label: a.tabExams, count: exams.length, alert: 0, icon: ListChecks },
+    { key: 'chat' as const, label: a.tabChat, count: 0, alert: 0, icon: MessageSquare },
     { key: 'words' as const, label: a.tabWords, count: learnCards.length, alert: 0, icon: Layers },
     { key: 'quiz' as const, label: a.tabQuiz, count: quizQuestions.length, alert: 0, icon: ListChecks },
     { key: 'teachers' as const, label: a.tabTeachers, count: teachers.length, alert: 0, icon: UserRound },
@@ -4791,6 +4981,21 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
               {/* وبلاگ */}
               {tab === 'blog' && (
                 <div>
+                  {/* 📰 ایمپورت یک‌جای مقاله‌های سئو — upsert بر اساس slug */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-2xl border border-sage-light/30 px-4 py-3 mb-4">
+                    <p className="text-xs text-brown-light flex-1 min-w-48">
+                      Import the bundled SEO article pack — existing slugs are updated, new ones are
+                      published. Safe to run any time.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void seedSeoArticles()}
+                      disabled={seoSeeding}
+                      className="bg-sage text-brown-dark px-4 py-2 rounded-xl text-xs font-bold hover:bg-sage-dark transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex-shrink-0"
+                    >
+                      {seoSeeding ? 'Importing…' : 'Import SEO articles'}
+                    </button>
+                  </div>
                   <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
                   {filteredPosts.length === 0 && (
                     <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-sage-light/50">
@@ -5251,6 +5456,9 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
                   onToast={onToast ?? (() => {})}
                 />
               )}
+
+              {/* 💬 پشتیبانی لحظه‌ای — نشست‌های بازدیدکننده + پاسخ */}
+              {tab === 'chat' && <ChatAdmin token={token!} onToast={onToast ?? (() => {})} />}
 
               {/* 🃏 واژه‌ها — فلش‌کارت‌های صفحهٔ Learn */}
               {tab === 'words' && (

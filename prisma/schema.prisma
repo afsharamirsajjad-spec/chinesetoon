@@ -296,6 +296,19 @@ model Exam {
   updatedAt   DateTime @updatedAt
 }
 
+// 💬 پشتیبانی لحظه‌ای — چت ناشناس بازدیدکننده با ادمین (polling سازگار با
+// serverless). session = توکن تصادفی کلاینت در localStorage؛ بدون حساب.
+model LiveChatMessage {
+  id        String   @id @default(cuid())
+  session   String
+  role      String   @default("user") // user | admin
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([session, createdAt])
+  @@index([createdAt])
+}
+
 model SiteSetting {
   key       String   @id
   value     String // JSON

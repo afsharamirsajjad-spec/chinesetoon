@@ -18,14 +18,8 @@
 
 import { PrismaClient } from '@prisma/client'
 import { parseTable } from '../src/lib/blog-format'
-import { HSK_EXAM } from './seo-articles/hsk-exam-guide'
-import { SCHOLARSHIPS } from './seo-articles/china-scholarships'
-import { BEGINNERS } from './seo-articles/learn-chinese-beginners'
-import { STUDY_IN_CHINA } from './seo-articles/study-in-china'
-import { HSK1 } from './seo-articles/hsk-1-study-guide'
+import { ARTICLES } from './seo-articles'
 import type { SeedPost } from './seo-articles/types'
-
-export const ARTICLES: SeedPost[] = [HSK_EXAM, SCHOLARSHIPS, BEGINNERS, STUDY_IN_CHINA, HSK1]
 
 // 🗺️ مسیرهای مجاز لینک داخلی — هر آدرس باید یکی از این‌ها یا یکی از slugهای
 // پویای زیر باشد (کلاس‌ها/درس‌ها/مقالات واقعی سایت)
@@ -33,6 +27,8 @@ const STATIC_PATHS = new Set([
   '/',
   '/classes',
   '/learn',
+  '/practice',
+  '/exams',
   '/about',
   '/blog',
   '/reviews',
@@ -41,6 +37,9 @@ const STATIC_PATHS = new Set([
   '/blog/complete-guide-to-hsk-exam',
   '/blog/china-scholarships-for-international-students',
   '/blog/how-to-learn-chinese-for-beginners',
+  '/blog/hsk-2-study-guide',
+  '/blog/hsk-3-preparation-plan',
+  '/blog/mandarin-listening-practice-guide',
   '/blog/study-in-china-guide',
   '/blog/hsk-1-study-guide',
   // مقاله‌های موجود (فاز ۶۹/۷۵)

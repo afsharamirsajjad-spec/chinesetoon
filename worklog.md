@@ -407,3 +407,37 @@ Architecture:
 - tests/exams.test.ts: 11 unit tests — parse happy path + entity decoding + slugify fallback, numbered validation errors (no text, <2 options, 0/2 correct answers, malformed XML), grading (100%/67% thresholds, null+invalid answers, non-array), DB-JSON guard.
 
 Verification: prisma generate OK; tsc 0 errors; eslint clean (three react-hooks strictness iterations on the timer: submit moved out of the sync effect body into a setTimeout watcher); bun test 60/60 (49 + 11 new); next build OK (38/38 pages, /exams static ○, both API routes ƒ). Browser: /exams renders hero + graceful empty state locally (DB unreachable — pre-existing). End-to-end (XML import → take exam → score) needs staging/production with a real DATABASE_URL — parsing/grading logic itself is fully unit-covered.
+
+---
+Task ID: SEO-FAQ-JSONLD-1
+Task: SEO work — structured data for the FAQ (owner: «روی بخش سئو کار کن»).
+
+- src/app/support/page.tsx: FAQPage JSON-LD emitted server-side. Source: DB (FaqItem where published && !deletedAt, ordered by sortOrder, cap 50) with fallback to site-content support.faq.items when the DB is unreachable — mirroring the page's own data flow. JSON escaped (< → \\u003c).
+- BlogPosting JSON-LD on /blog/[slug] already existed (previous task) — verified, nothing to add. Sitemap already covers / + /classes + /learn + /practice + /exams + lessons + posts.
+
+Verification: tsc 0 errors; eslint clean; build OK. (Rich-results validation needs production URLs in Google's tester — schema shape follows schema.org FAQPage exactly.)
+
+---
+Task ID: SEO-ARTICLES-2
+Task: Add several working articles (owner: «چند تا مقاله») — and make the pack publishable from the admin panel without CLI access.
+
+- Three new fact-checked articles in scripts/seo-articles/: hsk-2-study-guide (format table, 300-word list, 比/就/过/一点儿-有点儿 patterns, 6-week plan, mock-exam diagnostic loop, original questions), hsk-3-preparation-plan (no-pinyin transition, 把/complements grammar, 10-week plan, writing-section drills, scoring practicalities), mandarin-listening-practice-guide (intensive/extensive/tone-drill/interactive modes, weekly routine table, subtitle+speed rules, material ladder). All pass seed --check (≥9000 chars, Takeaway+FAQ sections, internal links within the allowlist — /practice and /exams added to the whitelist — external links only to allowlisted official domains).
+- scripts/seo-articles/index.ts: single ARTICLES source shared by the seed script and the API (seed script refactored to import from it).
+- NEW /api/posts/seed-seo (POST, admin): upserts the whole pack by slug (views/createdAt preserved) — same logic as the script.
+- Admin Blog tab: "Import SEO articles" toolbar button → calls the endpoint, toasts the count, reloads. The owner can now publish/update all 8 articles with one click from the panel.
+
+Verification: bun scripts/seed-blog-seo.ts --check → 8/8 valid, 0 warnings; tsc 0; eslint clean; build OK. Actual publishing runs when the button is clicked on production (DB-gated).
+
+---
+Task ID: LIVE-CHAT-1
+Task: Live (instant) support section (owner: «بخش پشتیبانی لحظه‌ای بذار داخلش»).
+
+Architecture (polling — Vercel serverless has no WebSockets):
+- prisma: LiveChatMessage (session, role user|admin, body, createdAt; indexes on [session,createdAt] and createdAt) + migration 20261026000005_live_chat + self-heal DDLs (lms-schema + ensure-schema).
+- /api/chat (public): POST {session,text} (zod: session [a-zA-Z0-9-]{8,64}, text ≤2000; rate-limit 15/10min/IP + same-origin guard) creates a user message. GET ?session=&after=<ISO> returns that session's messages after the cursor (rate-limit 120/5min/IP) — sessions are isolated by the random client token; nothing else is readable.
+- /api/chat/admin (admin): GET → thread list (last message + unread count of user messages after the last admin reply, from the latest 500 messages) or ?session= full thread; POST → admin reply.
+- ChatWidget (floating, mounted in SiteChrome on every page): peach launcher next to BackToTop; anonymous session token in localStorage (crypto.randomUUID with fallback); panel with header/status dot, user/admin bubbles, welcome bubble when empty; polling 5s open / 15s closed (unread dot when an admin reply arrives while closed); send with graceful inline error on failure; opens via launcher or the 'ct-chat-open' CustomEvent.
+- Support page: "Live Support" CTA card under Quick Contact dispatches the open event. Copy added as support.chat content keys.
+- Admin tab "Live Chat" (MessageSquare icon): conversation list with unread badges + selected-thread view with 6s polling and a reply box.
+
+Verification: tsc 0 errors; eslint clean; bun test 60/60; build OK (both /api/chat routes ƒ). Browser (local prod): support CTA renders; launcher opens the panel; 'ct-chat-open' event opens it; sending fails gracefully with an inline error while the local DB is down (pre-existing) and panel/UI stays alive. End-to-end messaging (send → admin reply → poll delivery) needs production/staging with a real DATABASE_URL — the flow is two Prisma creates plus a cursor query, fully covered by the same patterns as the rest of the app.

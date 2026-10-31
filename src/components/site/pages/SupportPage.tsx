@@ -8,6 +8,7 @@ import {
   Search,
   HelpCircle,
   MessageSquare,
+  MessageCircle,
   Loader2,
   CheckCircle2,
   Clock,
@@ -201,6 +202,25 @@ export function SupportPage({ onToast }: SupportPageProps) {
                 </a>
               )
             })}
+          </div>
+
+          {/* 💬 پشتیبانی لحظه‌ای — ویجت چت زنده را باز می‌کند (روی همهٔ صفحات هم هست) */}
+          <div className="mt-8 scroll-animate bg-white rounded-3xl border border-dashed border-sage/50 p-6 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+            <span className="relative w-12 h-12 rounded-2xl bg-sage-light/40 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+              <MessageCircle className="w-6 h-6 text-sage-dark" />
+              <span className="absolute bottom-0 right-0 w-3 h-3 bg-sage-dark rounded-full border-2 border-white" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-brown-dark">{s.chat.title}</p>
+              <p className="text-xs text-brown-light mt-0.5">{s.chat.ctaNote}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('ct-chat-open'))}
+              className="bg-sage text-brown-dark px-6 py-2.5 rounded-full text-sm font-bold hover:bg-sage-dark transition-colors cursor-pointer min-h-[44px] flex-shrink-0"
+            >
+              {s.chat.ctaButton}
+            </button>
           </div>
         </div>
       </section>

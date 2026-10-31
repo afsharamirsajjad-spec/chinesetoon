@@ -218,6 +218,13 @@ const CREATE_TABLES: readonly string[] = [
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS "LiveChatMessage" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "session" TEXT NOT NULL,
+    "role" TEXT NOT NULL DEFAULT 'user',
+    "body" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
   `CREATE TABLE IF NOT EXISTS "SiteSetting" (
     "key" TEXT NOT NULL PRIMARY KEY,
     "value" TEXT NOT NULL,
