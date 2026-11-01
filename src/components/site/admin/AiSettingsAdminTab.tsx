@@ -32,6 +32,7 @@ export function AiSettingsAdminTab({
   onToast: (m: string) => void
 }) {
   const [settings, setSettings] = useState<MaskedSettings | null>(null)
+  const [builtinAvailable, setBuiltinAvailable] = useState(false)
   const [apiKeyInput, setApiKeyInput] = useState('')
   const [baseUrl, setBaseUrl] = useState('')
   const [model, setModel] = useState('')
@@ -52,6 +53,7 @@ export function AiSettingsAdminTab({
       const data = await res.json()
       const s: MaskedSettings = data.settings
       setSettings(s)
+      setBuiltinAvailable(data.builtinAvailable === true)
       setEnabled(s.enabled)
       setModel(s.model)
       setSystemPrompt(s.systemPrompt)
@@ -152,10 +154,19 @@ export function AiSettingsAdminTab({
           )}
         </div>
         <p className="text-[11px] text-brown-light bg-cream/70 border border-sage-light/25 rounded-xl px-3.5 py-2.5 leading-relaxed">
-          Works with any OpenAI-compatible chat API (OpenAI, DeepSeek, Moonshot, OpenRouter, a local
-          gateway…). The key is stored server-side, masked here, and is never sent to the browser or
-          exposed to visitors. Until it is configured, the chat shows the fallback message instead of
-          generating replies.
+          {builtinAvailable ? (
+            <>
+              🟢 <strong>Built-in AI model is available</strong> — the chatbot works with no API key. Optionally connect your
+              own OpenAI-compatible provider (OpenAI, DeepSeek, Moonshot, OpenRouter, a local gateway…) and it takes
+              priority. The key is stored server-side, masked here, and never sent to the browser.
+            </>
+          ) : (
+            <>
+              Works with any OpenAI-compatible chat API (OpenAI, DeepSeek, Moonshot, OpenRouter, a local gateway…).
+              The key is stored server-side, masked here, and is never sent to the browser or exposed to visitors.
+              Until it is configured, the chat shows the fallback message instead of generating replies.
+            </>
+          )}
         </p>
 
         <label className="flex items-center gap-2.5 cursor-pointer">

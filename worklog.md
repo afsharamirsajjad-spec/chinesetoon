@@ -497,3 +497,16 @@ Fix:
 - AnnouncementBar/HomePage useHeroText/StatsBar: initial state now comes from the SSR context (configured values on first paint); their client-side refresh remains as the instant-update path, reusing the same appliers so saved/missing/corrupt values behave identically on server and client.
 
 Verification: tsc 0; eslint clean; next build OK with revalidate=1m on all static pages; curl of / shows announcement + hero text present in the SSR HTML (server-rendered, not fetch-swapped); browser smoke test renders the home page with the announcement bar and stats from the SSR path. On production (DB-backed) the first paint now shows the owner's configured settings directly.
+
+---
+Task ID: ADMIN-FEATURE-FIXES-1
+Task: Videos/file-manager/HSK admin 500s fixed at the root (missing PostgreSQL tables) + chatbot answers out of the box.
+
+Root cause found: the learning-platform tables (TeachingVideo, EducationalFile, HskStage/HskWord/HskGrammar/HskPronunciation/HskReading, HskQuestion, HskExam, HskExamVersion, HskExamAttempt, HskProgress) had DDLs ONLY in ensure-schema.ts, which returned a hard no-op on PostgreSQL (the SQLite dialect is invalid there) - and nothing ever runs prisma migrate deploy in the build. On the real DB these tables never existed, so every admin write to them failed with 500: add video, upload educational file, manage HSK1 stages/exercises, create HSK exams, exam results.
+
+Fixes:
+- ensure-schema.ts: the PostgreSQL path now runs a REAL additive self-heal - the same CREATE TABLE/ALTER COLUMN lists are converted dialect-safe (DATETIME->TIMESTAMP(3), BOOLEAN DEFAULT 0/1->FALSE/TRUE via toPostgresDdl) and executed with information_schema checks so only genuinely missing tables/columns are created; idempotent on every cold start, same philosophy as lms-schema. Both the SQLite path (local) and the Postgres path (production) now share one table list; lists exported for tests.
+- AI chatbot (the chat should BE the smart bot): ai-assistant.ts gained a built-in provider fallback - when no custom API key is configured, callAiChat uses the platform model via z-ai-web-dev-sdk (same driver as /api/tts) with a 30s timeout; hasBuiltinAi() probes/caches availability per process. loadAiSettings defaults enabled=true when nothing is saved yet and the builtin model is available, so the chatbot works with zero configuration; the owner's saved settings always win afterwards. /api/support/ai GET reports configured=true when the builtin model is available; POST gates on enabled only. /api/admin/ai GET returns builtinAvailable; the AI tab explains the builtin mode.
+- tests/pg-schema.test.ts: 8 tests locking the dialect conversion (no DATETIME / numeric boolean defaults survive), PG-valid ALTERs (ADD COLUMN IF NOT EXISTS) and full coverage of the learning-platform tables.
+
+Verification: tsc 0; eslint clean; bun test 91/91; next build OK. The schema heal executes at the next cold start on the real DB (startup hook -> ensureSchema Postgres path); videos/files/HSK content/exams unblock immediately after. The built-in chatbot activates wherever z-ai runtime exists (same environment where TTS already works).

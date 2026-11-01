@@ -18,6 +18,7 @@ import {
   loadAiSettings,
   aiPublicView,
   callAiChat,
+  hasBuiltinAi,
   AiUnavailableError,
   AiProviderError,
   type AiChatMessage,
@@ -36,8 +37,8 @@ const postSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const settings = await loadAiSettings()
-    return NextResponse.json(aiPublicView(settings))
+    const [settings, builtin] = await Promise.all([loadAiSettings(), hasBuiltinAi()])
+    return NextResponse.json(aiPublicView(settings, builtin))
   } catch (err) {
     console.error('[GET /api/support/ai] error:', err)
     return NextResponse.json({ enabled: false, configured: false })
@@ -57,7 +58,8 @@ export async function POST(req: NextRequest) {
   }
 
   const settings = await loadAiSettings()
-  if (!settings.enabled || !settings.apiKey) {
+  // انتخاب پروایدر داخل callAiChat انجام می‌شود: کلید سفارشی یا مدل داخلی
+  if (!settings.enabled) {
     return NextResponse.json(
       { error: settings.fallbackMessage, code: 'UNAVAILABLE' },
       { status: 503 }

@@ -17,6 +17,7 @@ import {
   loadAiSettings,
   saveAiSettings,
   aiMaskedView,
+  hasBuiltinAi,
 } from '@/lib/ai-assistant'
 
 export const dynamic = 'force-dynamic'
@@ -38,8 +39,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   try {
-    const settings = await loadAiSettings()
-    return NextResponse.json({ settings: aiMaskedView(settings) })
+    const [settings, builtin] = await Promise.all([loadAiSettings(), hasBuiltinAi()])
+    return NextResponse.json({ settings: aiMaskedView(settings, builtin), builtinAvailable: builtin })
   } catch (err) {
     console.error('[GET /api/admin/ai] error:', err)
     return NextResponse.json({ error: 'Could not load AI settings' }, { status: 500 })

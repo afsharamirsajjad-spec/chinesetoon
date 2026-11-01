@@ -5,14 +5,17 @@
 // key is stored server-side only and NEVER returned by any endpoint — the
 // admin panel sees a masked preview plus the last 4 characters.
 //
-// Provider: any OpenAI-compatible chat-completions endpoint (OpenAI, DeepSeek,
-// Moonshot, local gateways, OpenRouter, …) configured with base URL + API key
-// + model + temperature + max tokens — exactly the knobs the owner asked to
-// manage from the dashboard. Swapping providers later means changing the base
-// URL, not the architecture.
+// Providers (in order):
+//   1) Custom OpenAI-compatible endpoint (OpenAI, DeepSeek, Moonshot,
+//      OpenRouter, …) — base URL + API key + model, all from the admin panel.
+//   2) 🟢 Built-in platform model (z-ai SDK, same driver as /api/tts) — works
+//      WITHOUT any API key where the platform runtime is available. This is
+//      what makes the chatbot answer out of the box; the owner can still
+//      override it by saving a custom provider in the panel.
 //
-// If the assistant is disabled or unconfigured, callers get a clean 503 and
-// the UI shows the fallback message — fake responses are never generated.
+// If the assistant is disabled or no provider is available, callers get a
+// clean 503 and the UI shows the fallback message — fake responses are never
+// generated.
 // ---------------------------------------------------------------------------
 
 import { db } from '@/lib/db'
@@ -89,7 +92,14 @@ function coerceSettings(raw: Partial<AiSettings> | null | undefined): AiSettings
 export async function loadAiSettings(): Promise<AiSettings> {
   try {
     const row = await db.siteSetting.findUnique({ where: { key: AI_SETTINGS_KEY } })
-    if (!row) return coerceSettings(null)
+    if (!row) {
+      const defaults = coerceSettings(null)
+      // 🟢 هیچ تنظیمی ذخیره نشده و مدل داخلی در دسترس است → ربات از همان اول
+      // روشن است (انتظار مالک: چت = ربات هوشمند). با اولین ذخیرهٔ مالک در پنل،
+      // انتخاب خودش منبع حقیقت می‌شود.
+      if (await hasBuiltinAi()) return { ...defaults, enabled: true }
+      return defaults
+    }
     return coerceSettings(JSON.parse(row.value) as Partial<AiSettings>)
   } catch {
     return coerceSettings(null)
@@ -111,8 +121,32 @@ export function aiConfigured(s: AiSettings): boolean {
   return Boolean(s.apiKey && s.baseUrl && s.model)
 }
 
+// ---------------------------------------------------------------------------
+// 🟢 مدل داخلی پلتفرم (z-ai SDK — همان درایور /api/tts) — در runtime پلتفرم
+// بدون هیچ کلیدی کار می‌کند؛ بیرون از آن (مثلاً Vercel) create() شکست می‌دهد
+// و پاسخ منفی کش می‌شود تا هر درخواست دوباره امتحان نکند.
+// ---------------------------------------------------------------------------
+const builtinStore = globalThis as unknown as {
+  __ctBuiltinAi?: Promise<boolean>
+}
+
+export function hasBuiltinAi(): Promise<boolean> {
+  if (!builtinStore.__ctBuiltinAi) {
+    builtinStore.__ctBuiltinAi = (async () => {
+      try {
+        const ZAI = (await import('z-ai-web-dev-sdk')).default
+        await ZAI.create()
+        return true
+      } catch {
+        return false
+      }
+    })()
+  }
+  return builtinStore.__ctBuiltinAi
+}
+
 /** Public status — safe for the browser (no secrets) */
-export function aiPublicView(s: AiSettings): AiSettingsPublic {
+export function aiPublicView(s: AiSettings, builtinAvailable = false): AiSettingsPublic {
   let host = ''
   try {
     host = new URL(s.baseUrl).hostname
@@ -121,8 +155,9 @@ export function aiPublicView(s: AiSettings): AiSettingsPublic {
   }
   return {
     enabled: s.enabled,
-    configured: aiConfigured(s),
-    model: s.model,
+    // ربات وقتی «در دسترس» است که یا پروایدر سفارشی کامل باشد یا مدل داخلی موجود باشد
+    configured: aiConfigured(s) || builtinAvailable,
+    model: aiConfigured(s) ? s.model : 'built-in',
     baseUrlHost: host,
     welcomeMessage: s.welcomeMessage,
     fallbackMessage: s.fallbackMessage,
@@ -130,9 +165,9 @@ export function aiPublicView(s: AiSettings): AiSettingsPublic {
 }
 
 /** Admin view — key masked, never the raw value */
-export function aiMaskedView(s: AiSettings): AiSettingsMasked {
+export function aiMaskedView(s: AiSettings, builtinAvailable = false): AiSettingsMasked {
   return {
-    ...aiPublicView(s),
+    ...aiPublicView(s, builtinAvailable),
     systemPrompt: s.systemPrompt,
     maxTokens: s.maxTokens,
     temperature: s.temperature,
@@ -163,17 +198,30 @@ export class AiProviderError extends Error {
 }
 
 /**
- * Call the configured OpenAI-compatible endpoint. Never throws raw provider
- * errors — they are mapped into AiUnavailableError (config) / AiProviderError
- * (upstream failure) so the API can return clean, actionable messages.
+ * Answer with the first available provider: the owner's custom
+ * OpenAI-compatible endpoint when fully configured, otherwise the built-in
+ * platform model. Never throws raw provider errors — they are mapped into
+ * AiUnavailableError (config) / AiProviderError (upstream failure) so the API
+ * can return clean, actionable messages.
  */
 export async function callAiChat(
   settings: AiSettings,
   messages: AiChatMessage[]
 ): Promise<{ reply: string; model: string }> {
-  if (!settings.enabled || !aiConfigured(settings)) {
+  if (!settings.enabled) {
     throw new AiUnavailableError('The AI assistant is not configured.')
   }
+  if (aiConfigured(settings)) {
+    return callCustomProvider(settings, messages)
+  }
+  // 🟢 کلید سفارشی تنظیم نشده — مدل داخلی پلتفرم
+  return callBuiltinProvider(settings, messages)
+}
+
+async function callCustomProvider(
+  settings: AiSettings,
+  messages: AiChatMessage[]
+): Promise<{ reply: string; model: string }> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 30_000)
   try {
@@ -219,4 +267,53 @@ export async function callAiChat(
   } finally {
     clearTimeout(timer)
   }
+}
+
+async function callBuiltinProvider(
+  settings: AiSettings,
+  messages: AiChatMessage[]
+): Promise<{ reply: string; model: string }> {
+  try {
+    const ZAI = (await import('z-ai-web-dev-sdk')).default
+    const zai = await ZAI.create()
+    // بدنهٔ پاسخ OpenAI-سازگار است؛ محتوا ممکن است رشته یا آبجکت باشد
+    const data = (await withTimeout(
+      zai.chat.completions.create({
+        messages: [{ role: 'system', content: settings.systemPrompt }, ...messages],
+        thinking: { type: 'disabled' },
+      }),
+      30_000
+    )) as { choices?: Array<{ message?: { content?: unknown } }> }
+    const raw = data.choices?.[0]?.message?.content
+    const reply = (typeof raw === 'string' ? raw : '').trim()
+    if (!reply) {
+      throw new AiProviderError('The AI model returned an empty response.')
+    }
+    return { reply, model: 'built-in' }
+  } catch (e) {
+    if (e instanceof AiProviderError) throw e
+    if (e instanceof Error && e.message === 'AI_TIMEOUT') {
+      throw new AiProviderError('The AI response took too long — please try again.')
+    }
+    console.error('[ai-chat] built-in model error:', e instanceof Error ? e.message : e)
+    throw new AiProviderError(
+      'The built-in AI model is not reachable in this environment — configure a custom provider in the admin AI tab.'
+    )
+  }
+}
+
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('AI_TIMEOUT')), ms)
+    p.then(
+      (v) => {
+        clearTimeout(t)
+        resolve(v)
+      },
+      (e) => {
+        clearTimeout(t)
+        reject(e)
+      }
+    )
+  })
 }
