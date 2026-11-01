@@ -1,24 +1,31 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
-import { ArrowRight, Play } from 'lucide-react'
+// ---------------------------------------------------------------------------
+// 📚 LearnPage — تب Learn (/learn) — بازسازی از نو (درخواست مالک)
+//
+// ساختار:
+//   ۱) هیرو
+//   ۲) PracticeActivities — «تمرین‌ها» با اولویت اول: بنر دورهٔ ۱۰ جلسه‌ای
+//      HSK 1، داشبورد شخصی، و «یک» گرید یکپارچه که کارت‌های فعالیت و
+//      کارت‌های «درس واژگان» (لغات) را با همان فیلترها/جست‌وجو نشان می‌دهد
+//      + فعالیت‌های تعبیه‌شده (کلمهٔ روز، تُن‌ها، فلش‌کارت‌ها، آزمون سطح)
+//   ۳) Teaching Videos — ویدیوهای یوتیوب (کتابخانهٔ کامل در /teaching-videos)
+//   ۴) Resources — فایل‌های رایگان + شبکه‌های اجتماعی
+//
+// تب Practice فقط امتحان‌هاست (/practice → /hsk-exams).
+// ---------------------------------------------------------------------------
+
+import { useEffect, useState } from 'react'
 import { InstagramIcon, TelegramIcon } from '../brand-icons'
 import { ResourcesSection } from '../ResourcesSection'
 import { PracticeActivities } from '../practice/PracticeHub'
 import { TeachingVideosSection } from '../TeachingVideosSection'
 import { siteContent } from '@/content/site-content'
-import { appNavigate } from '@/lib/nav'
+import type { PracticeActivity } from '@/lib/practice/registry'
 
 const c = siteContent.learn
 
-const colorMap = {
-  sage: { bg: 'bg-sage-light/20', border: 'border-sage-light/20', tag: 'text-sage-dark' },
-  butter: { bg: 'bg-butter/15', border: 'border-butter/20', tag: 'text-brown' },
-  peach: { bg: 'bg-peach-light/15', border: 'border-peach-light/20', tag: 'text-peach' },
-  cream: { bg: 'bg-cream', border: 'border-sage-light/20', tag: 'text-sage-dark' },
-} as const
-
-// 📚 شکل درس (کارت + واژه‌های مودال) — از دیتابیس یا فایل محتوا
+// 📚 شکل درس (محتوای واژگان + کارت) — از دیتابیس یا فایل محتوا
 interface LessonContent {
   title: string
   subtitle: string
@@ -39,53 +46,14 @@ interface LessonCard {
 }
 
 export function LearnPage() {
-  const [filter, setFilter] = useState('all')
-
-  // 🗄️ درس‌ها از دیتابیس (تب Lessons پنل) — تا وقتی خالی باشد کارت‌ها و
-  // درس‌های پیش‌فرض فایل محتوا نمایش داده می‌شوند
+  // 🗄️ درس‌ها از دیتابیس (تب Lessons پنل) — تا وقتی خالی باشد کارت‌های
+  // پیش‌فرض فایل محتوا استفاده می‌شوند
   const [dbLessons, setDbLessons] = useState<
     (LessonContent & LessonCard & { slug: string })[] | null
   >(null)
 
-  // نگاشت slug → محتوای درس — همیشه از جدیدترین منبع ساخته می‌شود
-  const staticLessons = c.lessons as unknown as Record<string, LessonContent>
-  const lessonsMap: Record<string, LessonContent> = dbLessons
-    ? Object.fromEntries(
-        dbLessons.map((l) => [l.slug, { title: l.title, subtitle: l.subtitle, words: l.words }])
-      )
-    : staticLessons
-  // 🃏 کارت‌های بخش Learn — از دیتابیس اگر درس موجود باشد
-  const items: LessonCard[] = dbLessons
-    ? dbLessons.map((l) => ({
-        category: l.category,
-        color: l.color,
-        tag: l.tag,
-        big: l.big,
-        small: l.small,
-        title: l.title,
-        text: l.text,
-        action: l.action,
-        lesson: l.slug,
-        isVideo: l.isVideo,
-      }))
-    : (c.items as unknown as LessonCard[])
-
-  // 📚 فاز ۲۲: به‌جای مودال، هر درس صفحهٔ اختصاصی دارد: /lesson/<slug>
-
-  // 📚 ناوبری به صفحهٔ اختصاصی درس (لینک‌پذیر و قابل اشتراک‌گذاری: /lesson/<slug>)
-  const goToLesson = useCallback((slug: string) => {
-    try {
-      sessionStorage.removeItem('ct-lesson-return')
-    } catch {
-      // حافظه در دسترس نیست
-    }
-    appNavigate(`/lesson/${encodeURIComponent(slug)}`)
-  }, [])
-
   useEffect(() => {
     let cancelled = false
-    // 🃏 فلش‌کارت‌ها اکنون در هاب تمرین (/practice) زندگی می‌کنند — این صفحه
-    // فقط درس‌ها را می‌خواند
     fetch('/api/learn/lessons')
       .then((res) => res.json())
       .then((data) => {
@@ -102,13 +70,40 @@ export function LearnPage() {
     }
   }, [])
 
-  const visible = items.filter(
-    (item) => filter === 'all' || item.category.split(' ').includes(filter)
-  )
+  const items: LessonCard[] = dbLessons
+    ? dbLessons.map((l) => ({
+        category: l.category,
+        color: l.color,
+        tag: l.tag,
+        big: l.big,
+        small: l.small,
+        title: l.title,
+        text: l.text,
+        action: l.action,
+        lesson: l.slug,
+        isVideo: l.isVideo,
+      }))
+    : (c.items as unknown as LessonCard[])
+
+  // 🎯 درخواست مالک: لغات داخل همان فیلتر تمرین‌ها — هر درس یک کارت در
+  // گرید یکپارچه (دستهٔ Word Lessons) با لینک به صفحهٔ اختصاصی درس
+  const lessonPracticeCards: PracticeActivity[] = items.map((item) => ({
+    key: `lesson-${item.lesson}`,
+    title: item.title,
+    description: item.text,
+    category: 'lessons',
+    href: `/lesson/${encodeURIComponent(item.lesson)}`,
+    icon: 'book',
+    level: 'All levels',
+    minutes: 10,
+    action: item.action || 'Open the lesson',
+    big: item.big,
+  }))
 
   return (
     <div id="page-learn">
-      <section className="pt-32 pb-12 md:pt-40">
+      {/* ================= هیرو ================= */}
+      <section className="pt-32 pb-4 md:pt-40">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-6">
             <h1 className="text-3xl md:text-5xl font-bold text-brown-dark mb-4">{c.title}</h1>
@@ -117,84 +112,15 @@ export function LearnPage() {
         </div>
       </section>
 
-      <section className="pb-6">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-wrap justify-center gap-3" role="tablist" aria-label="Content filters">
-            {c.filters.map((f, i) => (
-              <button
-                key={f.key}
-                onClick={() => setFilter(f.key)}
-                role="tab"
-                aria-selected={filter === f.key}
-                className={`learn-filter filter-btn px-5 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
-                  filter === f.key ? 'active' : ''
-                } ${f.key === 'all' && filter === 'all' ? 'bg-sage text-brown-dark' : 'bg-sage-light/30 text-brown'}`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* ================= تمرین‌ها + لغات — یک بخش یکپارچه ================= */}
+      {/* اولویت مالک: تمرین‌ها و مخصوصاً دورهٔ ۱۰ جلسه‌ای HSK 1 بالای صفحه؛
+          لغات هم داخل همان فیلتر و گرید */}
+      <PracticeActivities lessonCards={lessonPracticeCards} />
 
+      {/* ================= ویدیوها + منابع ================= */}
       <section className="pb-24">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {visible.map((item, i) => {
-              const color = colorMap[item.color as keyof typeof colorMap] ?? colorMap.sage
-              const delays = ['', 'delay-100', 'delay-200']
-              return (
-                <div
-                  key={i}
-                  className={`learn-card bg-white rounded-2xl overflow-hidden card-hover card-wave border ${color.border} animate-ct-fadeInUp ${delays[i % 3]}`}
-                  style={{ animationDelay: `${i * 60}ms` }}
-                >
-                  <div className={`h-44 ${color.bg} flex items-center justify-center relative`}>
-                    <div className="text-center px-4">
-                      <p
-                        className={`font-bold text-brown-dark ${
-                          item.big.length <= 2 ? 'text-5xl' : 'text-3xl'
-                        } ${item.tag === 'Characters' ? 'font-serif' : ''}`}
-                      >
-                        {item.big}
-                      </p>
-                      <p className="text-sm text-brown-light mt-1">{item.small}</p>
-                    </div>
-                    <span className="absolute top-3 left-3 bg-white/80 text-xs font-semibold px-3 py-1 rounded-full">
-                      {item.tag}
-                    </span>
-                    {item.isVideo && (
-                      <span className="absolute top-3 right-3 bg-sage/80 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
-                        <Play className="w-2.5 h-2.5" /> Video
-                      </span>
-                    )}
-                  </div>
-                  <div className="p-5">
-                    <h3 className="text-base font-semibold text-brown-dark mb-1">{item.title}</h3>
-                    <p className="text-sm text-brown-light mb-4">{item.text}</p>
-                    {/* 👇 باز شدن مودال همان درس — مبدأ پاک می‌شود تا «بازگشت» در همین صفحه بماند */}
-                    <button
-                      onClick={() => goToLesson(item.lesson)}
-                      className="text-sm font-medium text-sage-dark flex items-center gap-1 hover:gap-2 transition-all cursor-pointer"
-                    >
-                      {item.action} <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* 🎯 درخواست مالک: فعالیت‌های تمرین (کلمهٔ روز، فلش‌کارت‌ها، بازی تُن‌ها،
-          آزمون سطح، دورهٔ HSK 1) از تب Practice به همین‌جا منتقل شدند —
-          تب Practice فقط امتحان‌هاست (/hsk-exams) */}
-      <PracticeActivities />
-
-      {/* 🎬 درخواست مالک: ویدیوهای یوتیوب هم در تب Learn — کتابخانهٔ کامل در /teaching-videos */}
-      <section className="pb-24">
-        <div className="max-w-7xl mx-auto px-6">
+          {/* 🎬 درخواست مالک: ویدیوهای یوتیوب هم در تب Learn — کتابخانهٔ کامل در /teaching-videos */}
           <TeachingVideosSection />
 
           {/* 📚 کتابخانهٔ رایگان — فایل‌های آپلودی پنل (بدون منبع = بدون سکشن) */}
@@ -222,7 +148,6 @@ export function LearnPage() {
           </div>
         </div>
       </section>
-
     </div>
   )
 }

@@ -32,7 +32,7 @@ import {
   Target,
   UserRound,
 } from 'lucide-react'
-import { PRACTICE_ACTIVITIES, PRACTICE_CATEGORIES, type PracticeActivity } from '@/lib/practice/registry'
+import { isKnownActivity, PRACTICE_ACTIVITIES, PRACTICE_CATEGORIES, type PracticeActivity } from '@/lib/practice/registry'
 import { recordPractice } from '@/lib/practice/record'
 import { WordOfDay } from '../WordOfDay'
 import { ToneTrainer } from '../ToneTrainer'
@@ -65,7 +65,14 @@ interface ProgressSummary {
 
 type LoadState = 'loading' | 'ready' | 'failed'
 
-export function PracticeActivities() {
+export function PracticeActivities({
+  lessonCards = [],
+}: {
+  /** ℹ️ کارت‌های «درس واژگان» — LearnPage از دیتابیس/فایل محتوا می‌سازد و
+   * با همین فیلترها و جست‌وجو به گرید اضافه می‌شود (درخواست مالک: لغات داخل
+   * همان فیلتر تمرین‌ها) */
+  lessonCards?: PracticeActivity[]
+}) {
   const [progress, setProgress] = useState<ProgressSummary | null>(null)
   const [state, setState] = useState<LoadState>('loading')
   const [query, setQuery] = useState('')
@@ -128,7 +135,7 @@ export function PracticeActivities() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    const list = PRACTICE_ACTIVITIES.filter((a) => {
+    const list = [...PRACTICE_ACTIVITIES, ...lessonCards].filter((a) => {
       const matchesCategory = category === 'all' || a.category === category
       const matchesQuery =
         q === '' ||
@@ -144,7 +151,7 @@ export function PracticeActivities() {
       })
     }
     return list
-  }, [query, category, sort, recentByKey])
+  }, [query, category, sort, recentByKey, lessonCards])
 
   const firstName = progress?.user?.firstName?.trim()
   const todayCount = progress?.todayCount ?? 0
@@ -162,6 +169,14 @@ export function PracticeActivities() {
       {/* ================= دورهٔ HSK 1 + داشبورد تمرین ================= */}
       <section className="pt-16 pb-12 relative">
         <div className="max-w-4xl mx-auto px-6">
+          {/* سرتیتر بخش — اولویت مالک: تمرین‌ها و مخصوصاً دورهٔ ۱۰ جلسه‌ای HSK 1 */}
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-brown-dark mb-2">Practice &amp; Exercises</h2>
+            <p className="text-sm text-brown-light">
+              Daily practice is how Mandarin sticks — start with the structured HSK 1 course or pick an activity.
+            </p>
+          </div>
+
           {/* ---------- دورهٔ ساختاریافته HSK 1 — صفحهٔ اختصاصی خودش ---------- */}
           <Link
             href="/practice/hsk1"
@@ -365,16 +380,26 @@ export function PracticeActivities() {
                   <Link
                     key={a.key}
                     href={a.href}
-                    onClick={() => recordPractice(a.key)}
+                    onClick={() => {
+                      // ℹ️ فقط کلیدهای رجیستری ثبت می‌شوند — کارت‌های درس (lesson-*) ثبت پیشرفت ندارند
+                      if (isKnownActivity(a.key)) recordPractice(a.key)
+                    }}
                     className={`group bg-white rounded-2xl p-6 border border-sage-light/20 card-hover flex flex-col animate-ct-fadeInUp ${
                       ['delay-100', 'delay-200'][i % 2] ?? ''
                     }`}
                     style={{ animationDelay: `${i * 60}ms` }}
                   >
                     <div className="flex items-start justify-between gap-3 mb-4">
-                      <span className="w-12 h-12 rounded-2xl bg-sage-light/30 flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-6 h-6 text-sage-dark" aria-hidden="true" />
-                      </span>
+                      {'big' in a && typeof a.big === 'string' && a.big ? (
+                        // ℹ️ کارت درس واژگان — نویسهٔ بزرگ در جای آیکون
+                        <span className="w-12 h-12 rounded-2xl bg-sage-light/30 flex items-center justify-center flex-shrink-0 font-serif text-2xl font-bold text-brown-dark">
+                          {a.big}
+                        </span>
+                      ) : (
+                        <span className="w-12 h-12 rounded-2xl bg-sage-light/30 flex items-center justify-center flex-shrink-0">
+                          <Icon className="w-6 h-6 text-sage-dark" aria-hidden="true" />
+                        </span>
+                      )}
                       {done && (
                         <span className="inline-flex items-center gap-1 bg-sage/20 text-sage-dark text-[11px] font-bold px-2.5 py-1 rounded-full">
                           ✓ done today

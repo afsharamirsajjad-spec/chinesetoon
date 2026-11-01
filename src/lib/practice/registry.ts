@@ -14,6 +14,7 @@
 
 export const PRACTICE_CATEGORIES = [
   { key: 'vocabulary', label: 'Vocabulary', hint: 'Words, characters and daily review' },
+  { key: 'lessons', label: 'Word Lessons', hint: 'Themed vocabulary lessons with audio' },
   { key: 'pronunciation', label: 'Pronunciation & Tones', hint: 'Train your ear for the four tones' },
   { key: 'quizzes', label: 'Quizzes & Tests', hint: 'Find your level and check yourself' },
   { key: 'listening', label: 'Listening & Reading', hint: 'Hear native-speed audio with lessons' },
@@ -38,19 +39,23 @@ export interface PracticeActivity {
   minutes: number
   /** متن دکمهٔ اقدام */
   action: string
+  /** فقط کارت‌های درس — نویسهٔ بزرگ نمایشی در جای آیکون (مثلاً 词) */
+  big?: string
 }
 
-// ⚠️ فقط فعالیت‌های واقعاً موجود:
+// فقط فعالیت‌های واقعاً موجود:
 //   hsk-course   → دورهٔ ساختاریافتهٔ HSK 1 — /practice/hsk1 (URLهای سئو دست‌نخورده)
 //   daily-word   → بخش Word of Day — تعبیه‌شده در صفحهٔ /learn
 //   flashcards   → فلش‌کارت واژگان — تعبیه‌شده در صفحهٔ /learn
-//   lessons      → کتابخانهٔ درس‌های واژگان — همان صفحهٔ /learn (هر درس /lesson/<slug>)
 //   tone-trainer → بازی شنیداری تُن‌ها — تعبیه‌شده در صفحهٔ /learn
 //   level-quiz   → آزمون تعیین سطح — تعبیه‌شده در صفحهٔ /learn
 //   videos       → ویدیوهای آموزشی یوتیوب — بخش ویدیوهای صفحهٔ /learn (کتابخانهٔ کامل /teaching-videos)
 //   exams        → آزمون‌های آزمایشی — تب Practice (/hsk-exams)
-// 🧭 درخواست مالک: تب Practice فقط امتحان‌هاست (/practice → /hsk-exams)؛
-//    فعالیت‌ها و ویدیوها در تب Learn تعبیه شده‌اند — کارت‌ها به لنگر همان صفحه اسکرول می‌کنند.
+// کارت‌های «درس واژگان» از رجیستری نمی‌آیند — LearnPage آن‌ها را از
+// دیتابیس/فایل محتوا می‌سازد و با همین فیلترها به گرید اضافه می‌کند
+// (درخواست مالک: لغات داخل همان فیلترِ تمرین‌ها).
+// درخواست مالک: تب Practice فقط امتحان‌هاست (/practice → /hsk-exams)؛
+// فعالیت‌ها و ویدیوها در تب Learn تعبیه شده‌اند — کارت‌ها به لنگر همان صفحه اسکرول می‌کنند.
 export const PRACTICE_ACTIVITIES: PracticeActivity[] = [
   {
     key: 'hsk-course',
@@ -74,7 +79,7 @@ export const PRACTICE_ACTIVITIES: PracticeActivity[] = [
     icon: 'sun',
     level: 'All levels',
     minutes: 2,
-    action: 'Open today’s word',
+    action: 'Open the word of the day',
   },
   {
     key: 'flashcards',
@@ -87,18 +92,6 @@ export const PRACTICE_ACTIVITIES: PracticeActivity[] = [
     level: 'Beginner',
     minutes: 5,
     action: 'Start reviewing',
-  },
-  {
-    key: 'lessons',
-    title: 'Interactive Word Lessons',
-    description:
-      'Themed vocabulary lessons — greetings, food, numbers and more — every word with pronunciation audio.',
-    category: 'vocabulary',
-    href: '/learn',
-    icon: 'book',
-    level: 'Beginner',
-    minutes: 10,
-    action: 'Browse lessons',
   },
   {
     key: 'tone-trainer',
@@ -147,18 +140,6 @@ export const PRACTICE_ACTIVITIES: PracticeActivity[] = [
     level: 'All levels',
     minutes: 30,
     action: 'Take an exam',
-  },
-  {
-    key: 'lesson-listen',
-    title: 'Listen & Read Along',
-    description:
-      'Open any lesson and play each word and its example sentence — listening practice at your own pace.',
-    category: 'listening',
-    href: '/learn',
-    icon: 'graduation',
-    level: 'All levels',
-    minutes: 10,
-    action: 'Choose a lesson',
   },
 ]
 

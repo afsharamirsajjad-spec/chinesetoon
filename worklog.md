@@ -526,3 +526,29 @@ Changes:
 - tests/practice-registry.test.ts allowlist updated to the new hrefs.
 
 Verification: tsc 0; eslint clean; bun test 91/91; build OK; curl /practice -> 308 /hsk-exams; /learn renders lessons + activities (flashcards/word-of-day/tone/quiz anchors) and the videos section appears once the owner publishes videos (hidden on empty DB as designed).
+
+---
+Task ID: LEARN-VIDEO-FIXES-1
+Task: YouTube embeds unblocked (CSP frame-src) + Learn tab reordered with exercises and the HSK 10-stage course first (owner priority).
+
+Problem 1: every YouTube embed on the site showed "This content is blocked. Contact the site owner to fix the issue." Root cause: the site CSP had no frame-src directive, so it fell back to default-src 'self' and the browser refused to load the youtube-nocookie iframe at all.
+Fix: CSP gained "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com" in next.config.ts. Additionally, when a specific video's uploader has disabled embedding, YouTube itself refuses to play it in any site - the watch page (/teaching-videos/[id]) now shows a "Video not playing? Watch it on YouTube" direct link under the player as a graceful fallback.
+
+Problem 2: on /learn the practice activities sat BELOW the vocabulary lesson cards, so the exercises - especially the HSK 1 Course (10 stages) - were invisible.
+Fix (owner priority: exercises first): Learn page order is now hero -> Practice & Exercises (section heading + HSK 1 Course banner + personal dashboard with streak/goal + activity cards + embedded Word of Day / Tone Trainer / Flashcards / Level Quiz) -> Word Lessons (new section heading above the filters + lesson cards) -> Teaching Videos -> Resources -> socials.
+
+Verification: tsc 0; eslint clean; next build OK; curl confirms the CSP header now carries frame-src with the YouTube hosts; browser DOM order check on /learn confirms Practice & Exercises -> HSK 1 Course banner precede Word Lessons.
+
+---
+Task ID: LEARN-UNIFIED-GRID-1
+Task: Learn page rebuilt from scratch - ONE Practice & Exercises section (duplicate removed) with word lessons inside the same filter/grid (owner request).
+
+Problems found by re-reading the page: <PracticeActivities /> was rendered TWICE on /learn (a leftover from the previous incremental edit), so the "Practice & Exercises" heading appeared twice; and the word lessons lived in a separate section with their own filter chips, disconnected from the practice activities.
+
+Fixes:
+- LearnPage.tsx rebuilt cleanly: hero -> PracticeActivities (exactly once) -> Teaching Videos -> Resources -> socials. The separate Word Lessons section and its own filter chips are gone.
+- PracticeActivities now accepts a lessonCards prop: LearnPage maps every lesson (DB via /api/learn/lessons or bundled fallback) into an activity card (category 'lessons', href /lesson/<slug>, big hanzi rendered in the icon slot). Lessons share the SAME search, category chips and grid as the activities; clicking opens the dedicated lesson page. Lesson cards are not recorded into PracticeEvent (unknown keys skipped client-side via isKnownActivity).
+- registry.ts: new 'lessons' category chip (Word Lessons); redundant 'lessons'/'lesson-listen' registry cards removed; PracticeActivity gained optional big field.
+- Fixed curly-quote corruption introduced in registry.ts during editing (strings had smart quotes instead of straight quotes).
+
+Verification: tsc 0; eslint clean; bun test 91/91; build OK; browser check on /learn confirms exactly one 'Practice & Exercises' heading, the Word Lessons chip exists in the unified filter row, and clicking it shows the lesson cards in the same grid.
