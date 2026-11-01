@@ -16,6 +16,7 @@ import { logAdminAction } from '@/lib/audit'
 import {
   MAX_HOMEWORK_FILE_BYTES,
   MAX_HOMEWORK_FILES_PER_UPLOAD,
+  MAX_HOMEWORK_TOTAL_BYTES,
   homeworkExtFor,
   generateHomeworkFileId,
   saveHomeworkFile,
@@ -73,9 +74,11 @@ export async function POST(req: NextRequest) {
   if (!rl.ok) return tooManyRequests(rl)
 
   const contentLength = Number(req.headers.get('content-length') || '0')
-  if (contentLength > MAX_HOMEWORK_FILE_BYTES * MAX_HOMEWORK_FILES_PER_UPLOAD + 256 * 1024) {
+  // مجموع بدنه باید زیر سقف بدنهٔ serverless (۴.۵MB) بماند — بالاتر از آن
+  // خودِ پلتفرم 413 می‌دهد و پیام خطای ما به کاربر نمی‌رسد
+  if (contentLength > MAX_HOMEWORK_TOTAL_BYTES + 256 * 1024) {
     return NextResponse.json(
-      { error: `Too much data — max ${MAX_HOMEWORK_FILES_PER_UPLOAD} files, ${MAX_HOMEWORK_FILE_BYTES / 1024 / 1024} MB each` },
+      { error: `Too much data — max ${MAX_HOMEWORK_FILES_PER_UPLOAD} files, ${MAX_HOMEWORK_TOTAL_BYTES / 1024 / 1024} MB total` },
       { status: 413 }
     )
   }
@@ -112,13 +115,15 @@ export async function POST(req: NextRequest) {
     )
   }
   const prepared: { id: string; ext: string; mime: string; name: string; size: number; data: Buffer }[] = []
+  let totalBytes = 0
   for (const f of incoming) {
     if (f.size > MAX_HOMEWORK_FILE_BYTES) {
       return NextResponse.json(
-        { error: `"${f.name}" is too large (max ${MAX_HOMEWORK_FILE_BYTES / 1024 / 1024} MB)` },
+        { error: `"${f.name}" is too large (max ${MAX_HOMEWORK_FILE_BYTES / 1024 / 1024} MB per file)` },
         { status: 413 }
       )
     }
+    totalBytes += f.size
     const ext = homeworkExtFor({ name: f.name, type: f.type })
     if (!ext) {
       return NextResponse.json(
@@ -134,6 +139,12 @@ export async function POST(req: NextRequest) {
       size: f.size,
       data: Buffer.from(await f.arrayBuffer()),
     })
+  }
+  if (totalBytes > MAX_HOMEWORK_TOTAL_BYTES) {
+    return NextResponse.json(
+      { error: `Files add up to more than ${MAX_HOMEWORK_TOTAL_BYTES / 1024 / 1024} MB — please upload smaller files.` },
+      { status: 413 }
+    )
   }
 
   try {

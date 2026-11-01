@@ -40,6 +40,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  MAX_HOMEWORK_FILES_PER_UPLOAD,
+  MAX_HOMEWORK_TOTAL_BYTES,
+  homeworkBytesLabel,
+  homeworkUploadError,
+} from '@/lib/homework-limits'
 
 interface AdminHomeworkRow {
   id: string
@@ -179,6 +185,12 @@ export function HomeworkAdminTab({ token, onToast }: { token: string; onToast?: 
     if (creating) return
     if (title.trim().length < 2) {
       setCreateErr('Please enter a title.')
+      return
+    }
+    // 🛡️ اعتبارسنجی حجم قبل از آپلود — خطای واضح به‌جای 413 مبهم پلتفرم
+    const sizeError = homeworkUploadError(files)
+    if (sizeError) {
+      setCreateErr(sizeError)
       return
     }
     setCreating(true)
@@ -400,12 +412,18 @@ export function HomeworkAdminTab({ token, onToast }: { token: string; onToast?: 
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-brown-dark mb-1.5">Attachments (max 5, 15 MB each)</label>
+              <label className="block text-sm font-medium text-brown-dark mb-1.5">
+                Attachments (up to {MAX_HOMEWORK_FILES_PER_UPLOAD} files · max {homeworkBytesLabel(MAX_HOMEWORK_TOTAL_BYTES)} total)
+              </label>
               <input
                 ref={fileRef}
                 type="file"
                 multiple
-                onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, 5))}
+                onChange={(e) => {
+                  const picked = Array.from(e.target.files ?? []).slice(0, MAX_HOMEWORK_FILES_PER_UPLOAD)
+                  setFiles(picked)
+                  setCreateErr(homeworkUploadError(picked) ?? '')
+                }}
                 className="block w-full text-xs text-brown-light file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sage-light/40 file:text-brown-dark cursor-pointer"
               />
               {files.length > 0 && (
@@ -416,6 +434,9 @@ export function HomeworkAdminTab({ token, onToast }: { token: string; onToast?: 
                       <span className="text-brown-light whitespace-nowrap ml-2">{fmtBytes(f.size)}</span>
                     </li>
                   ))}
+                  <li className="text-[11px] text-brown-light px-3">
+                    Total: {fmtBytes(files.reduce((s, f) => s + f.size, 0))}
+                  </li>
                 </ul>
               )}
             </div>

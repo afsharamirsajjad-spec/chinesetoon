@@ -4,7 +4,7 @@
 // 📚 بخش «تکالیف من» در حساب کاربری دانش‌پذیر (AccountPage)
 //
 //  • تکالیف فعال استاد: عنوان/کلاس/مهلت/توضیح + دانلود پیوست‌ها
-//  • ارسال/به‌روزرسانی پاسخ: فایل‌ها (تا ۵ فایل، ۱۵MB) + یادداشت
+//  • ارسال/به‌روزرسانی پاسخ: فایل‌ها (تا ۵ فایل، مجموع ۴MB — سقف serverless ورسل) + یادداشت
 //  • وضعیت پاسخ خود + بازخورد متنی استاد
 //  • 401 → بی‌صدا خالی (بخش فقط برای کاربر واردشده رندر می‌شود)
 // ---------------------------------------------------------------------------
@@ -21,6 +21,11 @@ import {
   Send,
   TriangleAlert,
 } from 'lucide-react'
+import {
+  MAX_HOMEWORK_FILES_PER_UPLOAD,
+  MAX_HOMEWORK_TOTAL_BYTES,
+  homeworkUploadError,
+} from '@/lib/homework-limits'
 
 interface HomeworkFileLike {
   id: string
@@ -115,6 +120,12 @@ export function AccountHomework({ onToast }: { onToast: (m: string) => void }) {
     if (uploadingFor !== item.id) return
     if (files.length === 0 && !note.trim()) {
       setUploadErr('Add a note or at least one file.')
+      return
+    }
+    // 🛡️ اعتبارسنجی حجم قبل از آپلود — خطای واضح به‌جای 413 مبهم پلتفرم
+    const sizeError = homeworkUploadError(files)
+    if (sizeError) {
+      setUploadErr(sizeError)
       return
     }
     setUploadingFor(`busy:${item.id}`)
@@ -255,11 +266,22 @@ export function AccountHomework({ onToast }: { onToast: (m: string) => void }) {
                       type="file"
                       multiple
                       disabled={busy}
-                      onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, 5))}
+                      onChange={(e) => {
+                        const picked = Array.from(e.target.files ?? []).slice(0, MAX_HOMEWORK_FILES_PER_UPLOAD)
+                        setFiles(picked)
+                        // اعتبارسنجی حجم بلافاصله بعد از انتخاب — قبل از هر تلاشی برای آپلود
+                        setUploadErr(homeworkUploadError(picked) ?? '')
+                      }}
                       className="block w-full text-xs text-brown-light file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sage-light/40 file:text-brown-dark cursor-pointer"
                     />
-                    {files.length > 0 && (
-                      <p className="text-xs text-brown-light">{files.length} file(s) selected</p>
+                    {files.length > 0 ? (
+                      <p className="text-xs text-brown-light">
+                        {files.length} file(s) selected · {fmtBytes(files.reduce((s, f) => s + f.size, 0))} total
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-brown-light/80">
+                        Up to {MAX_HOMEWORK_FILES_PER_UPLOAD} files · max {fmtBytes(MAX_HOMEWORK_TOTAL_BYTES)} per submission — large phone photos may need compressing first.
+                      </p>
                     )}
                     {uploadErr && (
                       <p className="text-sm text-red-500 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">

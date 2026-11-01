@@ -5,7 +5,9 @@
 //  • شناسهٔ فایل = ۴۸ نویسهٔ hex تصادفی (غیرقابل‌حدس) — نام اصلی کاربر هرگز
 //    برای مسیر/ذخیره استفاده نمی‌شود؛ فقط نام نمایشی پاک‌سازی‌شده در DB می‌ماند
 //  • پسوند از لیست مجاز (اسناد/تصویر/صدا/ویدیو/آرشیو) — HTML/SVG/اسکریپت مطلقاً نه
-//  • سقف ۱۵ مگابایت برای هر فایل و حداکثر ۵ فایل در هر ارسال
+//  • سقف ۴ مگابایت برای هر فایل و «مجموع» فایل‌های هر ارسال — هم‌راستا با سقف
+//    بدنهٔ ۴.۵MB فانکشن‌های serverless ورسل (بالای آن، خودِ پلتفرم 413 می‌دهد و
+//    پیام خطای ما به کاربر نمی‌رسد) و حداکثر ۵ فایل در هر ارسال
 //  • همهٔ دانلودها با Content-Disposition: attachment + nosniff سرو می‌شوند
 //
 // ذخیره‌سازی دولایه:
@@ -19,9 +21,14 @@ import { mkdir, readFile, writeFile, unlink } from 'fs/promises'
 import path from 'path'
 import { sanitizeDisplayName } from '@/lib/receipts'
 import { isBlobConfigured, putBlobFile, delBlobFile } from '@/lib/blob-store'
+// سقف‌ها از ماژول client-safe می‌آیند — یک منبع حقیقت برای سرور و مرورگر
+import {
+  MAX_HOMEWORK_FILE_BYTES,
+  MAX_HOMEWORK_FILES_PER_UPLOAD,
+  MAX_HOMEWORK_TOTAL_BYTES,
+} from '@/lib/homework-limits'
 
-export const MAX_HOMEWORK_FILE_BYTES = 15 * 1024 * 1024 // ۱۵MB
-export const MAX_HOMEWORK_FILES_PER_UPLOAD = 5
+export { MAX_HOMEWORK_FILE_BYTES, MAX_HOMEWORK_FILES_PER_UPLOAD, MAX_HOMEWORK_TOTAL_BYTES }
 
 export const HOMEWORK_FILE_EXT_BY_MIME: Record<string, string> = {
   'application/pdf': 'pdf',
