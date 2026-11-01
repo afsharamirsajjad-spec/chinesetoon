@@ -2972,6 +2972,7 @@ export const siteContent = {
     catOverview: "Overview",
     catCommunity: "Students & Community",
     catCommerce: "Sales & Payments",
+    catLearning: "HSK & Learning",
     catContent: "Content & Learning",
     catSystem: "System",
     // ✏️ متن‌های هیروی خانه (فاز ۲۲)

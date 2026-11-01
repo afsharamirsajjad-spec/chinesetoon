@@ -3686,6 +3686,9 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
   const [lessons, setLessons] = useState<AdminLesson[]>([])
   const [resources, setResources] = useState<AdminResource[]>([])
   const [exams, setExams] = useState<AdminExam[]>([])
+  // 💬 پرسش‌های لحظه‌ای — شمار پیام‌های بی‌پاسخ + تعداد نشست‌ها (برای اعلان تب Live Chat)
+  const [chatUnread, setChatUnread] = useState(0)
+  const [chatThreads, setChatThreads] = useState(0)
   // 💬 Live Chat — state فقط در ChatAdmin؛ اینجا فقط برای کلید تب
   const [chatTabReady] = useState(true)
   // 💳 فاز ۵۹ — پرداخت دستی کارت بانکی: تنظیمات + شمارنده‌ها + فیلتر ورودی تب Payments
@@ -3778,7 +3781,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
 
   /** پرش به تب مقصد با بازخورد واضح: پاک‌کردن جست‌وجو (تا موارد در انتظار پنهان نباشند)،
    *  فلاش روی تب فعال و اسکرول نرم به نوار تب‌ها — حتی اگر همین تب از قبل فعال باشد */
-  const goToPending = useCallback((t: 'messages' | 'registrations' | 'reviews') => {
+  const goToPending = useCallback((t: 'messages' | 'registrations' | 'reviews' | 'chat') => {
     setTab(t)
     setSearch('')
     setFlashTab(t)
@@ -3892,6 +3895,29 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
   useEffect(() => {
     load()
   }, [tab, load])
+
+  // 💬 پرسش‌های لحظه‌ای — اعلان سوالات بی‌پاسخ چت زنده روی تب Live Chat
+  // (روی هر تب و سپس هر ۳۰ ثانیه؛ شکست بی‌صدا — نبود اتصال نباید پنل را آزار دهد)
+  const loadChatUnread = useCallback(async () => {
+    if (!token) return
+    try {
+      const res = await fetch('/api/chat/admin', { headers: { 'x-admin-key': token }, cache: 'no-store' })
+      if (!res.ok) return
+      const d = (await res.json()) as { threads?: Array<{ unread?: number }> }
+      const threads = Array.isArray(d.threads) ? d.threads : []
+      setChatThreads(threads.length)
+      setChatUnread(threads.reduce((sum, t) => sum + (typeof t.unread === 'number' ? t.unread : 0), 0))
+    } catch {
+      // دور بعد
+    }
+  }, [token])
+
+  useEffect(() => {
+    if (!token) return
+    void loadChatUnread()
+    const iv = setInterval(() => void loadChatUnread(), 30_000)
+    return () => clearInterval(iv)
+  }, [token, tab, loadChatUnread])
 
   // 📰 ایمپورت یک‌جای مقاله‌های سئو (تب Blog) — upsert از scripts/seo-articles
   const [seoSeeding, setSeoSeeding] = useState(false)
@@ -4229,7 +4255,8 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
   const pendingMessages = messages.filter((m) => m.status === 'new').length
   const pendingRegistrations = registrations.filter((r) => r.status === 'new').length
   const pendingReviews = reviews.filter((r) => r.status === 'pending').length
-  const pendingTotal = pendingMessages + pendingRegistrations + pendingReviews
+  // 💬 سوالات بی‌پاسخ چت لحظه‌ای هم «نیاز به توجه»‌اند
+  const pendingTotal = pendingMessages + pendingRegistrations + pendingReviews + chatUnread
 
   // 👥 چیپ‌های فیلتر تب Students — شمارنده‌ها از سرور می‌آیند و روی کل کاربران حساب شده‌اند
   //  (مستقل از فیلتر فعلی)، پس با عوض‌کردن فیلتر هم درست می‌مانند؛ چیپ Unpaid لهجهٔ کهربایی دارد
@@ -4261,15 +4288,15 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
     { key: 'lessons' as const, label: a.tabLessons, count: lessons.length, alert: 0, icon: BookOpen },
     { key: 'resources' as const, label: a.tabResources, count: resources.length, alert: 0, icon: FolderDown },
     { key: 'exams' as const, label: a.tabExams, count: exams.length, alert: 0, icon: ListChecks },
-    // 🎓 Learning platform (Parts 1–5)
-    { key: 'ai' as const, label: 'AI Assistant', count: 0, alert: 0, icon: Sparkles },
+    // 🎓 Learning platform (Parts 1–5) — ترتیب = ترتیب نمایش در دستهٔ HSK & Learning
     { key: 'hskpractice' as const, label: 'HSK Practice', count: 0, alert: 0, icon: GraduationCap },
     { key: 'hskquestions' as const, label: 'Exercise Builder', count: 0, alert: 0, icon: Layers },
     { key: 'hskexams' as const, label: 'HSK Exam Management', count: 0, alert: 0, icon: ListChecks },
     { key: 'hskresults' as const, label: 'Exam Results', count: 0, alert: 0, icon: BookOpenCheck },
     { key: 'edufiles' as const, label: 'File Manager', count: 0, alert: 0, icon: FolderDown },
     { key: 'videos' as const, label: 'Teaching Videos', count: 0, alert: 0, icon: MessageSquare },
-    { key: 'chat' as const, label: a.tabChat, count: 0, alert: 0, icon: MessageSquare },
+    { key: 'ai' as const, label: 'AI Assistant', count: 0, alert: 0, icon: Sparkles },
+    { key: 'chat' as const, label: a.tabChat, count: chatThreads, alert: chatUnread, icon: MessageSquare },
     { key: 'words' as const, label: a.tabWords, count: learnCards.length, alert: 0, icon: Layers },
     { key: 'quiz' as const, label: a.tabQuiz, count: quizQuestions.length, alert: 0, icon: ListChecks },
     { key: 'teachers' as const, label: a.tabTeachers, count: teachers.length, alert: 0, icon: UserRound },
@@ -4281,7 +4308,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
     { key: 'settings' as const, label: a.tabSettings, count: 0, alert: 0, icon: SlidersHorizontal },
   ]
 
-  // 🗂️ ناوبری دومرحله‌ای — ۱۹ تب در ۵ دسته؛ دستهٔ فعال از تب جاری مشتق می‌شود
+  // 🗂️ ناوبری دومرحله‌ای — ۳۰ تب در ۶ دسته؛ دستهٔ فعال از تب جاری مشتق می‌شود
   // (پرش‌های goToPending/جست‌وجو خودکار دستهٔ درست را نشان می‌دهند).
   const tabCategories: { key: string; label: string; icon: typeof LayoutDashboard; tabKeys: string[] }[] = [
     { key: 'overview', label: a.catOverview, icon: LayoutDashboard, tabKeys: ['dashboard'] },
@@ -4289,7 +4316,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
       key: 'community',
       label: a.catCommunity,
       icon: UsersRound,
-      tabKeys: ['students', 'registrations', 'homework', 'messages', 'newsletter', 'reviews'],
+      tabKeys: ['students', 'registrations', 'homework', 'messages', 'chat', 'newsletter', 'reviews'],
     },
     {
       key: 'commerce',
@@ -4298,10 +4325,17 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
       tabKeys: ['classes', 'orders', 'discounts', 'scheduling'],
     },
     {
+      // 🎓 Learning platform — مدیریت محتوای HSK، آزمون‌ساز، نتایج، فایل‌ها و ویدیوها
+      key: 'learning',
+      label: a.catLearning,
+      icon: GraduationCap,
+      tabKeys: ['hskpractice', 'hskquestions', 'hskexams', 'hskresults', 'edufiles', 'videos', 'ai'],
+    },
+    {
       key: 'content',
       label: a.catContent,
       icon: BookOpen,
-      tabKeys: ['lessons', 'words', 'quiz', 'blog', 'teachers', 'faq'],
+      tabKeys: ['lessons', 'exams', 'resources', 'words', 'quiz', 'blog', 'teachers', 'faq'],
     },
     { key: 'system', label: a.catSystem, icon: DatabaseBackup, tabKeys: ['backup', 'logs', 'settings'] },
   ]
@@ -4393,10 +4427,19 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
                     {a.tabReviews} · <span className="tabular-nums">{pendingReviews}</span>
                   </button>
                 )}
+                {chatUnread > 0 && (
+                  <button
+                    onClick={() => goToPending('chat')}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white border border-sage-light/50 text-brown hover:border-sage transition-all cursor-pointer min-h-[32px]"
+                  >
+                    {a.tabChat} · <span className="tabular-nums">{chatUnread}</span>
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     if (pendingMessages > 0) goToPending('messages')
                     else if (pendingRegistrations > 0) goToPending('registrations')
+                    else if (chatUnread > 0) goToPending('chat')
                     else goToPending('reviews')
                   }}
                   className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full bg-sage text-brown-dark hover:bg-sage-dark transition-all cursor-pointer min-h-[32px]"
@@ -5489,7 +5532,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
               {tab === 'hskexams' && <HskExamsAdminTab token={token!} onToast={onToast ?? (() => {})} />}
 
               {/* 📊 Exam Results — attempts + analytics + CSV */}
-              {tab === 'hskresults' && <ExamResultsAdminTab token={token!} exams={exams.map((e) => ({ id: e.id, title: e.title }))} />}
+              {tab === 'hskresults' && <ExamResultsAdminTab token={token!} />}
 
               {/* 🗂️ File Manager — educational files */}
               {tab === 'edufiles' && <FilesAdminTab token={token!} onToast={onToast ?? (() => {})} />}

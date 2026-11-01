@@ -242,7 +242,7 @@ export function HskPracticeAdminTab({
               </div>
               <div className="flex flex-wrap items-center gap-1.5 flex-shrink-0">
                 <a
-                  href={`/practice/hsk1/stage-${s.stageNumber}`}
+                  href={`/practice/${level}/stage-${s.stageNumber}`}
                   target="_blank"
                   rel="noreferrer"
                   title="Preview as a student"

@@ -33,17 +33,27 @@ interface ResultsData {
 
 export function ExamResultsAdminTab({
   token,
-  exams,
 }: {
   token: string
-  exams: Array<{ id: string; title: string }>
 }) {
   const [data, setData] = useState<ResultsData | null>(null)
+  const [exams, setExams] = useState<Array<{ id: string; title: string }>>([])
   const [examId, setExamId] = useState('')
   const [level, setLevel] = useState('')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [student, setStudent] = useState('')
+
+  // فیلتر آزمون باید از بانک آزمون‌های HSK پر شود — نه آزمون‌های XML قدیمی
+  useEffect(() => {
+    fetch('/api/admin/hsk-exams', { headers: { 'x-admin-key': token }, cache: 'no-store' })
+      .then(async (res) => {
+        if (!res.ok) return
+        const d = (await res.json()) as { exams?: Array<{ id: string; title: string }> }
+        setExams(Array.isArray(d.exams) ? d.exams.map((e) => ({ id: e.id, title: e.title })) : [])
+      })
+      .catch(() => setExams([]))
+  }, [token])
 
   const params = useCallback(() => {
     const p = new URLSearchParams()
