@@ -498,7 +498,7 @@ export function ExamsHub() {
                   </ol>
                   <div className="text-center mt-8">
                     <Link
-                      href="/practice"
+                      href="/hsk-exams"
                       className="inline-flex items-center gap-1.5 text-sm font-semibold text-sage-dark hover:underline cursor-pointer"
                     >
                       Practice more in the Practice Hub <ArrowRight className="w-4 h-4" aria-hidden="true" />

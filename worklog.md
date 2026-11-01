@@ -510,3 +510,19 @@ Fixes:
 - tests/pg-schema.test.ts: 8 tests locking the dialect conversion (no DATETIME / numeric boolean defaults survive), PG-valid ALTERs (ADD COLUMN IF NOT EXISTS) and full coverage of the learning-platform tables.
 
 Verification: tsc 0; eslint clean; bun test 91/91; next build OK. The schema heal executes at the next cold start on the real DB (startup hook -> ensureSchema Postgres path); videos/files/HSK content/exams unblock immediately after. The built-in chatbot activates wherever z-ai runtime exists (same environment where TTS already works).
+
+---
+Task ID: PRACTICE-EXAMS-SPLIT-1
+Task: Practice tab = exams only; all practice activities + YouTube videos moved into the Learn tab (owner request).
+
+Changes:
+- /practice now 308-redirects to /hsk-exams (next.config redirects; old page file removed) - the Practice tab is exams-only. /practice/hsk1/* course URLs untouched (40 static SEO pages intact).
+- PracticeHub.tsx refactored into an embeddable PracticeActivities component (no standalone hero): HSK 1 course banner card, personal dashboard (today/goal/streak/continue), searchable activity cards and the embedded Word of Day / Tone Trainer / Flashcards / Level Quiz now live on /learn below the lessons grid.
+- New TeachingVideosSection on /learn: latest published YouTube videos (up to 6) linking to /teaching-videos/[id]; hidden until the owner publishes videos; full library stays at /teaching-videos.
+- registry.ts: anchors moved to the /learn#practice-* ids, exams card now points to /hsk-exams, new videos card; icon union extended with video.
+- Breadcrumbs of the HSK course pages (module + stage overview) now root at Learn; old XML ExamsHub back-link points to /hsk-exams.
+- site-shell: nav highlight maps /hsk-exams -> Practice tab and /teaching-videos -> Learn tab.
+- sitemap: /practice entry removed (redirect); /practice/hsk1 entries kept.
+- tests/practice-registry.test.ts allowlist updated to the new hrefs.
+
+Verification: tsc 0; eslint clean; bun test 91/91; build OK; curl /practice -> 308 /hsk-exams; /learn renders lessons + activities (flashcards/word-of-day/tone/quiz anchors) and the videos section appears once the owner publishes videos (hidden on empty DB as designed).

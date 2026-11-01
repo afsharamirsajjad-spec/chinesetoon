@@ -76,6 +76,10 @@ function pageFromPathname(pathname: string): PageKey {
   if (raw === 'lesson') return 'learn'
   if (raw === 'pay') return 'register'
   if (raw === 'forgot-password' || raw === 'reset-password') return 'account'
+  // 🧭 درخواست مالک: تب Practice فقط امتحان‌هاست (/practice → /hsk-exams) و
+  // ویدیوها در Learn زندگی می‌کنند — هایلایت منو باید پیروی کند
+  if (raw === 'hsk-exams') return 'practice'
+  if (raw === 'teaching-videos') return 'learn'
   const known: PageKey[] = [
     'home',
     'classes',

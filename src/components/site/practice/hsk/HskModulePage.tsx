@@ -34,7 +34,7 @@ export function HskModulePage({ stage, module }: { stage: number; module: HskMod
   const [quizKey, setQuizKey] = useState(0)
 
   const crumbs = [
-    { label: 'Practice', href: '/practice' },
+    { label: 'Learn', href: '/learn' },
     { label: 'HSK 1', href: '/practice/hsk1' },
     { label: `Stage ${stage}`, href: `/practice/hsk1/stage-${stage}` },
     { label: MODULE_LABELS[module] },

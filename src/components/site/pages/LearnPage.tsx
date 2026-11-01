@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { ArrowRight, Play } from 'lucide-react'
 import { InstagramIcon, TelegramIcon } from '../brand-icons'
 import { ResourcesSection } from '../ResourcesSection'
+import { PracticeActivities } from '../practice/PracticeHub'
+import { TeachingVideosSection } from '../TeachingVideosSection'
 import { siteContent } from '@/content/site-content'
 import { appNavigate } from '@/lib/nav'
 
@@ -182,21 +184,23 @@ export function LearnPage() {
               )
             })}
           </div>
+        </div>
+      </section>
 
-          {/* 👂 🃏 بازی تُن‌ها و فلش‌کارت‌ها به هاب تمرین (/practice) منتقل شدند
-              (درخواست مالک) — این صفحه کتابخانهٔ درس‌ها + منابع دانلودی است */}
+      {/* 🎯 درخواست مالک: فعالیت‌های تمرین (کلمهٔ روز، فلش‌کارت‌ها، بازی تُن‌ها،
+          آزمون سطح، دورهٔ HSK 1) از تب Practice به همین‌جا منتقل شدند —
+          تب Practice فقط امتحان‌هاست (/hsk-exams) */}
+      <PracticeActivities />
+
+      {/* 🎬 درخواست مالک: ویدیوهای یوتیوب هم در تب Learn — کتابخانهٔ کامل در /teaching-videos */}
+      <section className="pb-24">
+        <div className="max-w-7xl mx-auto px-6">
+          <TeachingVideosSection />
 
           {/* 📚 کتابخانهٔ رایگان — فایل‌های آپلودی پنل (بدون منبع = بدون سکشن) */}
           <ResourcesSection />
 
           <div className="text-center mt-14">
-            {/* 🧭 پیوند متنی به هاب تمرین — همهٔ فعالیت‌ها در یک صفحه */}
-            <p className="text-sm text-brown-light mb-5">
-              {c.moreNote} ·{' '}
-              <a href="/practice" className="font-semibold text-sage-dark hover:underline cursor-pointer">
-                Practice Hub
-              </a>
-            </p>
             <div className="flex justify-center gap-4">
               <a
                 href={siteContent.contact.socials.instagram}

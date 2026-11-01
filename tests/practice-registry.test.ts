@@ -1,7 +1,8 @@
 /// <reference types="bun-types" />
 // ---------------------------------------------------------------------------
-// تست‌های رجیستری هاب تمرین (src/lib/practice/registry.ts) — اجرا: `bun test tests/`
-// تضمین می‌کند هر کارت /practice به یک مقصد واقعی و بدون کلید تکراری لینک است.
+// تست‌های رجیستری فعالیت‌های تمرین (src/lib/practice/registry.ts) — اجرا: `bun test tests/`
+// تضمین می‌کند هر کارت به یک مقصد واقعی و بدون کلید تکراری لینک است.
+// درخواست مالک: تب Practice فقط امتحان‌هاست — فعالیت‌ها و ویدیوها در تب Learn تعبیه‌اند.
 // ---------------------------------------------------------------------------
 
 import { describe, expect, test } from 'bun:test'
@@ -12,19 +13,21 @@ import {
 } from '../src/lib/practice/registry'
 
 // مسیرها/لنگرهای مجاز — لنگرها باید واقعاً در صفحهٔ مقصد وجود داشته باشند
-// (درخواست مالک: فعالیت‌های تعاملی داخل خود /practice تعبیه شده‌اند —
+// (فعالیت‌های تعاملی داخل خود /learn تعبیه شده‌اند —
 //  idهای تزریق‌شده: #practice-daily-word/#practice-tone-trainer/
-//  #practice-flashcards/#practice-level-quiz؛ فقط درس‌ها به /learn لینک‌اند)
+//  #practice-flashcards/#practice-level-quiz/#learn-videos؛ exams → /hsk-exams)
 const VALID_HREFS = new Set([
   '/',
   '/learn',
   '/classes',
   '/exams',
+  '/hsk-exams',
   '/practice/hsk1',
-  '/practice#practice-daily-word',
-  '/practice#practice-flashcards',
-  '/practice#practice-tone-trainer',
-  '/practice#practice-level-quiz',
+  '/learn#practice-daily-word',
+  '/learn#practice-flashcards',
+  '/learn#practice-tone-trainer',
+  '/learn#practice-level-quiz',
+  '/learn#learn-videos',
 ])
 
 describe('practice registry', () => {

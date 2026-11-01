@@ -38,7 +38,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/`, changeFrequency: "weekly", priority: 1 },
     { url: `${base}/classes`, changeFrequency: "weekly", priority: 0.9 },
     { url: `${base}/learn`, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${base}/practice`, changeFrequency: "weekly", priority: 0.7 },
     { url: `${base}/exams`, changeFrequency: "weekly", priority: 0.7 },
     { url: `${base}/hsk-exams`, changeFrequency: "weekly", priority: 0.7 },
     { url: `${base}/teaching-videos`, changeFrequency: "weekly", priority: 0.6 },
@@ -48,6 +47,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/support`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/register`, changeFrequency: "monthly", priority: 0.7 },
   ];
+  // ℹ️ /practice در sitemap نیست — به /hsk-exams ریدایرکت دائم شده (تب Practice = امتحان‌ها)
 
   // 🎯 Structured HSK 1 course — the dashboard + 10 stage overviews are
   // public, static, indexable teaching pages. (The 40 module pages carry

@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
-// 🧭 Practice Hub — رجیستری مرکزی فعالیت‌های تمرین
+// 🧭 Practice — رجیستری مرکزی فعالیت‌های تمرین
 //
-// منبع واحد حقیقت برای: کارت‌های صفحهٔ /practice، فیلترها/جست‌وجو و
+// منبع واحد حقیقت برای: کارت‌های «تمرین» صفحهٔ /learn، فیلترها/جست‌وجو و
 // اعتبارسنجی سمت سرورِ کلید فعالیت در API ثبت پیشرفت.
 //
 // اصول:
@@ -9,7 +9,7 @@
 //    کارت غیرفعال/جعلی اینجا ثبت نمی‌شود.
 //  • href ها همان روت‌های واقعی سایت + لنگرِ بخش‌های موجود هستند.
 //  • افزودن نوع تمرین جدید در آینده = افزودن یک ردیف به این فایل؛ صفحهٔ
-//    هاب، فیلترها و API به‌طور خودکار از همین رجیستری می‌خوانند.
+//    Learn، فیلترها و API به‌طور خودکار از همین رجیستری می‌خوانند.
 // ---------------------------------------------------------------------------
 
 export const PRACTICE_CATEGORIES = [
@@ -32,7 +32,7 @@ export interface PracticeActivity {
   /** روت واقعی + لنگر بخش مربوطه */
   href: string
   /** نام آیکون lucide — در کامپوننت به آیکون نگاشت می‌شود */
-  icon: 'sun' | 'layers' | 'book' | 'ear' | 'target' | 'graduation' | 'clipboard'
+  icon: 'sun' | 'layers' | 'book' | 'ear' | 'target' | 'graduation' | 'clipboard' | 'video'
   level: PracticeLevel
   /** برآورد زمان (دقیقه) */
   minutes: number
@@ -41,13 +41,16 @@ export interface PracticeActivity {
 }
 
 // ⚠️ فقط فعالیت‌های واقعاً موجود:
-//   daily-word   → بخش Word of Day — تعبیه‌شده در همین صفحهٔ /practice
-//   flashcards   → فلش‌کارت واژگان — تعبیه‌شده در همین صفحهٔ /practice
-//   lessons      → کتابخانهٔ درس‌های واژگان /learn (هر درس صفحهٔ /lesson/<slug> با تلفظ هر واژه)
-//   tone-trainer → بازی شنیداری تُن‌ها — تعبیه‌شده در همین صفحهٔ /practice
-//   level-quiz   → آزمون تعیین سطح — تعبیه‌شده در همین صفحهٔ /practice (نتیجه سمت سرور ذخیره می‌شود)
-// 🧭 درخواست مالک: فعالیت‌های تعاملی خودِ تمرین داخل همان صفحهٔ /practice می‌زنند —
-//    کارت‌ها فقط به لنگرِ همان صفحه اسکرول می‌کنند؛ تنها استثنا کتابخانهٔ درس‌هاست.
+//   hsk-course   → دورهٔ ساختاریافتهٔ HSK 1 — /practice/hsk1 (URLهای سئو دست‌نخورده)
+//   daily-word   → بخش Word of Day — تعبیه‌شده در صفحهٔ /learn
+//   flashcards   → فلش‌کارت واژگان — تعبیه‌شده در صفحهٔ /learn
+//   lessons      → کتابخانهٔ درس‌های واژگان — همان صفحهٔ /learn (هر درس /lesson/<slug>)
+//   tone-trainer → بازی شنیداری تُن‌ها — تعبیه‌شده در صفحهٔ /learn
+//   level-quiz   → آزمون تعیین سطح — تعبیه‌شده در صفحهٔ /learn
+//   videos       → ویدیوهای آموزشی یوتیوب — بخش ویدیوهای صفحهٔ /learn (کتابخانهٔ کامل /teaching-videos)
+//   exams        → آزمون‌های آزمایشی — تب Practice (/hsk-exams)
+// 🧭 درخواست مالک: تب Practice فقط امتحان‌هاست (/practice → /hsk-exams)؛
+//    فعالیت‌ها و ویدیوها در تب Learn تعبیه شده‌اند — کارت‌ها به لنگر همان صفحه اسکرول می‌کنند.
 export const PRACTICE_ACTIVITIES: PracticeActivity[] = [
   {
     key: 'hsk-course',
@@ -67,7 +70,7 @@ export const PRACTICE_ACTIVITIES: PracticeActivity[] = [
     description:
       'A fresh word every day with hanzi, pinyin, meaning, example sentence and native-style audio.',
     category: 'vocabulary',
-    href: '/practice#practice-daily-word',
+    href: '/learn#practice-daily-word',
     icon: 'sun',
     level: 'All levels',
     minutes: 2,
@@ -79,7 +82,7 @@ export const PRACTICE_ACTIVITIES: PracticeActivity[] = [
     description:
       'Flip, shuffle and review core words — hanzi and pinyin on the front, meaning and example on the back.',
     category: 'vocabulary',
-    href: '/practice#practice-flashcards',
+    href: '/learn#practice-flashcards',
     icon: 'layers',
     level: 'Beginner',
     minutes: 5,
@@ -103,7 +106,7 @@ export const PRACTICE_ACTIVITIES: PracticeActivity[] = [
     description:
       'Listen to a syllable and pick the right tone. Builds the ear for all four Mandarin tones plus neutral.',
     category: 'pronunciation',
-    href: '/practice#practice-tone-trainer',
+    href: '/learn#practice-tone-trainer',
     icon: 'ear',
     level: 'All levels',
     minutes: 5,
@@ -115,11 +118,23 @@ export const PRACTICE_ACTIVITIES: PracticeActivity[] = [
     description:
       'Multiple-choice placement quiz — get a beginner/elementary/intermediate band with server-graded scoring.',
     category: 'quizzes',
-    href: '/practice#practice-level-quiz',
+    href: '/learn#practice-level-quiz',
     icon: 'target',
     level: 'All levels',
     minutes: 5,
     action: 'Take the quiz',
+  },
+  {
+    key: 'videos',
+    title: 'Teaching Videos',
+    description:
+      'YouTube teaching samples — grammar, pronunciation and sample classes — with filters by level and topic.',
+    category: 'listening',
+    href: '/learn#learn-videos',
+    icon: 'video',
+    level: 'All levels',
+    minutes: 10,
+    action: 'Watch the videos',
   },
   {
     key: 'exams',
@@ -127,7 +142,7 @@ export const PRACTICE_ACTIVITIES: PracticeActivity[] = [
     description:
       'Full timed mock exams — multiple-choice questions graded on the server with an instant score and answer review.',
     category: 'quizzes',
-    href: '/exams',
+    href: '/hsk-exams',
     icon: 'clipboard',
     level: 'All levels',
     minutes: 30,

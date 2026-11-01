@@ -45,7 +45,7 @@ export function HskStageOverview({ stage }: { stage: number }) {
         <div className="max-w-3xl mx-auto px-6">
           <Breadcrumbs
             items={[
-              { label: 'Practice', href: '/practice' },
+              { label: 'Learn', href: '/learn' },
               { label: 'HSK 1', href: '/practice/hsk1' },
               { label: `Stage ${stage}` },
             ]}
@@ -73,7 +73,7 @@ export function HskStageOverview({ stage }: { stage: number }) {
   if (!meta) return null
 
   const crumbs = [
-    { label: 'Practice', href: '/practice' },
+    { label: 'Learn', href: '/learn' },
     { label: 'HSK 1', href: '/practice/hsk1' },
     { label: `Stage ${stage}` },
   ]

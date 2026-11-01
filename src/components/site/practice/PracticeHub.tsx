@@ -1,18 +1,16 @@
 'use client'
 
 // ---------------------------------------------------------------------------
-// 🧭 PracticeHub — صفحهٔ مرکزی تمرین (/practice)
+// 🧭 PracticeActivities — بخش «تمرین» صفحهٔ Learn (/learn)
 //
-// ساختار:
-//   ۱) داشبورد: سلام شخصی‌سازی‌شده + شمارندهٔ امروز/هدف + استریک + اقدام
-//      «Continue» (آخرین فعالیت واقعی کاربر) — همهٔ آمار از سرور می‌آید و
-//      هیچ عددی جعل نمی‌شود؛ مهمان: بنر شفاف «برای ذخیرهٔ پیشرفت وارد شو».
-//   ۲) جست‌وجو + فیلتر دسته + مرتب‌سازی (پیشنهادی/اخیراً استفاده‌شده) —
-//      روی متادیتای واقعی رجیستری کار می‌کند.
-//   ۳) کارت فعالیت‌ها — هر کارت به «خودِ تمرین واقعی» می‌رسد (درخواست مالک:
-//      فعالیت‌های تعاملی داخل همین صفحه تعبیه شده‌اند و کارت فقط به لنگرِ
-//      پایین صفحه اسکرول می‌کند؛ تنها استثنا کتابخانهٔ درس‌ها در /learn).
-//   ۴) فعالیت‌های تعبیه‌شده: کلمهٔ روز، بازی تُن‌ها، فلش‌کارت‌ها و آزمون سطح.
+// درخواست مالک: تب Practice فقط امتحان‌هاست (/practice → /hsk-exams) و همهٔ
+// فعالیت‌های تمرین به تب Learn منتقل شده‌اند. این کامپوننت همان تجربهٔ هاب
+// قدیمی است — بدون هیروی مستقل — و وسط صفحهٔ Learn تعبیه می‌شود:
+//   ۱) کارت دورهٔ ساختاریافتهٔ HSK 1 (مسیر /practice/hsk1 با همان URLهای سئو)
+//   ۲) داشبورد: سلام شخصی‌سازی‌شده + شمارندهٔ امروز/هدف + استریک + اقدام
+//      «Continue» — همهٔ آمار از سرور می‌آید و هیچ عددی جعل نمی‌شود
+//   ۳) جست‌وجو + فیلتر دسته + مرتب‌سازی + کارت فعالیت‌ها
+//   ۴) فعالیت‌های تعبیه‌شده: کلمهٔ روز، بازی تُن‌ها، فلش‌کارت‌ها و آزمون سطح
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -26,6 +24,7 @@ import {
   GraduationCap,
   Layers,
   Loader2,
+  PlayCircle,
   Search,
   SearchX,
   Sparkles,
@@ -50,6 +49,7 @@ const ICONS = {
   target: Target,
   graduation: Sparkles,
   clipboard: ClipboardList,
+  video: PlayCircle,
 } as const
 
 interface ProgressSummary {
@@ -65,7 +65,7 @@ interface ProgressSummary {
 
 type LoadState = 'loading' | 'ready' | 'failed'
 
-export function PracticeHub() {
+export function PracticeActivities() {
   const [progress, setProgress] = useState<ProgressSummary | null>(null)
   const [state, setState] = useState<LoadState>('loading')
   const [query, setQuery] = useState('')
@@ -158,29 +158,10 @@ export function PracticeHub() {
       : null
 
   return (
-    <div id="page-practice">
-      {/* ================= هیروی تمرین ================= */}
-      <section className="pt-32 pb-12 md:pt-40 md:pb-14 relative overflow-hidden bg-cream">
-        <div
-          aria-hidden="true"
-          className="absolute -top-10 -left-20 w-72 h-72 bg-butter/25 rounded-full blur-3xl"
-        ></div>
-        <div className="char-bg top-12 right-[5%]" style={{ fontSize: '220px', opacity: 0.05 }} aria-hidden="true">
-          练
-        </div>
-
-        <div className="max-w-4xl mx-auto px-6 relative">
-          <div className="text-center mb-8">
-            <span className="inline-flex items-center gap-1.5 bg-sage-light/30 rounded-full px-4 py-1.5 mb-4 text-xs font-semibold uppercase tracking-widest text-sage-dark">
-              <Sparkles className="w-3.5 h-3.5" aria-hidden="true" /> Practice Hub
-            </span>
-            <h1 className="text-3xl md:text-5xl font-bold text-brown-dark mb-4">Practice Your Chinese</h1>
-            <p className="text-brown-light max-w-2xl mx-auto">
-              A little practice every day is how Mandarin sticks. Pick an activity below — words,
-              tones, quizzes or listening — and keep your streak alive.
-            </p>
-          </div>
-
+    <div id="practice-activities">
+      {/* ================= دورهٔ HSK 1 + داشبورد تمرین ================= */}
+      <section className="pt-16 pb-12 relative">
+        <div className="max-w-4xl mx-auto px-6">
           {/* ---------- دورهٔ ساختاریافته HSK 1 — صفحهٔ اختصاصی خودش ---------- */}
           <Link
             href="/practice/hsk1"

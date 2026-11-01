@@ -9,6 +9,13 @@ const nextConfig: NextConfig = {
   // 🟢 output: "standalone" حذف شد — فقط برای self-hosting (Docker/node server.js)
   // است و روی Vercel باعث 404 NOT_FOUND با بیلدِ موفق می‌شد. بدون آن، هم Vercel
   // درست کار می‌کند و هم `next start` محلی.
+  // 🧭 درخواست مالک: تب Practice فقط امتحان‌هاست — هاب قدیمی تمرین به صفحهٔ
+  // امتحان‌ها منتقل شد (/practice/hsk1/* دست‌نخورده؛ فقط مسیر دقیق ریدایرکت می‌شود).
+  async redirects() {
+    return [
+      { source: "/practice", destination: "/hsk-exams", permanent: true },
+    ];
+  },
   typescript: {
     // 🛡️ فاز ۶۴ — خطاهای تایپ دیگر در بیلد نادیده گرفته نمی‌شوند؛
     // ignoreBuildErrors=true اجازه داده بود کد خراب (مثل FaqVote غایب) تا
