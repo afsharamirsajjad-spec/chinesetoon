@@ -7,13 +7,13 @@
 // ---------------------------------------------------------------------------
 
 import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
 import { Loader2, PlayCircle, SearchX } from 'lucide-react'
 import { resilientJsonFetch } from '@/lib/client-fetch'
 import { VIDEO_LEVELS, VIDEO_CATEGORIES, VIDEO_LEVEL_LABELS, VIDEO_CATEGORY_LABELS } from '@/lib/videos'
 
 interface VideoCard {
   id: string
+  youtubeId: string
   title: string
   teacher: string
   level: string
@@ -121,9 +121,12 @@ export function VideosLibrary() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {videos.map((v, i) => (
-              <Link
+              // 🎬 درخواست مالک: کلیک روی پیش‌نمایش = تماشا در خود یوتیوب (تب جدید)
+              <a
                 key={v.id}
-                href={`/teaching-videos/${v.id}`}
+                href={`https://www.youtube.com/watch?v=${v.youtubeId}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="group bg-white rounded-2xl border border-sage-light/20 card-hover overflow-hidden flex flex-col animate-ct-fadeInUp"
                 style={{ animationDelay: `${(i % 6) * 60}ms` }}
               >
@@ -155,7 +158,7 @@ export function VideosLibrary() {
                     <span className="bg-cream rounded-full px-2.5 py-1 text-brown">{VIDEO_CATEGORY_LABELS[v.category] ?? v.category}</span>
                   </div>
                 </div>
-              </Link>
+              </a>
             ))}
           </div>
         )}

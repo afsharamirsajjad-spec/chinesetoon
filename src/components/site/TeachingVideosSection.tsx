@@ -16,6 +16,7 @@ import { VIDEO_LEVEL_LABELS } from '@/lib/videos'
 
 interface VideoCard {
   id: string
+  youtubeId: string
   title: string
   teacher: string
   level: string
@@ -51,9 +52,12 @@ export function TeachingVideosSection() {
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {shown.map((v, i) => (
-          <Link
+          // 🎬 درخواست مالک: کلیک روی پیش‌نمایش = تماشا در خود یوتیوب (تب جدید)
+          <a
             key={v.id}
-            href={`/teaching-videos/${v.id}`}
+            href={`https://www.youtube.com/watch?v=${v.youtubeId}`}
+            target="_blank"
+            rel="noopener noreferrer"
             className={`group bg-white rounded-2xl overflow-hidden border border-sage-light/20 card-hover animate-ct-fadeInUp ${
               ['', 'delay-100', 'delay-200'][i % 3]
             }`}
@@ -85,7 +89,7 @@ export function TeachingVideosSection() {
                 <p className="text-sm text-brown-light line-clamp-2">{v.description}</p>
               )}
             </div>
-          </Link>
+          </a>
         ))}
       </div>
 

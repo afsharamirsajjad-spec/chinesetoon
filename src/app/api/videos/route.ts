@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
         category: v.category,
         description: v.description,
         durationLabel: v.durationLabel,
+        youtubeId: v.youtubeId,
         thumbnailUrl: youTubeThumbnailUrl(v.youtubeId),
       })),
     })
