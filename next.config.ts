@@ -45,6 +45,9 @@ const nextConfig: NextConfig = {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "media-src 'self' blob:",
+      // 🎬 تعبیه‌های یوتیوب (صفحهٔ ویدیوهای آموزشی) — بدون frame-src، مرورگر به
+      // default-src 'self' برمی‌گردد و iframe یوتیوب «This content is blocked» می‌دهد
+      "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com",
       "font-src 'self' data:",
       "connect-src 'self'",
       "worker-src 'self' blob:",

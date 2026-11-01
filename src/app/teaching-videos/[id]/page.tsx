@@ -107,6 +107,19 @@ export default async function TeachingVideoPage({
               className="w-full h-full border-0"
             />
           </div>
+          {/* 🔗 اگر سازندهٔ ویدیو تعبیه را بسته باشد یوتیوب پیام «This content is
+              blocked» نشان می‌دهد — لینک مستقیم تماشا در یوتیوب همیشه کار می‌کند */}
+          <p className="mt-3 text-xs text-brown-light">
+            Video not playing?{" "}
+            <a
+              href={`https://www.youtube.com/watch?v=${video.youtubeId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-sage-dark hover:underline"
+            >
+              Watch it on YouTube ↗
+            </a>
+          </p>
 
           <div className="mt-6">
             <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold mb-3">
