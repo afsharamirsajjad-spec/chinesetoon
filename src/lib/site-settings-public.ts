@@ -24,7 +24,6 @@ export interface AnnouncementSettings {
 }
 
 export interface HeroSettings {
-  badge: string
   titleTop: string
   titleMiddle: string
   titleHighlight: string
@@ -78,7 +77,6 @@ export function applyHero(saved: unknown, fallback: HeroSettings = defaultPublic
   const str = (v: unknown, fb: string): string =>
     typeof v === 'string' && v.trim().length > 0 ? v.trim() : fb
   return {
-    badge: str(s.badge, fallback.badge),
     titleTop: str(s.titleTop, fallback.titleTop),
     titleMiddle: str(s.titleMiddle, fallback.titleMiddle),
     titleHighlight: str(s.titleHighlight, fallback.titleHighlight),

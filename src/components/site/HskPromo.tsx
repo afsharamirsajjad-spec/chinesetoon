@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useRef, useSyncExternalStore } from 'react'
-import { ArrowRight, CalendarClock, Check, GraduationCap } from 'lucide-react'
+import { ArrowRight, CalendarClock, Check } from 'lucide-react'
 import { siteContent, PageKey } from '@/content/site-content'
 
 const p = siteContent.classes.hskPromo
@@ -98,11 +98,7 @@ export function HskPromo({ onNavigate }: HskPromoProps) {
         <div className="relative grid lg:grid-cols-2 gap-10 p-8 md:p-12 items-center">
           {/* ستون متن */}
           <div>
-            <span className="inline-flex items-center gap-2 bg-white/80 backdrop-blur text-sage-dark text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm">
-              <GraduationCap className="w-4 h-4" />
-              {p.eyebrow}
-            </span>
-            <h2 id="hsk-promo-title" className="text-2xl md:text-4xl font-bold text-brown-dark mt-4 mb-4">
+            <h2 id="hsk-promo-title" className="text-2xl md:text-4xl font-bold text-brown-dark mb-4">
               {p.title}
             </h2>
             <p className="text-brown-light leading-relaxed mb-6 max-w-lg">{p.text}</p>

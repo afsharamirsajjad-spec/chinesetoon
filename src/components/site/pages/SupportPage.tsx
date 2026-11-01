@@ -234,9 +234,6 @@ export function SupportPage({ onToast }: SupportPageProps) {
         </div>
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-10 scroll-animate">
-            <span className="inline-block text-xs font-semibold uppercase tracking-widest text-sage-dark mb-3">
-              {s.faq.eyebrow}
-            </span>
             <h2 className="text-3xl md:text-4xl font-bold text-brown-dark mb-4">{s.faq.title}</h2>
             <p className="text-brown-light max-w-2xl mx-auto">{s.faq.subtitle}</p>
           </div>
@@ -337,9 +334,6 @@ export function SupportPage({ onToast }: SupportPageProps) {
         </div>
         <div className="max-w-2xl mx-auto px-6">
           <div className="text-center mb-10 scroll-animate">
-            <span className="inline-block text-xs font-semibold uppercase tracking-widest text-sage-dark mb-3">
-              {s.form.eyebrow}
-            </span>
             <h2 className="text-3xl font-bold text-brown-dark mb-3">{s.form.title}</h2>
             <p className="text-brown-light">{s.form.subtitle}</p>
           </div>

@@ -49,7 +49,6 @@ export const siteContent = {
   // ---------------------------------------------------------------
   home: {
     hero: {
-      badge: "Mandarin Chinese Learning", // برچسب کوچک بالای تیتر
       titleTop: "Learn Chinese.", // سطر اول تیتر بزرگ
       titleMiddle: "Have Fun.", // سطر دوم
       titleHighlight: "Make Progress.", // سطر سوم (به رنگ سبز)

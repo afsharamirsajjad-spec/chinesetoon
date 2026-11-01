@@ -3004,7 +3004,6 @@ function LessonForm({
 //  هر دو بخش با یک دکمه ذخیره می‌شوند (PUT /api/settings)
 // ---------------------------------------------------------------------
 type AdminHero = {
-  badge: string
   titleTop: string
   titleMiddle: string
   titleHighlight: string
@@ -3083,7 +3082,6 @@ function SettingsForm({
           announcement: finalAnn,
           homeStats: rows.map((r) => ({ value: Number(r.value) || 0, suffix: r.suffix, label: r.label })),
           hero: {
-            badge: hero.badge.trim(),
             titleTop: hero.titleTop.trim(),
             titleMiddle: hero.titleMiddle.trim(),
             titleHighlight: hero.titleHighlight.trim(),
@@ -3211,18 +3209,6 @@ function SettingsForm({
           {a.settingsHeroHint}
         </p>
         <div className="grid sm:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label htmlFor="sf-hero-badge" className="block text-xs font-semibold uppercase tracking-wider text-brown mb-1.5">
-              {a.settingsHeroBadgeLabel}
-            </label>
-            <input
-              id="sf-hero-badge"
-              value={hero.badge}
-              maxLength={60}
-              onChange={(e) => setHero({ ...hero, badge: e.target.value })}
-              className={inputSoft}
-            />
-          </div>
           <div>
             <label htmlFor="sf-hero-ttop" className="block text-xs font-semibold uppercase tracking-wider text-brown mb-1.5">
               {a.settingsHeroTitleTopLabel}

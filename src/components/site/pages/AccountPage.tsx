@@ -450,9 +450,6 @@ export function AccountPage({ onNavigate, onToast, go }: AccountPageProps) {
           <div className="max-w-2xl mx-auto">
             {/* هیرو — هم‌خانوادهٔ RegisterPage */}
             <div className="text-center mb-10">
-              <span className="inline-block text-xs font-semibold uppercase tracking-widest text-sage-dark mb-3">
-                {c.eyebrow}
-              </span>
               <h1 className="text-3xl md:text-5xl font-bold text-brown-dark mb-4">{hero.title}</h1>
               {hero.subtitle && <p className="text-brown-light">{hero.subtitle}</p>}
             </div>

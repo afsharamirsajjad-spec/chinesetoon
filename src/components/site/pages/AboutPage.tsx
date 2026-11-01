@@ -67,9 +67,6 @@ export function AboutPage({ onNavigate }: AboutPageProps) {
         </svg>
         <div className="max-w-7xl mx-auto px-6 relative">
           <div className="max-w-3xl">
-            <span className="inline-block text-xs font-semibold uppercase tracking-widest text-sage-dark mb-3">
-              {c.eyebrow}
-            </span>
             <h1 className="text-3xl md:text-5xl font-bold text-brown-dark mb-6">
               {c.titleTop} <span className="text-sage-dark">{c.titleHighlight}</span>
               {c.titleBottom}

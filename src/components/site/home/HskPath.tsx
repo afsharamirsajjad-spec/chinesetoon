@@ -48,9 +48,6 @@ export function HskPath({ onNavigate }: { onNavigate: (page: 'classes') => void 
 
       <div className="max-w-6xl mx-auto px-6 relative">
         <div className="text-center mb-14 scroll-animate">
-          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-sage-dark mb-3">
-            {hsk.eyebrow}
-          </span>
           <h2 className="text-3xl md:text-4xl font-bold text-brown-dark mb-4">{hsk.title}</h2>
           <p className="text-brown-light max-w-2xl mx-auto">{hsk.subtitle}</p>
         </div>

@@ -89,9 +89,6 @@ export function WordOfDay({
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* معرفی بخش */}
         <div className="text-center max-w-xl mx-auto mb-10 scroll-animate">
-          <span className="inline-flex items-center gap-1.5 bg-sage/15 rounded-full px-4 py-1.5 mb-4 text-xs font-semibold uppercase tracking-widest text-sage-dark">
-            <Volume2 className="w-3.5 h-3.5" aria-hidden="true" /> {wod.eyebrow}
-          </span>
           <h2 id="wod-title" className="text-2xl md:text-3xl font-bold text-brown-dark mb-3">
             {wod.title}
           </h2>

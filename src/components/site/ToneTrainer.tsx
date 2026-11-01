@@ -233,9 +233,6 @@ export function ToneTrainer() {
     // همان‌جا مدیریت می‌شود (mt قبلی برای جریان قدیمی صفحهٔ Learn بود)
     <section aria-labelledby="tone-trainer-title">
       <div className="text-center mb-8">
-        <span className="inline-block text-xs font-semibold uppercase tracking-widest text-sage-dark mb-3">
-          {t.eyebrow}
-        </span>
         <h2 id="tone-trainer-title" className="text-2xl md:text-3xl font-bold text-brown-dark mb-3">
           {t.title}
         </h2>

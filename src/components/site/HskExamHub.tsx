@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, ClipboardList, Clock, ListChecks, Loader2, Lock, PlayCircle, SearchX, Trophy, UserRound } from 'lucide-react'
+import { ArrowRight, Clock, ListChecks, Loader2, Lock, PlayCircle, SearchX, Trophy, UserRound } from 'lucide-react'
 import { resilientJsonFetch } from '@/lib/client-fetch'
 
 interface ExamRow {
@@ -113,9 +113,6 @@ export function HskExamHub() {
           考
         </div>
         <div className="max-w-4xl mx-auto px-6 relative text-center">
-          <span className="inline-flex items-center gap-1.5 bg-sage-light/30 rounded-full px-4 py-1.5 mb-4 text-xs font-semibold uppercase tracking-widest text-sage-dark">
-            <ClipboardList className="w-3.5 h-3.5" aria-hidden="true" /> HSK Exam Preparation
-          </span>
           <h1 className="text-3xl md:text-5xl font-bold text-brown-dark mb-4">HSK Mock Exams</h1>
           <p className="text-brown-light max-w-2xl mx-auto">
             Real exam conditions — server-enforced timers, autosaved progress and full answer review.

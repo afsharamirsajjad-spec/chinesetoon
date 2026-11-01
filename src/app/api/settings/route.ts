@@ -22,8 +22,10 @@ const announcementSchema = z.object({
 })
 
 // متن‌های هیروی صفحهٔ خانه — مالک از تب Settings ویرایش می‌کند (فاز ۲۲)
+// badge حذف شده است (برچسب تزئینی بالای هیرو دیگر نمایش داده نمی‌شود) —
+// برای سازگاری با تنظیمات قدیمی اختیاری مانده و نادیده گرفته می‌شود.
 const heroSchema = z.object({
-  badge: z.string().trim().min(2).max(60),
+  badge: z.string().trim().max(60).optional(),
   titleTop: z.string().trim().min(2).max(80),
   titleMiddle: z.string().trim().min(1).max(80),
   titleHighlight: z.string().trim().min(1).max(80),

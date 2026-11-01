@@ -14,7 +14,7 @@
 // ---------------------------------------------------------------------------
 
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowRight, Check, Loader2, Play, RotateCcw, Sparkles, Target } from 'lucide-react'
+import { ArrowRight, Check, Loader2, Play, RotateCcw, Target } from 'lucide-react'
 import { selectClassForRegistration } from './class-selection'
 import { siteContent, PageKey } from '@/content/site-content'
 import { resilientJsonFetch } from '@/lib/client-fetch'
@@ -208,9 +208,6 @@ export function LevelQuiz({ onNavigate }: { onNavigate: (page: PageKey) => void 
         {/* شروع */}
         {step === -1 && (
           <div className="text-center max-w-xl mx-auto animate-ct-fadeInUp">
-            <span className="inline-flex items-center gap-1.5 bg-butter/20 rounded-full px-4 py-1.5 mb-4 text-xs font-semibold uppercase tracking-widest text-brown">
-              <Sparkles className="w-3.5 h-3.5" /> {q.eyebrow}
-            </span>
             <h2 className="text-2xl md:text-3xl font-bold text-brown-dark mb-3">{q.title}</h2>
             <p className="text-sm text-brown-light leading-relaxed mb-8">{introSubtitle}</p>
             <button
@@ -277,9 +274,6 @@ export function LevelQuiz({ onNavigate }: { onNavigate: (page: PageKey) => void 
         {/* نتیجه */}
         {finished && (
           <div className="max-w-xl mx-auto text-center animate-ct-pop">
-            <span className="inline-block bg-sage-light/40 text-sage-dark text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
-              {q.resultLabel}
-            </span>
             <div className="w-24 h-24 mx-auto mb-5 bg-cream rounded-3xl flex items-center justify-center shadow-inner">
               <span className="text-3xl font-bold text-brown-dark font-serif">{result.char}</span>
             </div>

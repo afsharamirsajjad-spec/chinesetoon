@@ -1,6 +1,6 @@
 'use client'
 
-import { Newspaper, ArrowRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { siteContent, PageKey } from '@/content/site-content'
 import { usePosts, PostCard } from './blog-parts'
 import { CurveDivider } from './CurveDivider'
@@ -34,10 +34,6 @@ export function HomeBlogSection({ onNavigate }: HomeBlogSectionProps) {
       </div>
       <div className="max-w-7xl mx-auto px-6 relative">
         <div className="text-center mb-12 scroll-animate">
-          <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-sage-dark mb-3">
-            <Newspaper className="w-4 h-4" />
-            {t.eyebrow}
-          </span>
           <h2 className="text-3xl md:text-4xl font-bold text-brown-dark mb-4">{t.title}</h2>
           <p className="text-brown-light max-w-2xl mx-auto">{t.subtitle}</p>
         </div>

@@ -186,9 +186,6 @@ export function HomeReviewsCarousel({ onNavigate }: { onNavigate: (page: 'review
         <div className="max-w-7xl mx-auto px-6">
           {/* سرتیتر بخش */}
           <div className="text-center mb-12 scroll-animate">
-            <span className="inline-flex items-center gap-1.5 bg-white/70 rounded-full px-4 py-1.5 mb-3 text-xs font-semibold uppercase tracking-widest text-sage-dark">
-              <Quote className="w-3.5 h-3.5" aria-hidden="true" /> {rc.eyebrow}
-            </span>
             <h2 className="text-3xl md:text-4xl font-bold text-brown-dark mb-4">{rc.title}</h2>
             <p className="text-brown-light max-w-2xl mx-auto">{rc.subtitle}</p>
           </div>

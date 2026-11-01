@@ -211,10 +211,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
         {/* ✍️ محتوای هیرو — لایهٔ رو، وسط‌چین (همان محتوای قبلی، بدون تغییر متن) */}
         <div className="relative z-10 max-w-7xl mx-auto px-6 pt-32 md:pt-40 lg:pt-44 pb-24 sm:pb-28 md:pb-32">
           <div className="max-w-2xl mx-auto text-center flex flex-col items-center animate-ct-fadeInUp">
-            <div className="inline-flex items-center gap-2 bg-sage-light/40 rounded-full px-4 py-1.5 mb-6">
-              <span className="w-2 h-2 bg-sage rounded-full"></span>
-              <span className="text-xs font-medium text-sage-dark">{hero.badge}</span>
-            </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-brown-dark leading-tight mb-6">
               {hero.titleTop}
               <br />
@@ -277,9 +273,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
         </svg>
         <div className="max-w-7xl mx-auto px-6 relative">
           <div className="text-center mb-14 scroll-animate">
-            <span className="inline-block text-xs font-semibold uppercase tracking-widest text-sage-dark mb-3">
-              {why.eyebrow}
-            </span>
             <h2 className="text-3xl md:text-4xl font-bold text-brown-dark mb-4">{why.title}</h2>
             <p className="text-brown-light max-w-2xl mx-auto">{why.subtitle}</p>
           </div>
@@ -316,9 +309,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
         <div aria-hidden="true" className="absolute bottom-10 left-[8%] w-40 h-40 ct-dots opacity-40 [mask-image:radial-gradient(circle,black,transparent_70%)] hidden md:block"></div>
         <div className="max-w-7xl mx-auto px-6 relative">
           <div className="text-center mb-14 scroll-animate">
-            <span className="inline-block text-xs font-semibold uppercase tracking-widest text-sage-dark mb-3">
-              {c.exploreClasses.eyebrow}
-            </span>
             <h2 className="text-3xl md:text-4xl font-bold text-brown-dark mb-4">
               {c.exploreClasses.title}
             </h2>
@@ -399,9 +389,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
         </div>
         <div className="max-w-7xl mx-auto px-6 relative">
           <div className="text-center mb-12 scroll-animate">
-            <span className="inline-block text-xs font-semibold uppercase tracking-widest text-sage-dark mb-3">
-              {free.eyebrow}
-            </span>
             <h2 className="text-3xl md:text-4xl font-bold text-brown-dark mb-4">{free.title}</h2>
             <p className="text-brown-light max-w-2xl mx-auto">{free.subtitle}</p>
           </div>
@@ -487,9 +474,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
         </div>
         <div className="max-w-3xl mx-auto px-6 relative">
           <div className="text-center mb-12 scroll-animate">
-            <span className="inline-block text-xs font-semibold uppercase tracking-widest text-sage-dark mb-3">
-              FAQ · 常见问题
-            </span>
             <h2 className="text-3xl md:text-4xl font-bold text-brown-dark mb-4">
               Frequently Asked Questions
             </h2>
@@ -547,9 +531,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
         <div className="relative max-w-3xl mx-auto px-6 py-20 md:py-24 text-center">
           {/* 🌙 متن‌ها با hex ثابت — روی گرادیان سبز در هر دو حالت خوانا */}
-          <span className="inline-block text-xs font-semibold uppercase tracking-widest text-[#FFF7E8]/80 mb-4">
-            {c.finalCta.eyebrow}
-          </span>
           <h2 className="text-3xl md:text-5xl font-bold text-[#FFF7E8] mb-4">{c.finalCta.title}</h2>
           <p className="text-[#FFF7E8]/85 max-w-xl mx-auto mb-9">{c.finalCta.subtitle}</p>
           <div className="flex flex-wrap justify-center gap-4">

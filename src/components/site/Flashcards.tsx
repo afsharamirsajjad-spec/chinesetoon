@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Layers, RefreshCw, Shuffle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, RefreshCw, Shuffle } from 'lucide-react'
 import { siteContent } from '@/content/site-content'
 import { PinyinText, toneMark, toneOf } from './pinyin'
 
@@ -89,9 +89,6 @@ export function Flashcards({ cards }: { cards?: FlashCardData[] }) {
       <div className="p-8 md:p-12">
         {/* معرفی بخش */}
         <div className="text-center max-w-xl mx-auto mb-10">
-          <span className="inline-flex items-center gap-1.5 bg-peach-light/30 rounded-full px-4 py-1.5 mb-4 text-xs font-semibold uppercase tracking-widest text-brown">
-            <Layers className="w-3.5 h-3.5" /> {fc.eyebrow}
-          </span>
           <h2 className="text-2xl md:text-3xl font-bold text-brown-dark mb-3">{fc.title}</h2>
           <p className="text-sm text-brown-light leading-relaxed">{fc.subtitle}</p>
         </div>
