@@ -50,7 +50,9 @@ export function Header({ activePage }: HeaderProps) {
   }
 
   // 🧭 مسیر واقعی هر نمای منو — لینک‌های <a> برای خزندگی گوگل
-  const hrefFor = (page: PageKey) => (page === 'home' ? '/' : `/${page}`)
+  // 🎬 بخش اختصاصی ویدیوها روی /teaching-videos زندگی می‌کند
+  const hrefFor = (page: PageKey) =>
+    page === 'home' ? '/' : page === 'videos' ? '/teaching-videos' : `/${page}`
 
   return (
     <>

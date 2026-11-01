@@ -552,3 +552,14 @@ Fixes:
 - Fixed curly-quote corruption introduced in registry.ts during editing (strings had smart quotes instead of straight quotes).
 
 Verification: tsc 0; eslint clean; bun test 91/91; build OK; browser check on /learn confirms exactly one 'Practice & Exercises' heading, the Word Lessons chip exists in the unified filter row, and clicking it shows the lesson cards in the same grid.
+
+---
+Task ID: VIDEOS-NAV-SMART-EMBED-1
+Task: Dedicated Videos section in the main nav + smart YouTube embed that auto-detects blocked videos (owner reports: wants one videos place with filters he can add to, and the YouTube sign-in flow leaves the site).
+
+Changes:
+- Main navigation gains a "Videos" item (Home/Classes/Learn/Videos/Practice/...): PageKey union + navigation entry + Header hrefFor and site-shell navigateTo map 'videos' to /teaching-videos, pageFromPathname highlights the Videos tab on /teaching-videos. The dedicated page keeps its level/category filters; the owner adds videos from the admin panel (HSK & Learning -> Teaching Videos tab).
+- New YouTubeEmbed client component (watch page): replaces the raw iframe with the YouTube IFrame Player API (youtube-nocookie host). Player onError 100/101/150/2 (video missing / uploader disabled embedding / invalid id) swaps in a fallback card - thumbnail + explanation + "Watch on YouTube" button - so a sign-in-gated or embed-blocked video never traps the visitor inside the site; API-load failure falls back to the plain iframe. The static "Watch it on YouTube" link stays under the player.
+- next.config CSP: script-src now allows https://www.youtube.com and https://s.ytimg.com (the IFrame API and its player widget); frame-src youtube hosts were already allowed.
+
+Verification: tsc 0; eslint clean; next build OK; curl confirms the nav link and the new CSP; browser check on /teaching-videos shows heading + level/category filters (empty state locally - the DB-backed grid appears in production).

@@ -77,9 +77,9 @@ function pageFromPathname(pathname: string): PageKey {
   if (raw === 'pay') return 'register'
   if (raw === 'forgot-password' || raw === 'reset-password') return 'account'
   // 🧭 درخواست مالک: تب Practice فقط امتحان‌هاست (/practice → /hsk-exams) و
-  // ویدیوها در Learn زندگی می‌کنند — هایلایت منو باید پیروی کند
+  // ویدیوها بخش اختصاصی خودشان را دارند (/teaching-videos) — هایلایت منو پیروی می‌کند
   if (raw === 'hsk-exams') return 'practice'
-  if (raw === 'teaching-videos') return 'learn'
+  if (raw === 'teaching-videos') return 'videos'
   const known: PageKey[] = [
     'home',
     'classes',
@@ -184,7 +184,8 @@ export function SiteChrome({
 
   const navigateTo = useCallback(
     (page: PageKey) => {
-      const target = page === 'home' ? '/' : `/${page}`
+      // 🎬 بخش اختصاصی ویدیوها روی /teaching-videos زندگی می‌کند
+      const target = page === 'home' ? '/' : page === 'videos' ? '/teaching-videos' : `/${page}`
       // مقایسه با «مسیر واقعی» نه مپ منو: /lesson/x برای هایلایت منو «learn»
       // است، اما دکمهٔ «All lessons» روی همان صفحه باید واقعاً به /learn برود
       if (window.location.pathname === target) {

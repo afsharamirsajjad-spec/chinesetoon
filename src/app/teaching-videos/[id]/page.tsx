@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { youTubeEmbedUrl, youTubeThumbnailUrl, VIDEO_LEVEL_LABELS, VIDEO_CATEGORY_LABELS } from "@/lib/videos";
+import { YouTubeEmbed } from "@/components/site/YouTubeEmbed";
 import { siteContent } from "@/content/site-content";
 
 const SITE_URL = siteContent.contact.siteUrl;
@@ -96,19 +97,10 @@ export default async function TeachingVideoPage({
             <span className="font-semibold text-brown">{video.title}</span>
           </nav>
 
-          <div className="bg-black rounded-3xl overflow-hidden shadow-lg aspect-video">
-            <iframe
-              src={youTubeEmbedUrl(video.youtubeId)}
-              title={video.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="strict-origin-when-cross-origin"
-              className="w-full h-full border-0"
-            />
-          </div>
-          {/* 🔗 اگر سازندهٔ ویدیو تعبیه را بسته باشد یوتیوب پیام «This content is
-              blocked» نشان می‌دهد — لینک مستقیم تماشا در یوتیوب همیشه کار می‌کند */}
+          {/* 🎬 پخش‌کنندهٔ هوشمند — اگر ویدیو اجازهٔ تعبیه نداشته باشد (خطای
+              101/150 یوتیوب) خودش کارت «Watch on YouTube» را نشان می‌دهد */}
+          <YouTubeEmbed videoId={video.youtubeId} title={video.title} />
+          {/* 🔗 لینک مستقیم تماشا — همیشه در دسترس */}
           <p className="mt-3 text-xs text-brown-light">
             Video not playing?{" "}
             <a

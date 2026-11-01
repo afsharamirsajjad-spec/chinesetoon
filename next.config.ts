@@ -36,9 +36,12 @@ const nextConfig: NextConfig = {
     //  • media-src blob: برای صدای TTS ساخته‌شده در مرورگر
     //  • frame-ancestors 'none' هم‌راستا با X-Frame-Options: DENY
     const isDev = process.env.NODE_ENV !== "production";
+    // 🎬 اسکریپت‌های IFrame Player API یوتیوب (صفحهٔ ویدیوهای آموزشی) —
+    // iframe_api از youtube.com و ویجت پخش از s.ytimg.com لود می‌شوند
+    const ytScriptSrc = " https://www.youtube.com https://s.ytimg.com";
     const scriptSrc = isDev
-      ? "'self' 'unsafe-inline' 'unsafe-eval'"
-      : "'self' 'unsafe-inline'";
+      ? `'self' 'unsafe-inline' 'unsafe-eval'${ytScriptSrc}`
+      : `'self' 'unsafe-inline'${ytScriptSrc}`;
     const csp = [
       "default-src 'self'",
       `script-src ${scriptSrc}`,

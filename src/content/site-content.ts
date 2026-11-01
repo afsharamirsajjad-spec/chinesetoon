@@ -3133,6 +3133,7 @@ export const siteContent = {
     { key: "home", label: "Home" },
     { key: "classes", label: "Classes" },
     { key: "learn", label: "Learn" },
+    { key: "videos", label: "Videos" }, // 🎬 بخش اختصاصی ویدیوها — /teaching-videos (نگاشت در hrefFor/navigateTo)
     { key: "practice", label: "Practice" }, // 🧭 هاب تمرین — /practice
     { key: "about", label: "About" },
     { key: "blog", label: "Blog" }, // 🆕 وبلاگ
@@ -3286,6 +3287,7 @@ export type PageKey =
   | "home"
   | "classes"
   | "learn"
+  | "videos"
   | "practice"
   | "about"
   | "blog"
