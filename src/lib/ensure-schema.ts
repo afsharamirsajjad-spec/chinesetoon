@@ -16,6 +16,14 @@
 // را با DEFAULT امن اضافه می‌کند و ایندکس‌های یکتا/جست‌وجو را تضمین می‌کند.
 // اجرای دوباره کاملاً بی‌اثر (idempotent) است.
 //
+// 🟢 مسیر PostgreSQL (فاز پنل ادمین/پلتفرم آموزشی): جداول جدید — TeachingVideo،
+// EducationalFile، خانوادهٔ Hsk*، HskProgress — فقط در همین فایل DDL داشتند و
+// چون این فایل روی PostgreSQL no-op بود، در محیط واقعی (Neon) «هرگز ساخته
+// نمی‌شدند»؛ نتیجه: افزودن ویدیو/فایل/محتوای HSK/آزمون با 500 شکست می‌خورد.
+// حالا همان فهرست additive با تبدیل خودکار گویش (DATETIME→TIMESTAMP(3) و
+// BOOLEAN DEFAULT 0/1→FALSE/TRUE) روی PostgreSQL هم اجرا می‌شود — idempotent
+// و بدون خطر، همان فلسفهٔ lms-schema.
+//
 // امنیت: هیچ راز/دادهٔ حساسی در این فایل نیست؛ فقط DDL.
 // ---------------------------------------------------------------------------
 
@@ -23,14 +31,25 @@ import { db } from '@/lib/db'
 
 /**
  * 🟢 PostgreSQL guard — تشخیص می‌دهد که آیا دیتابیس فعلی PostgreSQL است
- * (production روی Vercel + Neon). در PostgreSQL، مدیریت اسکیما بر عهدهٔ
- * `prisma migrate deploy` است و این خودترمیمِ SQLite-only نباید اجرا شود
- * (DDLهای زیر شامل `DATETIME`, `BOOLEAN NOT NULL DEFAULT 0`,
- * `sqlite_master`, `PRAGMA table_info` است که روی PostgreSQL نامعتبرند).
+ * (production روی Vercel + Neon). مدیریت اسکیما این‌جا هم additive و idempotent
+ * است ولی با گویش PG — نسخهٔ SQLite (PRAGMA/sqlite_master/DATETIME) فقط برای
+ * توسعهٔ محلی اجرا می‌شود.
  */
 function isPostgresDatabase(): boolean {
   const url = (process.env.DATABASE_URL ?? '').trim().toLowerCase()
   return url.startsWith('postgres') || url.startsWith('postgresql')
+}
+
+/**
+ * 🔄 تبدیل گویش SQLite DDL این فایل به PostgreSQL — تبدیل‌های تعریف‌شده:
+ *   DATETIME → TIMESTAMP(3) (قرارداد Prisma روی PG)
+ *   BOOLEAN NOT NULL DEFAULT 0/1 → FALSE/TRUE (SQLite 0/1 را نمی‌پذیرد PG)
+ * بقیهٔ اجزا (TEXT/INTEGER/REAL/CURRENT_TIMESTAMP/CONSTRAINTها) روی PG معتبرند.
+ */
+export function toPostgresDdl(ddl: string): string {
+  return ddl
+    .replace(/\bDATETIME\b/g, 'TIMESTAMP(3)')
+    .replace(/(BOOLEAN NOT NULL DEFAULT )([01])(?![\d])/g, (_m, p1: string, p2: string) => `${p1}${p2 === '1' ? 'TRUE' : 'FALSE'}`)
 }
 
 /** تشخیص خطای ناهم‌خوانی اسکیما (جدول/ستون غایب) از روی کد Prisma */
@@ -44,7 +63,7 @@ export function isSchemaDriftError(e: unknown): boolean {
 // یا ستونی پیدا کرد، همین‌جا هم به‌روز می‌شود (تک منبع مکمل).
 // ---------------------------------------------------------------------------
 
-const CREATE_TABLES: readonly string[] = [
+export const CREATE_TABLES: readonly string[] = [
   `CREATE TABLE IF NOT EXISTS "SupportMessage" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "name" TEXT NOT NULL,
@@ -676,7 +695,7 @@ const CREATE_TABLES: readonly string[] = [
 ]
 
 // ایندکس‌ها — نام‌ها دقیقاً مطابق قرارداد Prisma تا با db push هم‌خوان بمانند
-const CREATE_INDEXES: readonly string[] = [
+export const CREATE_INDEXES: readonly string[] = [
   `CREATE INDEX IF NOT EXISTS "Registration_userId_idx" ON "Registration"("userId")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "NewsletterSubscriber_email_key" ON "NewsletterSubscriber"("email")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "Post_slug_key" ON "Post"("slug")`,
@@ -760,7 +779,7 @@ const CREATE_INDEXES: readonly string[] = [
 // ترمیم ستون‌های جدول‌های «موجودِ کهنه» — فقط ADD COLUMN با DEFAULT امن
 // (محدودیت SQLite: ستون NOT NULL فقط با DEFAULT قابل‌اضافه است)
 // ---------------------------------------------------------------------------
-const ALTER_COLUMNS: Readonly<Record<string, readonly string[]>> = {
+export const ALTER_COLUMNS: Readonly<Record<string, readonly string[]>> = {
   User: [
     'ALTER TABLE "User" ADD COLUMN "dateOfBirth" DATETIME',
     'ALTER TABLE "User" ADD COLUMN "country" TEXT NOT NULL DEFAULT \'\'',
@@ -1010,19 +1029,12 @@ let lastRunAt = 0
 const RE_RUN_AFTER_MS = 60_000 // پس از یک اجرای موفق، حداکثر یک‌بار در دقیقه دوباره
 
 export async function ensureSchema(opts?: { force?: boolean; reason?: string }): Promise<EnsureSchemaResult> {
-  // 🟢 PostgreSQL (Vercel + Neon): خودترمیمیِ SQLite-only کاملاً no-op است.
-  // مدیریت اسکیما در PostgreSQL از طریق `prisma migrate deploy` (در build)
-  // انجام می‌شود. DDLهای این فایل روی PostgreSQL نامعتبرند و اجرایشان خطا می‌دهد.
-  const noop: EnsureSchemaResult = { createdTables: [], addedColumns: [], ensuredIndexes: 0, errors: [] }
-  if (isPostgresDatabase()) {
-    return noop
-  }
   const now = Date.now()
   if (!opts?.force && inFlight) return inFlight
   if (!opts?.force && now - lastRunAt < RE_RUN_AFTER_MS) {
     return { createdTables: [], addedColumns: [], ensuredIndexes: 0, errors: [] }
   }
-  inFlight = runEnsureSchema()
+  inFlight = (isPostgresDatabase() ? runPostgresSchema() : runEnsureSchema())
     .then((r) => {
       lastRunAt = Date.now()
       if (r.createdTables.length > 0 || r.addedColumns.length > 0) {
@@ -1038,4 +1050,73 @@ export async function ensureSchema(opts?: { force?: boolean; reason?: string }):
       inFlight = null
     })
   return inFlight
+}
+
+// ---------------------------------------------------------------------------
+// 🟢 خودترمیمِ PostgreSQL — همان فهرست additive با گویش PG.
+// جدول‌های موجود دست‌نخورده می‌مانند (CREATE IF NOT EXISTS = no-op)؛ فقط
+// جداول/ستون‌های واقعاً غایب ساخته می‌شوند — دقیقاً همان چیزی که در محیط
+// واقعی برای جداول پلتفرم آموزشی اتفاق نیفتاده بود.
+// ---------------------------------------------------------------------------
+async function runPostgresSchema(): Promise<EnsureSchemaResult> {
+  const result: EnsureSchemaResult = { createdTables: [], addedColumns: [], ensuredIndexes: 0, errors: [] }
+
+  // ۱) جدول‌های موجود — فقط برای گزارش دقیق «چه چیزی ساخته شد»
+  let before: Set<string>
+  try {
+    const rows = await db.$queryRawUnsafe<Array<{ table_name: string }>>(
+      `SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema()`
+    )
+    before = new Set(Array.isArray(rows) ? rows.map((r) => String(r.table_name)) : [])
+  } catch {
+    before = new Set()
+  }
+
+  // ۲) جداول غایب — CREATE TABLE IF NOT EXISTS با گویش PG
+  for (const ddl of CREATE_TABLES) {
+    const name = ddl.match(/CREATE TABLE IF NOT EXISTS "([^"]+)"/)?.[1] ?? ''
+    try {
+      await db.$executeRawUnsafe(toPostgresDdl(ddl))
+      if (name && !before.has(name)) result.createdTables.push(name)
+    } catch (e) {
+      result.errors.push(`create-table: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200))
+    }
+  }
+
+  // ۳) ایندکس‌ها — همین گویش روی PG معتبر است؛ شکست یکی (مثلاً دادهٔ تکراری قدیمی) بقیه را نمی‌شکند
+  for (const ddl of CREATE_INDEXES) {
+    try {
+      await db.$executeRawUnsafe(ddl)
+      result.ensuredIndexes++
+    } catch (e) {
+      result.errors.push(`index: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200))
+    }
+  }
+
+  // ۴) ستون‌های غایب جدول‌های موجود — یک کوئری برای همهٔ ستون‌های اسکیمای جاری
+  let existingColumns: Set<string>
+  try {
+    const rows = await db.$queryRawUnsafe<Array<{ table_name: string; column_name: string }>>(
+      `SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = current_schema()`
+    )
+    existingColumns = new Set(
+      Array.isArray(rows) ? rows.map((r) => `${String(r.table_name)}.${String(r.column_name)}`) : []
+    )
+  } catch {
+    existingColumns = new Set()
+  }
+  for (const [table, statements] of Object.entries(ALTER_COLUMNS)) {
+    for (const stmt of statements) {
+      const col = stmt.match(/ADD COLUMN\s+"([^"]+)"/)?.[1]
+      if (!col || existingColumns.has(`${table}.${col}`)) continue
+      try {
+        await db.$executeRawUnsafe(toPostgresDdl(stmt.replace('ADD COLUMN', 'ADD COLUMN IF NOT EXISTS')))
+        result.addedColumns.push(`${table}.${col}`)
+      } catch (e) {
+        result.errors.push(`alter ${table}.${col}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200))
+      }
+    }
+  }
+
+  return result
 }
