@@ -5,6 +5,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { siteContent } from "@/content/site-content";
 import { SiteChrome } from "@/components/site/site-shell";
+import { getPublicSiteSettings } from "@/lib/site-settings-server";
 
 // 🚀 فاز سرعت — Poppins به‌جای next/font/google (که در بیلد به fonts.googleapis.com
 // وابسته بود و در شبکه‌های فیلترشده بیلد را می‌شکند) به‌صورت محلی self-host می‌شود:
@@ -82,6 +83,13 @@ export const viewport: Viewport = {
   ],
 };
 
+// ⚙️ تنظیمات عمومی (اعلان/هیرو/آمار) در HTML سرور-رندر می‌شوند تا اولین رنگ
+// صفحه همان تنظیمات مالک باشد نه پیش‌فرض‌ها (حذف فلش لودینگ). revalidate=60
+// یعنی صفحات استاتیک ISR می‌مانند و حداکثر یک دقیقه بعد از ذخیرهٔ مالک در
+// پنل، HTML تازه با تنظیمات جدید ساخته می‌شود (fetch کلاینت هم همان لحظه
+// تازه‌سازی می‌کند). شکست DB (مثل بیلد محلی بدون دیتابیس) → پیش‌فرض فایل محتوا.
+export const revalidate = 60;
+
 // ---------------------------------------------------------------------
 // 🔍 داده‌های ساخت‌یافته (JSON-LD) برای گوگل — Organization + WebSite + FAQ
 //    سؤال‌ها مستقیم از فایل محتوا می‌آیند؛ با ویرایش FAQ در
@@ -136,11 +144,14 @@ function buildJsonLd(): string {
   return JSON.stringify({ "@context": "https://schema.org", "@graph": graph }).replace(/</g, "\\u003c");
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // ⚙️ تنظیمات مالک برای اولین رنگ صفحه — با شکست DB به پیش‌فرض برمی‌گردد
+  const siteSettings = await getPublicSiteSettings();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${poppins.variable} antialiased`}>
@@ -150,7 +161,7 @@ export default function RootLayout({
           {`(function(){try{var t=localStorage.getItem('ct-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})();`}
         </Script>
         {/* 🧭 پوستهٔ مشترک روت‌ها — هدر/فوتر/توست + کانتکست ناوبری (فاز SEO) */}
-        <SiteChrome>{children}</SiteChrome>
+        <SiteChrome initialSettings={siteSettings}>{children}</SiteChrome>
         <Toaster />
         {/* 🔍 داده‌های ساخت‌یافته برای موتورهای جستجو */}
         <script

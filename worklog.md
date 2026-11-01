@@ -483,3 +483,17 @@ Verification: prisma generate OK; tsc 0 errors; eslint clean; bun test 83/83 (in
 
 ---
 
+
+---
+Task ID: SSR-SITE-SETTINGS-1
+Task: Site settings (announcement/hero/homeStats) rendered server-side - no more default-content flash on load.
+
+Problem: AnnouncementBar/HomePage hero/StatsBar each started from bundled siteContent defaults and fetched /api/settings only after mount, so every load painted the DEFAULT texts first and swapped to the owner's configured settings a moment later (reported by the owner).
+
+Fix:
+- src/lib/site-settings-public.ts (client-safe): shared types, bundled defaults, safe appliers (applyAnnouncement/applyHero/applyHomeStats) and publicSettingsFromApiPayload - one source of truth for server SSR and client refreshers.
+- src/lib/site-settings-server.ts (server-only): React-cached getPublicSiteSettings() reading SiteSetting keys announcement/hero/homeStats straight from the DB; any DB failure (e.g. local build without a DB) falls back to bundled defaults, never breaks the render.
+- layout.tsx: awaits the loader and passes PublicSiteSettings into SiteChrome (new initialSettings prop -> SiteSettingsContext + useSiteSettings()); revalidate = 60 keeps pages ISR-cached - 28 page routes now show Revalidate 1m, so the baked HTML refreshes within a minute of the owner saving new settings (client /api/settings refresher still updates the live view instantly after a panel save).
+- AnnouncementBar/HomePage useHeroText/StatsBar: initial state now comes from the SSR context (configured values on first paint); their client-side refresh remains as the instant-update path, reusing the same appliers so saved/missing/corrupt values behave identically on server and client.
+
+Verification: tsc 0; eslint clean; next build OK with revalidate=1m on all static pages; curl of / shows announcement + hero text present in the SSR HTML (server-rendered, not fetch-swapped); browser smoke test renders the home page with the announcement bar and stats from the SSR path. On production (DB-backed) the first paint now shows the owner's configured settings directly.

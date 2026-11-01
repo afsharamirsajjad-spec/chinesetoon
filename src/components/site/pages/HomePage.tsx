@@ -30,6 +30,8 @@ import { Leaflet } from '../ToonBranch'
 import { HskPath } from '../home/HskPath'
 import { siteContent, PageKey } from '@/content/site-content'
 import { appNavigate } from '@/lib/nav'
+import { useSiteSettings } from '../site-shell'
+import { applyHero } from '@/lib/site-settings-public'
 
 const c = siteContent.home
 
@@ -90,26 +92,25 @@ function useHomeClasses(): HomeClassCard[] {
 
 // ---------------------------------------------------------------------
 //  ✏️ متن‌های هیرو از تنظیمات دیتابیس خوانده می‌شود (تب Settings پنل)
-//  تا مالک بدون دست‌زدن به کد، تیتر/بج/زیرنویس هیرو را عوض کند.
-//  تا قبل از لود، پیش‌فرض فایل محتوا نشان داده می‌شود.
+//  مقدار اولیه از SSR می‌آید (layout تنظیمات را در HTML می‌ریزد) — از اولین
+//  رنگ صفحه متن مالک دیده می‌شود، نه پیش‌فرض فایل محتوا. fetch تازه‌ساز باقی
+//  مانده تا تغییر مالک در پنل بلافاصله در همین نما هم اعمال شود.
 // ---------------------------------------------------------------------
 function useHeroText() {
-  const [hero, setHero] = useState(c.hero)
+  const initialHero = useSiteSettings().hero
+  const [hero, setHero] = useState(initialHero)
   useEffect(() => {
     let cancelled = false
     fetch('/api/settings')
       .then((r) => r.json())
       .then((d) => {
-        const saved = d?.settings?.hero
-        if (!cancelled && saved && typeof saved === 'object') {
-          setHero({ ...c.hero, ...saved })
-        }
+        if (!cancelled) setHero(applyHero(d?.settings?.hero, initialHero))
       })
-      .catch(() => {}) // خطا = پیش‌فرض فایل محتوا
+      .catch(() => {}) // خطا = همان مقدار SSR
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [initialHero])
   return hero
 }
 

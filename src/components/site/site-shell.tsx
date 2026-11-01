@@ -29,6 +29,10 @@ import { ChatWidget } from './chat/ChatWidget'
 import { useReveal } from './useReveal'
 import { setAppRouter } from '@/lib/nav'
 import { PageKey } from '@/content/site-content'
+import {
+  defaultPublicSiteSettings,
+  type PublicSiteSettings,
+} from '@/lib/site-settings-public'
 
 interface SiteContextValue {
   /** نمای فعال برای هایلایت منو (مشتق از pathname) */
@@ -50,6 +54,18 @@ export function useSite(): SiteContextValue {
   const ctx = useContext(SiteContext)
   if (!ctx) throw new Error('useSite must be used inside <SiteChrome>')
   return ctx
+}
+
+// ---------------------------------------------------------------------------
+// ⚙️ کانتکست تنظیمات عمومی (announcement/hero/homeStats) — layout سمت سرور
+// مقدار دیتابیس را به SiteChrome می‌دهد تا اولین رندر (HTML) همان تنظیمات
+// مالک را نشان دهد، نه پیش‌فرض‌های فایل محتوا (حذف فلش لودینگ).
+// ---------------------------------------------------------------------------
+const SiteSettingsContext = createContext<PublicSiteSettings>(defaultPublicSiteSettings)
+
+/** تنظیمات اولیهٔ رندر — SSR از دیتابیس پر می‌شود؛ بیرون از SiteChrome = پیش‌فرض فایل محتوا */
+export function useSiteSettings(): PublicSiteSettings {
+  return useContext(SiteSettingsContext)
 }
 
 /** نگاشت pathname → نمای منو (هم‌ارز pageFromHash قدیمی) */
@@ -108,7 +124,14 @@ function useLegacyHashRedirect() {
   }, [router])
 }
 
-export function SiteChrome({ children }: { children: React.ReactNode }) {
+export function SiteChrome({
+  children,
+  initialSettings,
+}: {
+  children: React.ReactNode
+  /** ⚙️ تنظیمات عمومی خوانده‌شده سمت سرور (layout) — غایب = پیش‌فرض فایل محتوا */
+  initialSettings?: PublicSiteSettings
+}) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -177,14 +200,16 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
 
   return (
     <SiteContext.Provider value={value}>
-      <div className="ct-body min-h-screen flex flex-col">
-        <Header activePage={activePage} />
-        <Toast message={toastMessage} show={toastShow} />
-        <BackToTop />
-        <ChatWidget />
-        <main className="flex-1">{children}</main>
-        <Footer onNavigate={navigateTo} onToast={showToast} />
-      </div>
+      <SiteSettingsContext.Provider value={initialSettings ?? defaultPublicSiteSettings}>
+        <div className="ct-body min-h-screen flex flex-col">
+          <Header activePage={activePage} />
+          <Toast message={toastMessage} show={toastShow} />
+          <BackToTop />
+          <ChatWidget />
+          <main className="flex-1">{children}</main>
+          <Footer onNavigate={navigateTo} onToast={showToast} />
+        </div>
+      </SiteSettingsContext.Provider>
     </SiteContext.Provider>
   )
 }

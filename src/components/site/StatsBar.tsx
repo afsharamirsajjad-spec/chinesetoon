@@ -1,10 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { siteContent } from '@/content/site-content'
 import { CurveDivider } from './CurveDivider'
-
-const defaultStats = siteContent.stats.items
+import { useSiteSettings } from './site-shell'
+import { applyHomeStats, type HomeStatItem } from '@/lib/site-settings-public'
 
 /**
  * شمارنده متحرک — وقتی وارد دید کاربر شود، از ۰ تا مقدار نهایی می‌شمارد.
@@ -55,13 +54,16 @@ function StatItem({
 
 // ---------------------------------------------------------------------
 //  📊 نوار آمار صفحهٔ اول — از تب Settings پنل ادمین قابل تغییر است
-//  (PUT /api/settings → کلید homeStats). تا وقتی مالک چیزی ذخیره نکرده،
-//  عددهای پیش‌فرض فایل محتوا نشان داده می‌شود.
+//  (PUT /api/settings → کلید homeStats). مقدار اولیه از SSR می‌آید (layout
+//  تنظیمات دیتابیس را در HTML می‌ریزد) — از اولین رنگ صفحه عددهای مالک دیده
+//  می‌شود؛ fetch تازه‌ساز فقط برای به‌روزرسانیِ بلافاصله بعد از ذخیره است.
 // ---------------------------------------------------------------------
 export function StatsBar() {
   const ref = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(false)
-  const [stats, setStats] = useState(defaultStats)
+  // مقدار اولیه از SSR (تنظیمات دیتابیس) — نه پیش‌فرض فایل محتوا
+  const initialStats = useSiteSettings().homeStats
+  const [stats, setStats] = useState<HomeStatItem[]>(initialStats)
 
   useEffect(() => {
     const el = ref.current
@@ -81,7 +83,7 @@ export function StatsBar() {
     return () => observer.disconnect()
   }, [])
 
-  // آمار از تنظیمات (پنل ادمین) — با هر ورود به صفحهٔ خانه هم تازه می‌شود
+  // تازه‌ساز — بعد از ذخیرهٔ مالک در پنل، همان نما بدون رفرش کامل به‌روز شود
   useEffect(() => {
     let cancelled = false
     const load = () => {
@@ -89,18 +91,7 @@ export function StatsBar() {
         .then((res) => res.json())
         .then((data) => {
           if (cancelled) return
-          const s = data?.settings?.homeStats
-          if (Array.isArray(s) && s.length > 0) {
-            setStats(
-              s.map((item: { value: number; suffix?: string; label: string }) => ({
-                value: Number(item.value) || 0,
-                suffix: item.suffix ?? '',
-                label: item.label,
-              }))
-            )
-          } else {
-            setStats(defaultStats) // تنظیمی ذخیره نشده → پیش‌فرض فایل محتوا
-          }
+          setStats(applyHomeStats(data?.settings?.homeStats))
         })
         .catch(() => {})
     }

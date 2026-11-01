@@ -4,11 +4,15 @@ import { useEffect, useState } from 'react'
 import { useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import { X } from 'lucide-react'
-import { siteContent, PageKey } from '@/content/site-content'
+import { useSiteSettings } from './site-shell'
+import { applyAnnouncement, type AnnouncementSettings } from '@/lib/site-settings-public'
 
 // ---------------------------------------------------------------------
 //  📣 نوار اعلان بالای سایت — برای خبرهای فوری (مثل شروع ثبت‌نام)
-//    - متن و دکمه از تب Settings پنل ادمین (PUT /api/settings) یا فایل محتوا
+//    - مقدار اولیه از SSR می‌آید (layout تنظیمات دیتابیس را در HTML می‌ریزد)
+//      → از همان اولین رنگ صفحه، اعلانِ مالک دیده می‌شود نه پیش‌فرض فایل محتوا
+//    - fetch تازه‌ساز باقی مانده تا تغییر مالک در پنل بلافاصله در همین نما
+//      هم دیده شود (PUT /api/settings)
 //    - بستن نوار فقط برای «همین نشست مرورگر» ذخیره می‌شود (sessionStorage)؛
 //      با باز کردن دوبارهٔ سایت، نوار دوباره دیده می‌شود — رفع باگ «نوار
 //      نمایش داده نمی‌شود» که به‌خاطر dismiss همیشگی در localStorage بود
@@ -17,16 +21,7 @@ import { siteContent, PageKey } from '@/content/site-content'
 //      (بدون setState در effect — سازگار با قانون lint)
 // ---------------------------------------------------------------------
 
-const staticAnnouncement = siteContent.announcement
-
-interface AnnouncementData {
-  enabled: boolean
-  id: string
-  emoji: string
-  text: string
-  ctaLabel: string
-  ctaPage: string
-}
+type AnnouncementData = AnnouncementSettings
 
 const listeners = new Set<() => void>()
 
@@ -65,11 +60,14 @@ function getServerSnapshot(): boolean {
 }
 
 export function AnnouncementBar() {
-  const [a, setA] = useState<AnnouncementData>(staticAnnouncement)
+  // مقدار اولیه از SSR (تنظیمات دیتابیس) — نه پیش‌فرض فایل محتوا
+  const initialAnnouncement = useSiteSettings().announcement
+  const [a, setA] = useState<AnnouncementData>(initialAnnouncement)
   const dismissed = useSyncExternalStore(subscribe, makeGetSnapshot(a.id), getServerSnapshot)
 
-  // اعلان از تنظیمات (پنل ادمین) — با هر جابه‌جایی بین صفحه‌ها هم تازه می‌شود
-  // تا تغییرات مالک بلافاصله دیده شود
+  // تازه‌ساز — بعد از ذخیرهٔ مالک در پنل، همان نما بدون رفرش کامل به‌روز شود.
+  // پاسخ با همان منطق SSR نرمال می‌شود (applyAnnouncement)؛ تنظیم ذخیره‌نشده
+  // = پیش‌فرض فایل محتوا.
   useEffect(() => {
     let cancelled = false
     const load = () => {
@@ -77,19 +75,7 @@ export function AnnouncementBar() {
         .then((res) => res.json())
         .then((data) => {
           if (cancelled) return
-          const s = data?.settings?.announcement
-          if (s && typeof s.text === 'string' && s.text.length > 0) {
-            setA({
-              enabled: s.enabled !== false,
-              id: String(s.id ?? staticAnnouncement.id),
-              emoji: String(s.emoji ?? '📣'),
-              text: s.text,
-              ctaLabel: String(s.ctaLabel ?? 'Save my spot'),
-              ctaPage: String(s.ctaPage ?? 'register'),
-            })
-          } else {
-            setA(staticAnnouncement) // تنظیمی ذخیره نشده → پیش‌فرض فایل محتوا
-          }
+          setA(applyAnnouncement(data?.settings?.announcement))
         })
         .catch(() => {})
     }
