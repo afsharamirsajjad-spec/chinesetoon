@@ -55,6 +55,14 @@ export async function register(): Promise<void> {
       } catch (e) {
         console.error('[instrumentation] hsk-seed failed:', e instanceof Error ? e.message : e)
       }
+      // 📝 آزمون‌های آمادهٔ HSK 1/2/3 — فقط برای سطح‌های فاقد هر آزمونی؛
+      // بعد از آن پنل ادمین (آزمون‌ساز) منبع حقیقت است
+      try {
+        const { ensureExamSeed } = await import('@/lib/hsk-exam-seed')
+        await ensureExamSeed()
+      } catch (e) {
+        console.error('[instrumentation] hsk-exam-seed failed:', e instanceof Error ? e.message : e)
+      }
       return // 🟢 PostgreSQL startup path کامل شد
     }
 

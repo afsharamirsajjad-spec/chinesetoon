@@ -563,3 +563,16 @@ Changes:
 - next.config CSP: script-src now allows https://www.youtube.com and https://s.ytimg.com (the IFrame API and its player widget); frame-src youtube hosts were already allowed.
 
 Verification: tsc 0; eslint clean; next build OK; curl confirms the nav link and the new CSP; browser check on /teaching-videos shows heading + level/category filters (empty state locally - the DB-backed grid appears in production).
+
+---
+Task ID: EXAM-SEED-YOUTUBE-DIRECT-1
+Task: Starter HSK 1/2/3 exams seeded (the Practice tab was empty) + video cards open YouTube directly (owner request).
+
+Video change: clicking any video card - in the dedicated /teaching-videos library AND the Learn teaser - now opens the video on YouTube itself in a new tab (owner: "preview click = watch on YouTube"). /api/videos now includes youtubeId; the internal watch pages /teaching-videos/[id] remain (SEO, VideoObject JSON-LD, related links, smart embed with auto-fallback).
+
+Exam seed (src/lib/hsk-exam-seed.ts, hooked into the PostgreSQL startup path next to hsk-seed):
+- Per level HSK1/HSK2/HSK3 two published, free exams are created when the level has NO exams at all: a timed Mock Exam (20 questions, 25/40/60 min, pass 60%) and an untimed Vocabulary Practice (10 questions) - 90 authored questions total across mcq/truefalse/match, all answer keys server-side (options+answerIndex, aligned match pairs), skills assigned for the per-skill score breakdown, stageNumber null so they never interfere with stage modules.
+- Idempotent and admin-first: a level with ANY existing exam is skipped entirely; per-level/per-slug guards + shared cold-start promise; failures never break startup.
+- The admin exam builder stays the source of truth: seeded exams can be edited, unpublished or deleted like any other.
+
+Verification: tsc 0; eslint clean; bun test 91/91; build OK; browser check of /teaching-videos confirms heading + level/category filters.
