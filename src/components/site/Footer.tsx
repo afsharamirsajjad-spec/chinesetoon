@@ -144,7 +144,8 @@ export function Footer({ onNavigate, onToast }: FooterProps) {
               {siteContent.navigation.map((item) => (
                 <li key={item.key}>
                   <Link
-                    href={item.key === 'home' ? '/' : `/${item.key}`}
+                    // 🎬 بخش اختصاصی ویدیوها روی /teaching-videos زندگی می‌کند
+                    href={item.key === 'home' ? '/' : item.key === 'videos' ? '/teaching-videos' : `/${item.key}`}
                     className="text-sm text-[#FFF7E8]/60 hover:text-sage-light transition-colors cursor-pointer"
                   >
                     {item.label}

@@ -7,15 +7,15 @@ import { siteContent } from '@/content/site-content'
 // ---------------------------------------------------------------------------
 // 💬 ChatWidget — Online Support (floating widget, every page)
 //
-// Two modes (Part 1 — AI-powered support):
-//   • AI mode (default when the admin enabled+configured the assistant):
-//     natural-language conversation with the AI, typing indicator, follow-up
-//     context, conversation reset. History lives in localStorage on the
-//     visitor's device; nothing personal is stored server-side.
-//   • Human mode: the original anonymous live chat with the admin team
-//     (session token + polling, unchanged behavior).
-// When the AI is disabled or unconfigured the widget starts in human mode and
-// shows no fake AI responses.
+// جریان هدایت‌شده (درخواست مالک) — بازدیدکننده هرگز بی‌راهنما رها نمی‌شود:
+//   ۱) منوی انتخاب موضوع: «مشکل دارم / سؤال دربارهٔ کلاس‌ها / پرداخت / غیره»
+//   ۲) پاسخ خودکاریِ گام‌به‌گام برای همان موضوع + گزینه‌های بعدی
+//   ۳) «درست نشد» → اتصال به پشتیبانی انسانی: همان چت زنده که در پنل ادمین
+//      (تب Live Chat) باز می‌شود و اپراتور همان‌جا پاسخ می‌دهد.
+//
+// حالت AI با دکمهٔ ✨ در دسترس می‌ماند (پاسخ آزاد با مدل پیکربندی‌شدهٔ مالک)؛
+// ولی ورود پیش‌فرض، منوی هدایت‌شده است. پیام‌های منوی هدایت‌شده فقط محلی‌اند —
+// تا لحظهٔ درخواست اپراتور، هیچ‌چیز به سرور ارسال نمی‌شود.
 // ---------------------------------------------------------------------------
 
 const c = siteContent.support.chat
@@ -39,6 +39,86 @@ interface AiStatus {
   configured: boolean
   welcomeMessage: string
   fallbackMessage: string
+}
+
+// ------------------------- جریان هدایت‌شده -------------------------
+
+type GuidedAction =
+  | { type: 'topic'; value: 'problem' | 'classes' | 'payment' | 'other' }
+  | { type: 'navigate'; href: string }
+  | { type: 'resolved' }
+  | { type: 'escalate' }
+  | { type: 'restart' }
+
+interface GuidedOption {
+  label: string
+  action: GuidedAction
+}
+
+interface GuidedTurn {
+  role: 'bot' | 'user'
+  body: string
+  options?: GuidedOption[]
+}
+
+const MENU_OPTIONS: GuidedOption[] = [
+  { label: '🐛 I found a problem', action: { type: 'topic', value: 'problem' } },
+  { label: '🎓 Question about classes', action: { type: 'topic', value: 'classes' } },
+  { label: '💳 Payment help', action: { type: 'topic', value: 'payment' } },
+  { label: '💬 Something else', action: { type: 'topic', value: 'other' } },
+]
+
+const AFTER_ANSWER_OPTIONS: GuidedOption[] = [
+  { label: '✓ It worked', action: { type: 'resolved' } },
+  { label: '🙋 Still not fixed — talk to a human', action: { type: 'escalate' } },
+]
+
+const RESTART_OPTIONS: GuidedOption[] = [
+  { label: '↩ Back to the menu', action: { type: 'restart' } },
+]
+
+const ESCALATE_OPTIONS: GuidedOption[] = [
+  { label: '🙋 Talk to a human', action: { type: 'escalate' } },
+]
+
+function topicAnswer(value: 'problem' | 'classes' | 'payment' | 'other'): GuidedTurn[] {
+  switch (value) {
+    case 'problem':
+      return [
+        {
+          role: 'bot',
+          body: 'Let’s try a quick fix:\n1) Refresh the page (Ctrl/Cmd + R).\n2) If you are signed in, sign out and back in.\n3) If it still breaks, try another browser or clear the cache.',
+          options: AFTER_ANSWER_OPTIONS,
+        },
+      ]
+    case 'classes':
+      return [
+        {
+          role: 'bot',
+          body: 'All live classes are on the Classes page — level, teacher, price and schedule are on every class card, and you can register online in one minute.',
+          options: [
+            { label: '🎓 Open the Classes page', action: { type: 'navigate', href: '/classes' } },
+            ...AFTER_ANSWER_OPTIONS,
+          ],
+        },
+      ]
+    case 'payment':
+      return [
+        {
+          role: 'bot',
+          body: 'Payments: pick a class → checkout → pay with USDT (TRON) or upload a bank receipt.\nIf a payment did not register, contact us with your order reference (CT-…) and we will trace it right away.',
+          options: AFTER_ANSWER_OPTIONS,
+        },
+      ]
+    case 'other':
+      return [
+        {
+          role: 'bot',
+          body: 'Tell us your question in one line — or connect directly to our team and they will answer you right here in this chat.',
+          options: ESCALATE_OPTIONS,
+        },
+      ]
+  }
 }
 
 function getSessionToken(): string {
@@ -72,18 +152,24 @@ function loadAiHistory(): AiMsg[] {
 
 export function ChatWidget() {
   const [open, setOpen] = useState(false)
-  // mode decided on first open from /api/support/ai/status
+  // 🧭 ورود پیش‌فرض = منوی هدایت‌شده؛ AI با دکمهٔ ✨ در دسترس است
   const [aiAvailable, setAiAvailable] = useState(false)
   const [aiChecked, setAiChecked] = useState(false)
   const [aiStatus, setAiStatus] = useState<AiStatus | null>(null)
   const [mode, setMode] = useState<'ai' | 'human'>('human')
+
+  // جریان هدایت‌شده — تا لحظهٔ escalate کاملاً محلی است
+  const [guided, setGuided] = useState<GuidedTurn[]>([])
+  const [lastTopic, setLastTopic] = useState<string>('')
+  // 'guided' = منو/راهنما · 'live' = چت واقعی با اپراتور (پنل ادمین)
+  const [stage, setStage] = useState<'guided' | 'live'>('guided')
 
   // AI state
   const [aiMessages, setAiMessages] = useState<AiMsg[]>([])
   const [aiSending, setAiSending] = useState(false)
   const [aiError, setAiError] = useState('')
 
-  // human state (unchanged legacy flow)
+  // human state (چت واقعی)
   const [messages, setMessages] = useState<ChatMsg[]>([])
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState(false)
@@ -98,7 +184,7 @@ export function ChatWidget() {
   const [draft, setDraft] = useState('')
   draftRef.current = draft
 
-  // AI availability — checked once when the widget first opens
+  // AI availability — یک‌بار در اولین باز شدن برای نمایش دکمهٔ تغییر حالت
   useEffect(() => {
     if (!open || aiChecked) return
     let cancelled = false
@@ -110,29 +196,22 @@ export function ChatWidget() {
         if (data?.enabled && data?.configured) {
           setAiStatus(data)
           setAiAvailable(true)
-          setMode('ai')
-          setAiMessages(loadAiHistory())
         } else {
           setAiStatus(data)
           setAiAvailable(false)
-          setMode('human')
         }
       })
       .catch(() => {
-        if (!cancelled) {
-          setAiChecked(true)
-          setMode('human')
-        }
+        if (!cancelled) setAiChecked(true)
       })
     return () => {
       cancelled = true
     }
   }, [open, aiChecked])
 
-  // ---- human chat flow (unchanged) ----
+  // ---------- مرحلهٔ live: بازیابی تاریخچهٔ نشست ----------
   useEffect(() => {
-    if (!open || mode !== 'human' || sessionRef.current) return
-    sessionRef.current = getSessionToken()
+    if (!open || mode !== 'human' || stage !== 'live' || !sessionRef.current) return
     let cancelled = false
     fetch(`/api/chat?session=${encodeURIComponent(sessionRef.current)}`, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
@@ -148,10 +227,10 @@ export function ChatWidget() {
     return () => {
       cancelled = true
     }
-  }, [open, mode])
+  }, [open, mode, stage])
 
   const poll = useCallback(async () => {
-    if (!sessionRef.current || mode !== 'human') return
+    if (!sessionRef.current || mode !== 'human' || stage !== 'live') return
     try {
       const q = `?session=${encodeURIComponent(sessionRef.current)}${
         lastAtRef.current ? `&after=${encodeURIComponent(lastAtRef.current)}` : ''
@@ -172,7 +251,7 @@ export function ChatWidget() {
     } catch {
       // network hiccup — next tick retries
     }
-  }, [mode])
+  }, [mode, stage])
 
   useEffect(() => {
     const iv = setInterval(() => void poll(), open ? 5000 : 15000)
@@ -183,7 +262,7 @@ export function ChatWidget() {
     if (open && listRef.current) {
       listRef.current.scrollTop = listRef.current.scrollHeight
     }
-  }, [messages, aiMessages, aiSending, open])
+  }, [messages, aiMessages, aiSending, guided, open])
 
   useEffect(() => {
     const onOpen = () => setOpen(true)
@@ -236,9 +315,73 @@ export function ChatWidget() {
     setAiError('')
   }
 
+  // ---------- اتصال به اپراتور — همان چت زندهٔ پنل ادمین ----------
+  const escalate = useCallback(async (context: string) => {
+    if (sending) return
+    setSending(true)
+    setSendError(false)
+    try {
+      sessionRef.current = getSessionToken()
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session: sessionRef.current, text: context }),
+      })
+      if (!res.ok) {
+        setSendError(true)
+        setSending(false)
+        return
+      }
+      const data = (await res.json()) as { message?: ChatMsg }
+      setStage('live')
+      setMessages((prev) => (data.message ? [...prev, data.message] : prev))
+      if (data.message) lastAtRef.current = data.message.createdAt
+      setDraft('')
+    } catch {
+      setSendError(true)
+    } finally {
+      setSending(false)
+    }
+  }, [sending])
+
+  // ---------- انتخاب‌های منوی هدایت‌شده ----------
+  const runAction = (action: GuidedAction, label: string) => {
+    switch (action.type) {
+      case 'navigate':
+        window.location.href = action.href
+        return
+      case 'topic': {
+        const turns: GuidedTurn[] = [{ role: 'user', body: label }, ...topicAnswer(action.value)]
+        setLastTopic(label)
+        setGuided((prev) => [...prev, ...turns])
+        return
+      }
+      case 'resolved':
+        setGuided((prev) => [
+          ...prev,
+          { role: 'user', body: label },
+          { role: 'bot', body: 'Glad we could help! 🎉 If you need anything else, just pick a topic below.', options: RESTART_OPTIONS },
+        ])
+        return
+      case 'escalate':
+        setGuided((prev) => [...prev, { role: 'user', body: label }])
+        void escalate(`🆘 Human support requested — topic: ${lastTopic || 'general'}. The guided help did not solve it.`)
+        return
+      case 'restart':
+        setGuided([{ role: 'bot', body: c.welcome, options: MENU_OPTIONS }])
+        return
+    }
+  }
+
   const sendHuman = async () => {
     const text = draft.trim()
     if (!text || sending) return
+    if (stage === 'guided') {
+      // متن آزاد در مرحلهٔ منو = درخواست اتصال به اپراتور با همان متن
+      setGuided((prev) => [...prev, { role: 'user', body: text }])
+      void escalate(text)
+      return
+    }
     setSending(true)
     setSendError(false)
     try {
@@ -266,15 +409,26 @@ export function ChatWidget() {
 
   const send = mode === 'ai' ? sendAi : sendHuman
   const busy = mode === 'ai' ? aiSending : sending
-  const conversationEmpty = mode === 'ai' ? aiMessages.length === 0 : messages.length === 0
+  const conversationEmpty =
+    mode === 'ai' ? aiMessages.length === 0 : stage === 'guided' ? guided.length === 0 : messages.length === 0
 
   const toggle = () => {
     setOpen((o) => !o)
     setHasUnread(false)
   }
 
+  // ---------- ناوبری گزینه‌های هدایت‌شده ----------
+  const onOptionClick = (opt: GuidedOption) => {
+    if (mode !== 'human' || stage !== 'guided') return
+    runAction(opt.action, opt.label)
+  }
+
   const welcomeText =
     mode === 'ai' ? aiStatus?.welcomeMessage ?? c.welcome : c.welcome
+
+  const renderBody = (body: string) => (
+    <span className="whitespace-pre-wrap">{body}</span>
+  )
 
   return (
     <>
@@ -316,15 +470,17 @@ export function ChatWidget() {
                   ? aiSending
                     ? 'Typing…'
                     : 'Powered by AI · answers instantly'
-                  : c.subtitle}
+                  : stage === 'live'
+                    ? 'Connected to our team — they reply here'
+                    : 'How can we help you today?'}
               </p>
             </div>
             {aiAvailable && (
               <button
                 type="button"
                 onClick={() => setMode(mode === 'ai' ? 'human' : 'ai')}
-                title={mode === 'ai' ? 'Talk to a human' : 'Back to the AI assistant'}
-                aria-label={mode === 'ai' ? 'Talk to a human' : 'Back to the AI assistant'}
+                title={mode === 'ai' ? 'Guided help & human support' : 'Chat with the AI assistant'}
+                aria-label={mode === 'ai' ? 'Guided help and human support' : 'Chat with the AI assistant'}
                 className="p-1.5 rounded-full bg-white/70 text-brown hover:text-sage-dark cursor-pointer"
               >
                 {mode === 'ai' ? <UserRound className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
@@ -344,11 +500,13 @@ export function ChatWidget() {
           <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-2.5 bg-cream/40">
             {conversationEmpty && (
               <div className="bg-white rounded-2xl rounded-bl-md px-4 py-3 text-sm text-brown border border-sage-light/25 max-w-[85%]">
-                {welcomeText}
+                {renderBody(welcomeText)}
               </div>
             )}
-            {mode === 'ai'
-              ? aiMessages.map((m, i) =>
+
+            {mode === 'ai' ? (
+              <>
+                {aiMessages.map((m, i) =>
                   m.role === 'assistant' ? (
                     <div
                       key={i}
@@ -360,36 +518,102 @@ export function ChatWidget() {
                     <div key={i} className="ml-auto bg-sage text-brown-dark rounded-2xl rounded-br-md px-4 py-3 text-sm max-w-[85%] font-medium">
                       {m.body}
                     </div>
-                  )
-                )
-              : messages.map((m) =>
-                  m.role === 'admin' ? (
-                    <div
-                      key={m.id}
-                      className="bg-white rounded-2xl rounded-bl-md px-4 py-3 text-sm text-brown border border-sage-light/25 max-w-[85%]"
-                    >
-                      {m.body}
-                    </div>
-                  ) : (
-                    <div
-                      key={m.id}
-                      className="ml-auto bg-sage text-brown-dark rounded-2xl rounded-br-md px-4 py-3 text-sm max-w-[85%] font-medium"
-                    >
-                      {m.body}
-                    </div>
-                  )
+                  ),
                 )}
-            {/* typing indicator (AI) */}
-            {mode === 'ai' && aiSending && (
-              <div className="bg-white rounded-2xl rounded-bl-md px-4 py-3 border border-sage-light/25 max-w-[60%] inline-flex items-center gap-1.5" aria-label="The assistant is typing">
-                {[0, 1, 2].map((i) => (
-                  <span
-                    key={i}
-                    className="w-1.5 h-1.5 bg-sage-dark rounded-full animate-bounce"
-                    style={{ animationDelay: `${i * 150}ms` }}
-                  />
-                ))}
-              </div>
+                {aiSending && (
+                  <div className="bg-white rounded-2xl rounded-bl-md px-4 py-3 border border-sage-light/25 max-w-[60%] inline-flex items-center gap-1.5" aria-label="The assistant is typing">
+                    {[0, 1, 2].map((i) => (
+                      <span
+                        key={i}
+                        className="w-1.5 h-1.5 bg-sage-dark rounded-full animate-bounce"
+                        style={{ animationDelay: `${i * 150}ms` }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {/* 🧭 پیام‌های هدایت‌شده — فقط محلی، تا لحظهٔ اتصال به اپراتور */}
+                {stage === 'guided' && guided.length > 0 && (
+                  <div className="flex justify-center py-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-brown-light/70">guided help</span>
+                  </div>
+                )}
+                {stage === 'guided'
+                  ? guided.map((turn, i) =>
+                      turn.role === 'bot' ? (
+                        <div key={`g${i}`} className="space-y-2">
+                          <div className="bg-white rounded-2xl rounded-bl-md px-4 py-3 text-sm text-brown border border-sage-light/25 max-w-[90%] whitespace-pre-wrap">
+                            {renderBody(turn.body)}
+                          </div>
+                          {turn.options && (
+                            <div className="flex flex-wrap gap-2 pl-2">
+                              {turn.options.map((opt) => (
+                                <button
+                                  key={opt.label}
+                                  type="button"
+                                  onClick={() => onOptionClick(opt)}
+                                  className="text-xs font-semibold bg-white border border-sage/40 text-sage-dark px-3.5 py-2 rounded-full hover:bg-sage hover:text-brown-dark transition-colors cursor-pointer text-left"
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div key={`g${i}`} className="ml-auto bg-sage text-brown-dark rounded-2xl rounded-br-md px-4 py-3 text-sm max-w-[85%] font-medium">
+                          {renderBody(turn.body)}
+                        </div>
+                      ),
+                    )
+                  : (
+                    <>
+                      {/* 🟢 چت واقعی — اپراتور از پنل ادمین پاسخ می‌دهد */}
+                      <div className="flex justify-center py-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-brown-light/70">live support — your messages reach our team</span>
+                      </div>
+                      {messages.length === 0 && (
+                        <div className="bg-white rounded-2xl rounded-bl-md px-4 py-3 text-sm text-brown border border-sage-light/25 max-w-[85%]">
+                          Connecting you to our team… you will see the reply right here.
+                        </div>
+                      )}
+                      {messages.map((m) =>
+                        m.role === 'admin' ? (
+                          <div
+                            key={m.id}
+                            className="bg-white rounded-2xl rounded-bl-md px-4 py-3 text-sm text-brown border border-sage-light/25 max-w-[85%]"
+                          >
+                            {m.body}
+                          </div>
+                        ) : (
+                          <div
+                            key={m.id}
+                            className="ml-auto bg-sage text-brown-dark rounded-2xl rounded-br-md px-4 py-3 text-sm max-w-[85%] font-medium"
+                          >
+                            {m.body}
+                          </div>
+                        ),
+                      )}
+                    </>
+                  )}
+                {/* 🧭 منوی شروع — وقتی هنوز موضوعی انتخاب نشده */}
+                {stage === 'guided' && guided.length === 0 && (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {MENU_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.label}
+                        type="button"
+                        onClick={() => onOptionClick(opt)}
+                        className="text-xs font-semibold bg-white border border-sage/40 text-sage-dark px-3.5 py-2 rounded-full hover:bg-sage hover:text-brown-dark transition-colors cursor-pointer text-left"
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -428,7 +652,13 @@ export function ChatWidget() {
               type="text"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder={mode === 'ai' ? 'Ask about Chinese, HSK or our courses…' : c.placeholder}
+              placeholder={
+                mode === 'ai'
+                  ? 'Ask about Chinese, HSK or our courses…'
+                  : stage === 'guided'
+                    ? 'Or type your question and we will connect you…'
+                    : c.placeholder
+              }
               aria-label={mode === 'ai' ? 'Message the AI assistant' : c.placeholder}
               maxLength={2000}
               className="flex-1 min-w-0 bg-cream/60 border border-sage-light/40 rounded-full px-4 py-2.5 text-sm text-brown placeholder:text-brown-light/60 focus:outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 transition-colors"

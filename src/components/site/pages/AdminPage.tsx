@@ -2378,6 +2378,8 @@ function ChatAdmin({ token, onToast }: { token: string; onToast: (m: string) => 
       if (res.ok) {
         setDraft('')
         onToast('Reply sent ✓')
+        // 🩺 نشانگر «بی‌پاسخ» بلافاصله تازه شود — نه ۳۰ ثانیه بعد
+        window.dispatchEvent(new CustomEvent('ct-admin-chat-activity'))
         await loadThread(selected)
       }
     } finally {
@@ -3675,6 +3677,8 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
   // 💬 پرسش‌های لحظه‌ای — شمار پیام‌های بی‌پاسخ + تعداد نشست‌ها (برای اعلان تب Live Chat)
   const [chatUnread, setChatUnread] = useState(0)
   const [chatThreads, setChatThreads] = useState(0)
+  // 🩺 endpointهایی که در آخرین load نرسیدند — بنر شفاف + تلاش مجدد
+  const [loadError, setLoadError] = useState<string | null>(null)
   // 💬 Live Chat — state فقط در ChatAdmin؛ اینجا فقط برای کلید تب
   const [chatTabReady] = useState(true)
   // 💳 فاز ۵۹ — پرداخت دستی کارت بانکی: تنظیمات + شمارنده‌ها + فیلتر ورودی تب Payments
@@ -3809,11 +3813,18 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
     setLoading(true)
     try {
       const headers = { 'x-admin-key': token }
+      // 🩺 خطاها بی‌صدا نمی‌مانند — نام endpointهای شکست‌خورده جمع و به‌صورت
+      // بنر + دکمهٔ تلاش مجدد نشان داده می‌شود
+      const failed: string[] = []
       // اگر هر API برگشت 401 داد (مثلاً بعد از عوض‌کردن رمز)، برگرد به صفحهٔ ورود
-      const get = async (url: string) => {
+      const get = async (url: string, label?: string) => {
         const res = await fetch(url, { headers })
         if (res.status === 401) return { unauthorized: true as const }
-        return res.ok ? res.json() : {}
+        if (!res.ok) {
+          failed.push(label ?? url.replace('/api/', ''))
+          return {}
+        }
+        return res.json()
       }
       const [m, r, n, p, s, rev, wc, qq, tc, ls, st, ps, fd, dc, reva, fda, rs, ex] = await Promise.all([
         get('/api/support'),
@@ -3870,8 +3881,10 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
         hero: st?.settings?.hero ?? null,
       })
       setStats(s)
+      // 🩺 گزارش شفاف — اگر بخشی از داده‌ها نرسید، بنر + تلاش مجدد نشان داده می‌شود
+      setLoadError(failed.length > 0 ? failed.join(' · ') : null)
     } catch {
-      // خطاها بی‌صدا — UI خالی نشان داده می‌شود
+      setLoadError('network')
     } finally {
       setLoading(false)
     }
@@ -3902,7 +3915,13 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
     if (!token) return
     void loadChatUnread()
     const iv = setInterval(() => void loadChatUnread(), 30_000)
-    return () => clearInterval(iv)
+    // 🗨️ بعد از پاسخ ادمین در ChatAdmin، نشانگر بلافاصله تازه شود (نه ۳۰ ثانیه بعد)
+    const onChatActivity = () => void loadChatUnread()
+    window.addEventListener('ct-admin-chat-activity', onChatActivity)
+    return () => {
+      clearInterval(iv)
+      window.removeEventListener('ct-admin-chat-activity', onChatActivity)
+    }
   }, [token, tab, loadChatUnread])
 
   // 📰 ایمپورت یک‌جای مقاله‌های سئو (تب Blog) — upsert از scripts/seo-articles
@@ -4282,7 +4301,7 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
     { key: 'edufiles' as const, label: 'File Manager', count: 0, alert: 0, icon: FolderDown },
     { key: 'videos' as const, label: 'Teaching Videos', count: 0, alert: 0, icon: MessageSquare },
     { key: 'ai' as const, label: 'AI Assistant', count: 0, alert: 0, icon: Sparkles },
-    { key: 'chat' as const, label: a.tabChat, count: chatThreads, alert: chatUnread, icon: MessageSquare },
+    { key: 'chat' as const, label: a.tabChat, count: chatThreads, alert: tab === 'chat' ? 0 : chatUnread, icon: MessageSquare },
     { key: 'words' as const, label: a.tabWords, count: learnCards.length, alert: 0, icon: Layers },
     { key: 'quiz' as const, label: a.tabQuiz, count: quizQuestions.length, alert: 0, icon: ListChecks },
     { key: 'teachers' as const, label: a.tabTeachers, count: teachers.length, alert: 0, icon: UserRound },
@@ -4374,6 +4393,22 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
           <div className="mb-6 flex justify-end">
             <AdminGlobalSearch token={token} onOpen={handleSearchOpen} />
           </div>
+
+          {/* 🩺 بنر خطای لود داده — دیگر هیچ شکستی بی‌صدا نیست */}
+          {loadError && (
+            <div className="mb-6 bg-peach/20 border border-peach/50 rounded-2xl px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-brown-dark flex items-center gap-2">
+                <Bell className="w-4 h-4 text-peach-dark" aria-hidden="true" />
+                Some admin data could not load{loadError === 'network' ? ' (network error)' : ` (${loadError})`} — the related lists may look empty.
+              </p>
+              <button
+                onClick={load}
+                className="bg-sage text-brown-dark px-4 py-2 rounded-full text-xs font-bold hover:bg-sage-dark transition-colors cursor-pointer min-h-[32px] inline-flex items-center gap-1.5"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Retry
+              </button>
+            </div>
+          )}
 
           {/* 🔔 نوار اعلان — مواردی که منتظر بررسی‌اند (کلیک روی هر چیپ = پرش به همان تب) */}
           {pendingTotal > 0 && (

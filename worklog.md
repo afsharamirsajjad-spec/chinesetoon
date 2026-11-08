@@ -576,3 +576,20 @@ Exam seed (src/lib/hsk-exam-seed.ts, hooked into the PostgreSQL startup path nex
 - The admin exam builder stays the source of truth: seeded exams can be edited, unpublished or deleted like any other.
 
 Verification: tsc 0; eslint clean; bun test 91/91; build OK; browser check of /teaching-videos confirms heading + level/category filters.
+
+---
+Task ID: GUIDED-SUPPORT-ADMIN-UX-1
+Task: Guided support chat (menu -> self-help -> human escalation into the admin panel) + admin panel data-load transparency and notification freshness.
+
+Support chat (ChatWidget rebuilt): the widget no longer dumps visitors into free-form chat. New flow:
+  1) Opening the widget shows "How can we help you today?" with quick-reply topics (problem / classes / payment / something else).
+  2) Each topic returns a scripted step-by-step self-help answer with follow-up options ("It worked" / "Still not fixed - talk to a human"); the classes topic offers an "Open the Classes page" navigation option.
+  3) "Still not fixed" (or typing free text at the menu) escalates: it starts the real live-chat session, posts a context message ("Human support requested - topic: X"), and switches to live mode where the operator answers from the admin Live Chat tab. Until escalation nothing is sent to the server.
+  The AI assistant stays available via the sparkle toggle (no longer auto-forced on open); the guided menu is the default entry.
+
+Admin panel:
+- load() failures are no longer silent: failed endpoints are collected and shown in a peach banner ("Some admin data could not load (...)") with a Retry button.
+- Live Chat notifications: replying in ChatAdmin dispatches ct-admin-chat-activity so the unanswered badge refreshes immediately (was up to 30s stale); the badge is hidden while the admin is viewing the Live Chat tab itself.
+- Footer: the Videos nav link pointed to the nonexistent /videos - now /teaching-videos (footer had its own href mapping).
+
+Verification: tsc 0; eslint clean; next build OK; browser flow test at 375px: menu -> topic answer with follow-up options -> escalation attempt shows the graceful error while the local DB is down (in production it connects); footer Videos link fixed and /teaching-videos 200.
