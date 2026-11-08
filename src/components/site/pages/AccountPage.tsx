@@ -1169,34 +1169,6 @@ function ProfileView({
             {c.logout}
           </button>
         </div>
-
-        {/* 🆔 فاز ۶۰ — کد یکتای پایدار دانش‌پذیر: از DB می‌آید و هرگز عوض نمی‌شود */}
-        {user.uniqueCode && (
-          <div className="mb-8 rounded-2xl border border-sage/30 bg-sage-light/20 px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-sage-dark mb-1">{c.uniqueCode}</p>
-              <p className="font-mono text-2xl font-extrabold text-brown-dark tracking-wider" dir="ltr">
-                {user.uniqueCode}
-              </p>
-              <p className="text-[11px] text-brown-light mt-1.5 leading-relaxed">{c.uniqueCodeNote}</p>
-            </div>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(user.uniqueCode ?? '')
-                  onToast(c.uniqueCodeCopied)
-                } catch {
-                  // بدون clipboard — کد قابل خواندن است
-                }
-              }}
-              className="inline-flex items-center justify-center gap-2 bg-white border border-sage-light/60 text-brown-dark px-5 py-2.5 rounded-xl text-sm font-bold hover:border-sage transition-colors cursor-pointer min-h-[44px] flex-shrink-0"
-            >
-              <Copy className="w-4 h-4" aria-hidden="true" /> {c.copyCode}
-              <span className="sr-only">{c.uniqueCodeCopied}</span>
-            </button>
-          </div>
-        )}
       </div>
 
       {/* کارت کلاس‌ها و پرداخت‌ها */}

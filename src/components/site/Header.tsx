@@ -82,10 +82,11 @@ export function Header({ activePage }: HeaderProps) {
               <ToonMark className="w-7 h-7" />
             </span>
             <span className={`text-left leading-none transition-all duration-300 ${scrolled ? 'lg:block' : 'block'}`}>
-              <span className="block text-lg font-bold tracking-wide text-leaf-dark">
+              {/* 📱 whitespace-nowrap + اندازهٔ کوچکتر در موبایل — نام برند هرگز دوخطی نشود */}
+              <span className="block whitespace-nowrap text-base sm:text-lg font-bold tracking-wide text-leaf-dark">
                 CHINESE TOON
               </span>
-              <span className="block text-[11px] font-semibold text-brown-light tracking-[0.3em] mt-0.5">
+              <span className="block whitespace-nowrap text-[9px] sm:text-[11px] font-semibold text-brown-light tracking-[0.3em] mt-0.5">
                 香椿 · MANDARIN
               </span>
             </span>
