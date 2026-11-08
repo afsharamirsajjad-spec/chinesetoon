@@ -2334,6 +2334,17 @@ function ChatAdmin({ token, onToast }: { token: string; onToast: (m: string) => 
   const loadThread = useCallback(
     async (session: string) => {
       try {
+        // 🫧 باز کردن رشته = دیده‌شدن — نوتیفیکیشن همان نشست پاک می‌شود
+        void fetch('/api/chat/admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-admin-key': token },
+          body: JSON.stringify({ session, markSeen: true }),
+        })
+          .then(() => {
+            window.dispatchEvent(new CustomEvent('ct-admin-chat-activity'))
+            void loadThreads()
+          })
+          .catch(() => {})
         const res = await fetch(`/api/chat/admin?session=${encodeURIComponent(session)}`, {
           headers: { 'x-admin-key': token },
           cache: 'no-store',
@@ -2343,7 +2354,7 @@ function ChatAdmin({ token, onToast }: { token: string; onToast: (m: string) => 
         // دور بعد
       }
     },
-    [token]
+    [token, loadThreads]
   )
 
   useEffect(() => {
@@ -4107,6 +4118,25 @@ export function AdminPage({ onToast }: { onToast?: (m: string) => void }) {
   useEffect(() => {
     if (tab === 'students') loadStudents()
   }, [tab, loadStudents])
+
+  // 🩺 شمارنده‌ها از لحظهٔ ورود — تا تب‌ها قبل از باز شدن، 0 نشان ندهند
+  // (متای دانش‌آموزان + شمارنده‌های پرداخت در انتظار)
+  useEffect(() => {
+    if (!token) return
+    void loadStudents()
+  }, [token, loadStudents])
+
+  useEffect(() => {
+    if (!token) return
+    fetch('/api/admin/payments', { headers: { 'x-admin-key': token }, cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((d) => {
+        if (d?.counts) setPayCounts(d.counts)
+      })
+      .catch(() => {
+        // تب Orders خودش دوباره می‌گیرد
+      })
+  }, [token])
 
   // 👤 باز کردن دیالوگ جزئیات کاربر — پروفایل + سفارش‌ها + درخواست‌های کلاس
   const openStudentDetail = useCallback(

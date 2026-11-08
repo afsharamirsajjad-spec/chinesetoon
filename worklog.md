@@ -593,3 +593,16 @@ Admin panel:
 - Footer: the Videos nav link pointed to the nonexistent /videos - now /teaching-videos (footer had its own href mapping).
 
 Verification: tsc 0; eslint clean; next build OK; browser flow test at 375px: menu -> topic answer with follow-up options -> escalation attempt shows the graceful error while the local DB is down (in production it connects); footer Videos link fixed and /teaching-videos 200.
+
+---
+Task ID: ADMIN-COUNTS-READ-STATE-1
+Task: Admin counters show real numbers immediately; reading a live-chat thread clears its notification.
+
+Problems (owner report): 1) in the admin panel the Students count (and similar) showed 0 until the tab was opened - studentsMeta loaded lazily only when tab==='students' and payCounts only when the Orders tab mounted; 2) in Live Chat, reading a visitor's message did NOT clear the notification - unread was defined as user-messages-after-last-admin-REPLY, so merely reading never cleared anything; 3) the unique-code card "flashed" on refresh after its removal - that is stale ISR HTML (pages are cached up to 60s, revalidate=60); it self-heals within a minute after each deploy, no code issue.
+
+Fixes:
+- /api/chat/admin GET: unread now counts user messages newer than max(last admin reply, last admin VISIT) - a per-thread "seen" timestamp is persisted in SiteSetting 'adminChatSeen' (capped at 200 sessions, pruned). POST {session, markSeen:true} records the visit.
+- ChatAdmin: opening a thread marks it seen (POST markSeen) and immediately dispatches ct-admin-chat-activity so the tab badge and banner refresh; admin replies also dispatch it (already) and now write an audit log entry.
+- AdminPage: studentsMeta (via loadStudents) and pay counts (GET /api/admin/payments) are fetched eagerly on login, so the Students/Orders tab counters show real numbers right away instead of 0.
+
+Verification: tsc 0; eslint clean; next build OK.
